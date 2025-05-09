@@ -66,10 +66,10 @@ exportData <- function(park = "BADL", path = "C:/Users/KMMiller/OneDrive - DOI/M
 # Iterate through list to import/export database tables for each park.
 # First you need SSMS installed/set up on machine
 # Then need to restore databases from BAK. Can run ./SQL/loop_restore_database.sql in SSMS to restore all
-ngpn_list <- c("AGFO", "BADL", "DETO", "FOLA", "FOUS", "JECA",
-               "KNRI", "MNRR", "MORU", "SCBL", "THRO", "WICA")
-
-purrr::map(ngpn_list, function(parkcode){
-  importData(park = parkcode)
-  exportData(park = parkcode)
-})
+# ngpn_list <- c("AGFO", "BADL", "DETO", "FOLA", "FOUS", "JECA",
+#                "KNRI", "MNRR", "MORU", "SCBL", "THRO", "WICA")
+#
+# purrr::map(ngpn_list, function(parkcode){
+#   importData(park = parkcode)
+#   exportData(park = parkcode)
+# })

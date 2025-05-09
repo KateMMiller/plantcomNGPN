@@ -1,6 +1,6 @@
 Package: vegcomNGPN
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Package for importing, exporting, querying, and summarizing NGPN FFI data. 
 Version: 0.1.0
 Authors@R: person(
     "Kate", "Miller",
@@ -8,8 +8,15 @@ Authors@R: person(
     email = "kathryn_miller@nps.gov",
     comment = c(ORCID = "0000-0001-8823-6373")
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: Package imports FFI database tables from SQL Server backend and/or csvs. 
+Additional features will allow for querying, summarizing and visualizing FFI data. 
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    dplyr
+Suggests: 
+    DBI,
+    dbplyr,
+    odbc
+RoxygenNote: 7.3.2

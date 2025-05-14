@@ -6,26 +6,50 @@
 #' from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
 #' are row binded, so that all NPGN parks can be queried, summarized, etc. at once.
 #'
-#' @importFrom dplyr collect rename tbl
+#' @importFrom dplyr bind_rows collect mutate rename tbl
+#' @importFrom purrr flatten map
 #'
 #' @param type Indicate how to import the database tables
-#'\describe{
-#'\item{"local"} Import tables in 'dbo' schema from the local installation of an FFI database in SQL Server Management Studio (SSMS).
-#'\item{"server"} Import tables in 'dbo' schema from the FFI database on the production SQL Server (not enabled).
-#'\item{"csv"} Import csvs that were exported from the FFI database. Option doesn't require SSMS to be installed.
-#'\item{"zip"} Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed.
-#'}
+#' \describe{
+#' \item{"local"}{Import tables in 'dbo' schema from the local installation of an FFI database in SQL Server Management Studio (SSMS).}
+#' \item{"server"}{Import tables in 'dbo' schema from the FFI database on the production SQL Server (not enabled).}
+#' \item{"csv"}{Import csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
+#' \item{"zip"}{ Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
+#' }
 #'
 #' @param server If type = 'server', requires quoted FFI server address (not currently enabled).
 #'
-#' @param dbname If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO")
+#' @param dbname If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO"). If
+#' multiple database names are specified, views will be row bound for tables in common for all of the databases with a column
+#' indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
+#' aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).
 #'
 #' @param path If type = "csv" or "zip", specify path of stores
+#'
+#' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
+#' environment.
+#'
+#' @examples
+#' \dontrun{
+#'
+#' # Import data for AGFO
+#' importData(type = 'local', dbname = c("FFI_RA_AGFO"))
+#'
+#' # Import data for all NGPN parks (takes a few seconds)
+#' importData(type = 'local',
+#'            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+#'                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+#'                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
+#'
+#' # Check that the multiple-park import worked
+#' table(VIEWS_NGPN$MacroPlot$dbname)
+#'
+#' }
 #'
 #'
 #' @export
 
-importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO"){
+importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T){
   #---- Bug Handling ----
   # Check that suggested package required for this function are installed
   if(!requireNamespace("odbc", quietly = TRUE)){
@@ -34,9 +58,13 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO"){
     stop("Package 'DBI' needed for this function to work. Please install it.", call. = FALSE)}
   if(!requireNamespace("dbplyr", quietly = TRUE)){
     stop("Package 'dbplyr' needed for this function to work. Please install it.", call. = FALSE)}
-  type <- match.arg(type, c("local", "server", "csv"))
+  type <- match.arg(type, c("local", "server", "csv", 'zip'))
+  stopifnot(is.logical(new_env))
 
-  if(type == "server")(stop("type = 'server' is not currently enabled."))
+  #++++++ Update as more features are added ++++++
+  if(type %in% c("server", "csv", "zip")){stop(paste0("Sorry, type = ", type, " is not yet enabled."))}
+
+
 
   csv_list <- c("AuxSpecies", "CandidatePlot", "Cover_Points_metric_Attribute", "Cover_Points_metric_Sample",
                 "Cover_SpeciesComposition_metric_Attribute", "Cover_SpeciesComposition_metric_Sample", "DataGridViewSettings",
@@ -57,13 +85,18 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO"){
                 "Trees_Individuals_metric_Attribute", "Trees_Individuals_metric_Sample")
 
   if(type == "local"){
+  error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",
+                       "and check that the database name is correct.")
 
-  con <- odbc::dbConnect(odbc::odbc(),
-                         Driver = "ODBC Driver 17 for SQL Server",
-                         Server = "localhost\\SQLEXPRESS",
-                         Database = dbname,
-                         Trusted_Connection = "Yes"
-  )
+  if(length(dbname) == 1){
+    tryCatch(
+      con <- odbc::dbConnect(odbc::odbc(),
+                             Driver = "ODBC Driver 17 for SQL Server",
+                             Server = "localhost\\SQLEXPRESS",
+                             Database = dbname,
+                             Trusted_Connection = "Yes"),
+     error = function(e){stop(error_mess)},
+     warning = function(w){stop(error_mess)})
 
   tbls <<- DBI::dbListTables(con, schema = "dbo")
 
@@ -85,7 +118,45 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO"){
 
 
   # Add check that all csvs were imported
-  }
+    } else if(length(dbname) > 1){
+
+    dbimport <-
+      purrr::map(seq_along(dbname), function(db){
+        error_mess = paste0("Unable to connect to specified SQL database named ", dbname[db],
+                            ". Make sure you have a local installation of the database in SSMS, ",
+                            "and check that the database name is correct.")
+
+        tryCatch(
+          con <- odbc::dbConnect(odbc::odbc(),
+                                 Driver = "ODBC Driver 17 for SQL Server",
+                                 Server = "localhost\\SQLEXPRESS",
+                                 Database = dbname[db],
+                                 Trusted_Connection = "Yes"),
+          error = function(e){stop(error_mess)},
+          warning = function(w){stop(error_mess)})
+
+        tbls <<- DBI::dbListTables(con, schema = "dbo")
+
+      # Import views using their names and show progress bar
+      tbl_import <- lapply(seq_along(tbls), function(x){
+       # setTxtProgressBar(pb, x)
+        tbl <- tbls[x]
+        tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
+          as.data.frame() |> mutate(dbname = dbname[db])
+        return(tab)})
+      DBI::dbDisconnect(con)
+      tbl_import <- setNames(tbl_import, tbls)
+      #list2env(tbl_import)
+      }, .progress = T) |> purrr::set_names(dbname)
+
+    dbflat1 <- flatten(dbimport)
+    dbflat2 <- tapply(dbflat1, names(dbflat1),dplyr::bind_rows)
+
+    VIEWS_NGPN <<- new.env()
+    list2env(dbflat2, envir = VIEWS_NGPN)
+
+  } # end of dbname>1
+  } # end of db=local
 
   if(type == 'csv'){
 

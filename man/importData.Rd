@@ -4,20 +4,26 @@
 \alias{importData}
 \title{importData}
 \usage{
-importData(type = "local", server = NA, dbname = "FFI_RA_AGFO")
+importData(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T)
 }
 \arguments{
 \item{type}{Indicate how to import the database tables
 \describe{
-\item{"local"} Import tables in 'dbo' schema from the local installation of an FFI database in SQL Server Management Studio (SSMS).
-\item{"server"} Import tables in 'dbo' schema from the FFI database on the production SQL Server (not enabled).
-\item{"csv"} Import csvs that were exported from the FFI database. Option doesn't require SSMS to be installed.
-\item{"zip"} Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed.
+\item{"local"}{Import tables in 'dbo' schema from the local installation of an FFI database in SQL Server Management Studio (SSMS).}
+\item{"server"}{Import tables in 'dbo' schema from the FFI database on the production SQL Server (not enabled).}
+\item{"csv"}{Import csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
+\item{"zip"}{ Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
 }}
 
 \item{server}{If type = 'server', requires quoted FFI server address (not currently enabled).}
 
-\item{dbname}{If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO")}
+\item{dbname}{If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO"). If
+multiple database names are specified, views will be row bound for tables in common for all of the databases with a column
+indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
+aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).}
+
+\item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
+environment.}
 
 \item{path}{If type = "csv" or "zip", specify path of stores}
 }
@@ -27,4 +33,23 @@ the Northern Great Plains Network plant community monitoring protocol. Currently
 of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
 from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
 are row binded, so that all NPGN parks can be queried, summarized, etc. at once.
+}
+\examples{
+\dontrun{
+
+# Import data for AGFO
+importData(type = 'local', dbname = c("FFI_RA_AGFO"))
+
+# Import data for all NGPN parks (takes a few seconds)
+importData(type = 'local',
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
+
+# Check that the multiple-park import worked
+table(VIEWS_NGPN$MacroPlot$dbname)
+
+}
+
+
 }

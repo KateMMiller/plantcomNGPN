@@ -9,12 +9,14 @@ Authors@R: person(
     comment = c(ORCID = "0000-0001-8823-6373")
   )
 Description: Package imports FFI database tables from SQL Server backend and/or csvs. 
-Additional features will allow for querying, summarizing and visualizing FFI data. 
-License: What license is it under?
+  Additional features will allow for querying, summarizing and visualizing FFI data, 
+  specifically designed for parks in Northern Great Plains Network. 
+License: MIT 
 Encoding: UTF-8
 LazyData: true
 Imports: 
-    dplyr
+    dplyr,
+    purrr
 Suggests: 
     DBI,
     dbplyr,

@@ -51,7 +51,8 @@ tblsum_wide$multi_park <- ifelse(tblsum_wide$num_parks > 1, 1, 0)
 tblsum_wide <- tblsum_wide |> arrange(desc(multi_park), Table) |> select(-multi_park)
 
 kbl_tbl <- kable(tblsum_wide, format = 'html', align = "c", caption = "Number of records per park per table.") |> 
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(tblsum_wide), border_left = "1px solid grey", border_right = "1px solid grey")
   
 ```
 
@@ -69,7 +70,8 @@ purpose <- VIEWS_NGPN$MacroPlot |> mutate(park = substr(dbname, nchar(dbname)-3,
   arrange(Purpose)
 
 kbl_purpose <- kable(purpose, format = 'html', align = 'c', captions = 'Number of MacroPlots per purpose per park') |> 
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10)
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(purpose), border_left = "1px solid grey", border_right = "1px solid grey")
 
 ```
 
@@ -99,7 +101,8 @@ proj_sum <- macroproj |> group_by(Project = ProjectUnit_Name, park = park) |>
   arrange(Project)
 
 kbl_proj <- kable(proj_sum, format = 'html', align = 'c', captions = 'Number of MacroPlots per project per park') |> 
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10)
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(proj_sum), border_left = "1px solid grey", border_right = "1px solid grey")
 ```
 
 ```{r}

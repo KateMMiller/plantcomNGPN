@@ -20,5 +20,6 @@ Imports:
 Suggests: 
     DBI,
     dbplyr,
-    odbc
+    odbc,
+    zip
 RoxygenNote: 7.3.2

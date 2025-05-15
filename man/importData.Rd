@@ -4,7 +4,14 @@
 \alias{importData}
 \title{importData}
 \usage{
-importData(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T)
+importData(
+  type = "local",
+  server = NA,
+  dbname = "FFI_RA_AGFO",
+  new_env = T,
+  export = F,
+  path = NA
+)
 }
 \arguments{
 \item{type}{Indicate how to import the database tables
@@ -25,7 +32,10 @@ aren't thorough checks built in the function to ensure that's true (i.e., it's l
 \item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 environment.}
 
-\item{path}{If type = "csv" or "zip", specify path of stores}
+\item{export}{Logical. If TRUE, will export a zip file of csvs to specified path.}
+
+\item{path}{Quoted string to save zipped csvs to if export = TRUE. If not specified, will export to the working directory.
+Default is export = FALSE.}
 }
 \description{
 Imports data from FFI SQL Server database or csvs of FFI database tables using the schmema designed for

@@ -29,6 +29,11 @@
 #' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 #' environment.
 #'
+#' @param export Logical. If TRUE, will export a zip file of csvs to specified path.
+#'
+#' @param path Quoted string to save zipped csvs to if export = TRUE. If not specified, will export to the working directory.
+#'  Default is export = FALSE.
+#'
 #' @examples
 #' \dontrun{
 #'
@@ -49,7 +54,7 @@
 #'
 #' @export
 
-importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T){
+importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T, export = F, path = NA){
   #---- Bug Handling ----
   # Check that suggested package required for this function are installed
   if(!requireNamespace("odbc", quietly = TRUE)){
@@ -58,31 +63,71 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     stop("Package 'DBI' needed for this function to work. Please install it.", call. = FALSE)}
   if(!requireNamespace("dbplyr", quietly = TRUE)){
     stop("Package 'dbplyr' needed for this function to work. Please install it.", call. = FALSE)}
+  if(!requireNamespace("zip", quietly = TRUE) & export == T){
+    stop("Package 'zip' needed when export = TRUE. Please install it.", call. = FALSE)}
   type <- match.arg(type, c("local", "server", "csv", 'zip'))
   stopifnot(is.logical(new_env))
+  stopifnot(is.logical(export))
+  if(any(type %in% c("local", "server")) & any(is.na(dbname))){stop("Must specify a dbname if type is 'local' or 'server'")}
+  if(type == "server" & is.na(server)){stop("Must specify a server address if type = 'server'")}
 
   #++++++ Update as more features are added ++++++
   if(type %in% c("server", "csv", "zip")){stop(paste0("Sorry, type = ", type, " is not yet enabled."))}
 
+  # Error handling for path
+  if(export == TRUE){
+    if(is.na(path)){
+      path <- getwd()
+      print(paste0("No path specified. Output saved to working directory: ", getwd()), quote = FALSE)}
+    if(!grepl("/$", path)){path <- paste0(path, "/")} # add / to end of path if doesn't exist
+    if(!dir.exists(path)){stop("Specified directory does not exist.")}
+    # Normalize filepath for zip
+    pathn <- normalizePath(path)
+    }
 
+  if(new_env == TRUE){VIEWS_NGPN <<- new.env()}
+  env <- if(new_env == TRUE){VIEWS_NGPN} else {.GlobalEnv}
 
-  csv_list <- c("AuxSpecies", "CandidatePlot", "Cover_Points_metric_Attribute", "Cover_Points_metric_Sample",
-                "Cover_SpeciesComposition_metric_Attribute", "Cover_SpeciesComposition_metric_Sample", "DataGridViewSettings",
+  # Need to update to include all possible tables f
+  csv_list <- c("AuxSpecies", "Biomass_Plants_metric_Attribute", "Biomass_Plants_metric_Sample",
+
+                "CBI_Info_Attribute", "CBI_Info_Sample", "CBIa_Substrates_Attribute",
+                "CBIa_Substrates_Sample", "CBIb_Herbs_Attribute", "CBIb_Herbs_Sample",
+                "CBIc_TallShrubs_Attribute", "CBIc_TallShrubs_Sample", "CBId_IntermediateTrees_Attribute",
+                "CBId_IntermediateTrees_Sample", "CBIe_BigTrees_Attribute", "CBIe_BigTrees_Sample",
+                "CBIf_Summation_Attribute", "CBIf_Summation_Sample",
+
+                "Cover_Frequency_metric_Attribute", "Cover_Frequency_metric_Sample",
+                "Cover_Points_metric_Attribute", "Cover_Points_metric_Sample", "Cover_SpeciesComposition_Attribute",
+                "Cover_SpeciesComposition_metric_Attribute", "Cover_SpeciesComposition_metric_Sample",
+                "Cover_SpeciesComposition_Sample",
+
+                "DataGridViewSettings",
                 "Density_Belts_metric_Attribute", "Density_Belts_metric_Sample", "Density_Quadrats_metric_Attribute",
                 "Density_Quadrats_metric_Sample", "DisturbanceHistory_Attribute", "DisturbanceHistory_Sample",
                 "FuelConstants_CWD", "FuelConstants_DL", "FuelConstants_ExpDL", "FuelConstants_FWD", "FuelConstants_Veg",
-                "Last_Modified_Date", "LocalSpecies", "LU_Contact", "LU_DataLevel", "LU_DataType", "LU_LifeCycle",
-                "LU_LifeForm", "LU_MacroPlot_Type", "LU_Shape", "LU_Unit", "MacroPlot", "MasterSpecies",
-                "MasterSpecies_LastModified", "MetaData", "Method", "MethodAttribute", "MethodAttributeCode", "MethodVersion",
-                "MM_LocalSpecies_SpeciesPickList", "MM_Method_Reference", "MM_MonitoringStatus_SampleEvent", "MM_Organization_Method",
-                "MM_Project_Protocol", "MM_ProjectUnit_MacroPlot", "MM_Protocol_Method",  "MM_SampleEvent_Protocol", "MonitoringStatus",
-                "MSchange_tracking_history", "Organization", "OrganizationGroup", "PostBurnSeverity_metric_Attribute",
+                "Last_Modified_Date", "LocalSpecies",
+
+                "LU_Contact", "LU_DataLevel", "LU_DataType", "LU_LifeCycle", "LU_LifeForm", "LU_MacroPlot_Type", "LU_Shape", "LU_Unit",
+                "MacroPlot", "MasterSpecies", "MasterSpecies_LastModified", "MetaData",
+                "Method", "MethodAttribute", "MethodAttributeCode", "MethodVersion",
+
+                "MM_LocalSpecies_SpeciesPickList", "MM_MonitoringStatus_SampleEvent", "MM_Organization_Method",
+                "MM_Project_Protocol", "MM_ProjectUnit_MacroPlot", "MM_Protocol_Method", "MM_SampleEvent_Protocol",
+                "MonitoringStatus", "MSchange_tracking_history",
+
+                "NGPN_MNRR_Cover_Attribute", "NGPN_MNRR_Cover_Sample", "Organization", "OrganizationGroup",
+
+                "PlotDescription_metric_Attribute", "PlotDescription_metric_Sample", "PostBurnSeverity_metric_Attribute",
                 "PostBurnSeverity_metric_Sample", "Program", "Project", "ProjectUnit", "Protocol", "ProtocolVersion",
-                "Reference_Book", "Reference_Journal", "Reference_WebSite", "RegistrationUnit", "SampleAttribute",
-                "SampleAttributeCode", "SampleEvent", "Schema_Version", "SchemaVersions", "Settings", "SpeciesPickList",
-                "SurfaceFuels_1000Hr_Attribute", "SurfaceFuels_1000Hr_Sample", "SurfaceFuels_Duff_Litter_Attribute",
-                "SurfaceFuels_Duff_Litter_Sample", "SurfaceFuels_Fine_Attribute", "SurfaceFuels_Fine_Sample", "sysdiagrams",
-                "Trees_Individuals_metric_Attribute", "Trees_Individuals_metric_Sample")
+                "RegistrationUnit", "SampleAttribute", "SampleAttributeCode", "SampleEvent",
+                "Schema_Version", "SchemaVersions", "Settings",
+
+                "SpeciesPickList", "SurfaceFuels_1000Hr_Attribute", "SurfaceFuels_1000Hr_Sample", "SurfaceFuels_Duff_Litter_Attribute",
+                "SurfaceFuels_Duff_Litter_Sample", "SurfaceFuels_Fine_Attribute", "SurfaceFuels_Fine_Sample",
+                "sysdiagrams",
+                "Trees_Individuals_Attribute", "Trees_Individuals_metric_Attribute", "Trees_Individuals_metric_Sample",
+                "Trees_Individuals_Sample")
 
   if(type == "local"){
   error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",
@@ -108,14 +153,39 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     setTxtProgressBar(pb, x)
     tbl <- tbls[x]
     tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-      as.data.frame()
+      as.data.frame() |> mutate(dbname = dbname)
     return(tab)})
 
   tbl_import <- setNames(tbl_import, tbls)
-  VIEWS_NGPN <<- new.env()
-  list2env(tbl_import, envir = VIEWS_NGPN)
+  tbl_import2 <- tbl_import[sort(names(tbl_import))]
+  # remove empty tables
+  tbl_import3 <- tbl_import2[sapply(tbl_import2, nrow) > 0]
+  #VIEWS_NGPN <<- new.env()
+  list2env(tbl_import3, envir = env)
   DBI::dbDisconnect(con)
 
+  if(export == TRUE){
+    dir.create(tmp <- tempfile())
+    dbtbls <- names(tbl_import3)
+
+    invisible(lapply(seq_along(dbtbls), function(x){
+      temp_tbl = get(dbtbls[x], envir = env)
+      write.csv(temp_tbl,
+                paste0(tmp, "\\", dbtbls[x], ".csv"),
+                row.names = FALSE)
+    }))
+
+    file_list <- list.files(tmp)
+    park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
+    zip_name = paste0("NGPN_FFI_export_", park, "_", format(Sys.Date(), "%Y%m%d"), ".zip")
+
+    zip::zipr(zipfile = paste0(pathn, "\\", zip_name),
+              root = tmp,
+              files = file_list)
+    # csvs will be deleted as soon as R session is closed b/c tempfile
+    noquote(paste0('Export complete. Data package saved to: ', pathn, zip_name))
+
+  }
 
   # Add check that all csvs were imported
     } else if(length(dbname) > 1){
@@ -149,11 +219,38 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       #list2env(tbl_import)
       }, .progress = T) |> purrr::set_names(dbname)
 
-    dbflat1 <- flatten(dbimport)
-    dbflat2 <- tapply(dbflat1, names(dbflat1),dplyr::bind_rows)
+    # flatten list to bind like tables together
+    dbflat1 <- purrr::flatten(dbimport)
+    dbflat2 <- tapply(dbflat1, names(dbflat1), dplyr::bind_rows)
+    # remove empty tables
+    dbflat3 <- dbflat2[sapply(dbflat2, nrow) > 0]
+    # sort tables alphabetically
+    dbflat4 <- dbflat3[sort(names(dbflat3))]
 
-    VIEWS_NGPN <<- new.env()
-    list2env(dbflat2, envir = VIEWS_NGPN)
+    #IEWS_NGPN <<- new.env()
+    list2env(dbflat4, envir = env)
+
+    if(export == TRUE){
+      dir.create(tmp <- tempfile())
+      dbtbls <- names(dbflat4)
+
+      invisible(lapply(seq_along(dbtbls), function(x){
+        temp_tbl = get(dbtbls[x], envir = env)
+        write.csv(temp_tbl,
+                  paste0(tmp, "\\", dbtbls[x], ".csv"),
+                  row.names = FALSE)
+      }))
+
+      file_list <- list.files(tmp)
+
+      zip_name = paste0("NGPN_FFI_export", format(Sys.Date(), "%Y%m%d"), ".zip")
+
+      zip::zipr(zipfile = paste0(pathn, "\\", zip_name),
+                root = tmp,
+                files = file_list)
+      # csvs will be deleted as soon as R session is closed b/c tempfile
+      noquote(paste0('Export complete. Data package saved to: ', pathn, zip_name))
+    }
 
   } # end of dbname>1
   } # end of db=local
@@ -165,4 +262,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   if(type == "zip"){
 
   }
-}
+
+
+} # end of function
+

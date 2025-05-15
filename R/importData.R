@@ -216,47 +216,23 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   if(type == 'csv'){
 
-    # Entire table list from all parks, but likely not all needed. Will trim as I figure out which tables are required
-    # for analysis
-    csv_list <- c("AuxSpecies", "Biomass_Plants_metric_Attribute", "Biomass_Plants_metric_Sample",
-
-                  "CBI_Info_Attribute", "CBI_Info_Sample", "CBIa_Substrates_Attribute",
-                  "CBIa_Substrates_Sample", "CBIb_Herbs_Attribute", "CBIb_Herbs_Sample",
-                  "CBIc_TallShrubs_Attribute", "CBIc_TallShrubs_Sample", "CBId_IntermediateTrees_Attribute",
-                  "CBId_IntermediateTrees_Sample", "CBIe_BigTrees_Attribute", "CBIe_BigTrees_Sample",
-                  "CBIf_Summation_Attribute", "CBIf_Summation_Sample",
-
-                  "Cover_Frequency_metric_Attribute", "Cover_Frequency_metric_Sample",
-                  "Cover_Points_metric_Attribute", "Cover_Points_metric_Sample", "Cover_SpeciesComposition_Attribute",
-                  "Cover_SpeciesComposition_metric_Attribute", "Cover_SpeciesComposition_metric_Sample",
-                  "Cover_SpeciesComposition_Sample",
-
-                  "DataGridViewSettings",
-                  "Density_Belts_metric_Attribute", "Density_Belts_metric_Sample", "Density_Quadrats_metric_Attribute",
-                  "Density_Quadrats_metric_Sample", "DisturbanceHistory_Attribute", "DisturbanceHistory_Sample",
-                  "FuelConstants_CWD", "FuelConstants_DL", "FuelConstants_ExpDL", "FuelConstants_FWD", "FuelConstants_Veg",
-                  "Last_Modified_Date", "LocalSpecies",
-
-                  "LU_Contact", "LU_DataLevel", "LU_DataType", "LU_LifeCycle", "LU_LifeForm", "LU_MacroPlot_Type", "LU_Shape", "LU_Unit",
-                  "MacroPlot", "MasterSpecies", "MasterSpecies_LastModified", "MetaData",
-                  "Method", "MethodAttribute", "MethodAttributeCode", "MethodVersion",
-
-                  "MM_LocalSpecies_SpeciesPickList", "MM_MonitoringStatus_SampleEvent", "MM_Organization_Method",
-                  "MM_Project_Protocol", "MM_ProjectUnit_MacroPlot", "MM_Protocol_Method", "MM_SampleEvent_Protocol",
-                  "MonitoringStatus", "MSchange_tracking_history",
-
-                  "NGPN_MNRR_Cover_Attribute", "NGPN_MNRR_Cover_Sample", "Organization", "OrganizationGroup",
-
-                  "PlotDescription_metric_Attribute", "PlotDescription_metric_Sample", "PostBurnSeverity_metric_Attribute",
-                  "PostBurnSeverity_metric_Sample", "Program", "Project", "ProjectUnit", "Protocol", "ProtocolVersion",
-                  "RegistrationUnit", "SampleAttribute", "SampleAttributeCode", "SampleEvent",
-                  "Schema_Version", "SchemaVersions", "Settings",
-
-                  "SpeciesPickList", "SurfaceFuels_1000Hr_Attribute", "SurfaceFuels_1000Hr_Sample", "SurfaceFuels_Duff_Litter_Attribute",
-                  "SurfaceFuels_Duff_Litter_Sample", "SurfaceFuels_Fine_Attribute", "SurfaceFuels_Fine_Sample",
-                  "sysdiagrams",
-                  "Trees_Individuals_Attribute", "Trees_Individuals_metric_Attribute", "Trees_Individuals_metric_Sample",
-                  "Trees_Individuals_Sample")
+    # Pulling in only tables commonly used across NGPN parks
+    csv_list <- c('AuxSpecies', 'Cover_Frequency_metric_Attribute', 'Cover_Frequency_metric_Sample',
+                  'Cover_Points_metric_Attribute', 'Cover_Points_metric_Sample', 'Cover_SpeciesComposition_metric_Attribute',
+                  'Cover_SpeciesComposition_metric_Sample', 'DataGridViewSettings', 'Density_Belts_metric_Attribute',
+                  'Density_Belts_metric_Sample', 'Density_Quadrats_metric_Attribute', 'Density_Quadrats_metric_Sample',
+                  'DisturbanceHistory_Attribute', 'DisturbanceHistory_Sample', 'FuelConstants_CWD', 'FuelConstants_DL',
+                  'FuelConstants_ExpDL', 'FuelConstants_FWD', 'FuelConstants_Veg', 'LU_Contact', 'LU_DataLevel', 'LU_DataType',
+                  'LU_LifeCycle', 'LU_LifeForm', 'LU_MacroPlot_Type', 'LU_Shape', 'LU_Unit', 'Last_Modified_Date', 'LocalSpecies',
+                  'MM_LocalSpecies_SpeciesPickList', 'MM_MonitoringStatus_SampleEvent', 'MM_Organization_Method', 'MM_ProjectUnit_MacroPlot',
+                  'MM_Project_Protocol', 'MM_Protocol_Method', 'MM_SampleEvent_Protocol', 'MSchange_tracking_history',
+                  'MacroPlot', 'MasterSpecies', 'MasterSpecies_LastModified', 'Method', 'MethodAttribute', 'MethodAttributeCode',
+                  'MethodVersion', 'MonitoringStatus', 'Organization', 'OrganizationGroup', 'PostBurnSeverity_metric_Attribute',
+                  'PostBurnSeverity_metric_Sample', 'Program', 'Project', 'ProjectUnit', 'Protocol', 'ProtocolVersion', 'RegistrationUnit',
+                  'SampleAttribute', 'SampleAttributeCode', 'SampleEvent', 'SchemaVersions', 'Schema_Version', 'Settings',
+                  'SpeciesPickList', 'SurfaceFuels_1000Hr_Attribute', 'SurfaceFuels_1000Hr_Sample', 'SurfaceFuels_Duff_Litter_Attribute',
+                  'SurfaceFuels_Duff_Litter_Sample', 'SurfaceFuels_Fine_Attribute', 'SurfaceFuels_Fine_Sample',
+                  'Trees_Individuals_metric_Attribute', 'Trees_Individuals_metric_Sample')
 
 
   }

@@ -36,14 +36,16 @@
 #' @examples
 #' \dontrun{
 #'
-#' # Import data for AGFO
-#' importData(type = 'local', dbname = c("FFI_RA_AGFO"))
+#' # Import data for AGFO and export tables to zip file
+#' importData(type = 'local', dbname = c("FFI_RA_AGFO"), export = T)
 #'
 #' # Import data for all NGPN parks (takes a few seconds) from local copy on SSMS
 #' importData(type = 'local',
 #'            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #'                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
-#'                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
+#'                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+#'            export = T,
+#'            export_path = "C:/temp")
 #'
 #' # Check that the multiple-park import worked
 #' table(VIEWS_NGPN$MacroPlot$dbname)
@@ -65,7 +67,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     stop("Package 'dbplyr' needed for this function to work. Please install it.", call. = FALSE)}
   if(!requireNamespace("zip", quietly = TRUE) & export == T){
     stop("Package 'zip' needed when export = TRUE. Please install it.", call. = FALSE)}
-  type <- match.arg(type, c("local", "server", 'zip'))
+  type <- match.arg(type, c("local", "server", 'csv'))
   stopifnot(is.logical(new_env))
   stopifnot(is.logical(export))
   if(any(type %in% c("local", "server")) & any(is.na(dbname))){stop("Must specify a dbname if type is 'local' or 'server'")}
@@ -85,15 +87,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     export_pathn <- normalizePath(export_path)
     }
 
-  if(type == 'zip'){
+  if(type == 'csv'){
     if(!any(file.exists(import_path))){
       stop(paste0("Specified import_path does not exist. ",
                   ifelse(any(grepl("sharepoint", import_path)), " Note that file paths from Sharepoint or Teams are not accessible.",
                          "")))}
 
-    if(is.na(import_path)){stop("Must specify an import_path for type = 'csv'.")}
-    if(!grepl(".zip$", import_path)){stop("Must include the name of the zip file in import_path.")} # add / to end of path if doesn't exist
-    if(!dir.exists(import_path)){stop("Specified import_path directory does not exist.")}
+    if(all(is.na(import_path))){stop("Must specify an import_path for type = 'csv'.")}
+    if(any(!grepl(".zip$", import_path))){stop("Must include the name of the zip file in import_path.")} # add / to end of path if doesn't exist
+    if(any(!file.exists(import_path))){stop("Specified import_path directory does not exist.")}
     # Normalize filepath for zip
     import_pathn <- normalizePath(import_path)
   }
@@ -155,8 +157,6 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
               root = tmp,
               files = file_list)
-    # csvs will be deleted as soon as R session is closed b/c tempfile
-    noquote(paste0('Export complete. Data package saved to: ', export_pathn, zip_name))
 
   }
 
@@ -185,7 +185,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
        # setTxtProgressBar(pb, x)
         tbl <- tbls[x]
         tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-          as.data.frame() |> mutate(dbname = dbname[db])
+          as.data.frame() |> dplyr::mutate(dbname = dbname[db])
         return(tab)})
       DBI::dbDisconnect(con)
       tbl_import <- setNames(tbl_import, tbls)
@@ -216,13 +216,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
       file_list <- list.files(tmp)
 
-      zip_name = paste0("NGPN_FFI_export", format(Sys.Date(), "%Y%m%d"), ".zip")
+      zip_name = paste0("NGPN_FFI_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
 
       zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                 root = tmp,
                 files = file_list)
-      # csvs will be deleted as soon as R session is closed b/c tempfile
-      noquote(paste0('Export complete. Data package saved to: ', export_pathn, zip_name))
     }
 
   } # end of dbname>1
@@ -252,6 +250,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
 
     if(length(import_path) == 1){
+
+      file_name1 <- sort(sub(".*/", "", import_path, perl = T))
+      file_name2 <- gsub("[[:digit:]]+|.zip", "", file_name1)
+      file_name <- gsub("_$","", file_name2)
+
       # Check if can read files within the zip file
       tryCatch(
         {zfiles = utils::unzip(import_path, list = T)$Name},
@@ -295,6 +298,26 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       # Close progress bar
       close(pb)
 
+      if(export == TRUE){
+        dir.create(tmp <- tempfile())
+        csvtbls <- names(tbl_import)
+
+        invisible(lapply(seq_along(csvtbls), function(x){
+          temp_tbl = get(csvtbls[x], envir = env)
+          write.csv(temp_tbl,
+                    paste0(tmp, "\\", csvtbls[x], ".csv"),
+                    row.names = FALSE)
+        }))
+
+        file_list <- list.files(tmp)
+        park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
+        zip_name = paste0(file_name, "_", format(Sys.Date(), "%Y%m%d"), ".zip")
+
+        zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
+                  root = tmp,
+                  files = file_list)
+        }
+
     } else if(length(import_path > 1)){
 
       file_names1 <- sort(sub(".*/", "", import_path, perl = T))
@@ -336,32 +359,59 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         tbl_import <-
           lapply(seq_along(tbls), function(x){
-          read.csv(tbls[x], na.string = c("NA", "NULL"), check.names = FALSE)})
+          tbl_temp <- read.csv(tbls[x], na.strings = c("NA", "NULL", ""), check.names = FALSE, as.is = T)
+
+          # When fields from one park are all NAs vs other parks have data, read.csv doesn't always assign
+          # them as consistent field types. Converting these to character by default. If importData returns
+          # error that Can't Combine two columns, it needs to be added here. I couldn't figure out how
+          # to generalize this better, given that parks have different tables.
+          cols_to_char <-
+              c("UV1", "UV2", "UV3", "AttributeData_DataRow_GUID", "AttributeData_SampleRow_GUID",
+               "Spp_GUID", "Status", "AgeCl", "Comment", "AttributeData_Original_GUID",
+               "AttributeData_CreatedBy", "AttributeData_CreatedDate", "AttributeData_ModifiedBy",
+               "AttributeData_ModifiedDate", "SampleData_SampleRow_GUID", "SampleData_SampleEvent_GUID",
+               "FieldTeam", "EntryTeam", "SaComment", "SampleData_Original_GUID",
+               "SampleData_CreatedBy", "SampleData_CreatedDate", "SampleData_ModifiedBy",
+               "SampleData_ModifiedDate", "MethodAtt_Value_Default", "ProtocolVersion_GUID",
+               "ProtocolVersion_Family_GUID", "ProtocolVersion_Protocol_GUID", "ProtocolVersion_TimeStamp",
+               "UV1Desc", "UV2Desc", "UV3Desc", "TypeCov", "NFRatio", "NFNum", "SizeCl",
+               "MacroPlot_UV5", "MacroPlot_UV7", "MM_SpeciesPickList_GUID", "MM_LocalSpecies_GUID",
+               "MonitoringStatus_Suffix", "SampleAttributeCode_GUID", "SampleAttributeCode_SampleAttribute_GUID",
+               "SampleAttributeCode_Code", "SampleAttributeCode_Text", "SampleAttributeCode_Description",
+               "val1", "key1", "SpeciesPickList_GUID", "SpeciesPickList_RegistrationUnitGUID",
+               "SpeciesPickList_Name", "SpeciesPickList_Describe", "DamCd3", "DamCd4", "DamCd5")
+
+          if(any(cols_to_char %in% names(tbl_temp))){
+            cols_to_char2 <- cols_to_char[cols_to_char %in% names(tbl_temp)]
+            tbl_temp[,cols_to_char2] <- sapply(tbl_temp[,cols_to_char2], as.character)
+            #tbl_temp[,cols_to_char2] <- as.character(tbl_temp[,cols_to_char2])
+            }
+
+          return(tbl_temp)
+          })
 
         tbl_import <- setNames(tbl_import, z_list_names)},
         .progress = TRUE) |> purrr::set_names(file_names)
 
       # flatten list to bind like tables together
       zipflat1 <- purrr::flatten(zip_import)
-      #+++++ ENDED HERE +++++ Couldn't combine UV1 and UV1 b/c different data types (might have to drop those)
-
       zipflat2 <- tapply(zipflat1, names(zipflat1), dplyr::bind_rows)
       # remove empty tables
-      dbflat3 <- dbflat2[sapply(dbflat2, nrow) > 0]
+      zipflat3 <- zipflat2[sapply(zipflat2, nrow) > 0]
       # sort tables alphabetically
-      dbflat4 <- dbflat3[sort(names(dbflat3))]
+      zipflat4 <- zipflat3[sort(names(zipflat3))]
 
       #VIEWS_NGPN <<- new.env()
-      list2env(dbflat4, envir = env)
+      list2env(zipflat4, envir = env)
 
       if(export == TRUE){
         dir.create(tmp <- tempfile())
-        dbtbls <- names(dbflat4)
+        ziptbls <- names(zipflat4)
 
-        invisible(lapply(seq_along(dbtbls), function(x){
-          temp_tbl = get(dbtbls[x], envir = env)
+        invisible(lapply(seq_along(ziptbls), function(x){
+          temp_tbl = get(ziptbls[x], envir = env)
           write.csv(temp_tbl,
-                    paste0(tmp, "\\", dbtbls[x], ".csv"),
+                    paste0(tmp, "\\", ziptbls[x], ".csv"),
                     row.names = FALSE)
         }))
 
@@ -371,14 +421,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                   root = tmp,
-                  files = file_list)
-        # csvs will be deleted as soon as R session is closed b/c tempfile
-        noquote(paste0('Export complete. Data package saved to: ', export_pathn, zip_name))
-      }
+                  files = file_list)}
       } # end of fp 2
-  }
+      } # type = csv
+  if(export == TRUE){noquote(paste0('Export complete. Data package saved to: ', export_pathn, "\\", zip_name))}
 
-
-
-} # end of function
+  } # end of function
 

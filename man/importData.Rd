@@ -10,7 +10,8 @@ importData(
   dbname = "FFI_RA_AGFO",
   new_env = T,
   export = F,
-  path = NA
+  export_path = NA,
+  import_path = NA
 )
 }
 \arguments{
@@ -18,8 +19,7 @@ importData(
 \describe{
 \item{"local"}{Import tables in 'dbo' schema from the local installation of an FFI database in SQL Server Management Studio (SSMS).}
 \item{"server"}{Import tables in 'dbo' schema from the FFI database on the production SQL Server (not enabled).}
-\item{"csv"}{Import csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
-\item{"zip"}{ Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
+\item{"csv"}{ Import zip file containing csvs that were exported from the FFI database. Option doesn't require SSMS to be installed (not yet enabled).}
 }}
 
 \item{server}{If type = 'server', requires quoted FFI server address (not currently enabled).}
@@ -32,13 +32,15 @@ aren't thorough checks built in the function to ensure that's true (i.e., it's l
 \item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 environment.}
 
-\item{export}{Logical. If TRUE, will export a zip file of csvs to specified path.}
+\item{export}{Logical. If TRUE, will export a zip file of csvs to specified export_path.}
 
-\item{path}{Quoted string to save zipped csvs to if export = TRUE. If not specified, will export to the working directory.
-Default is export = FALSE.}
+\item{export_path}{Quoted string to export zipped csvs to if export = TRUE. If not specified, will export to the working directory.}
+
+\item{import_path}{Quoted string to import a zipped file of csvs if type = 'csv'. The name of the zipped file should be included
+in the path. Can specify multiple paths to import multiple parks/projects.}
 }
 \description{
-Imports data from FFI SQL Server database or csvs of FFI database tables using the schmema designed for
+Imports data from FFI SQL Server database or csvs of FFI database tables using the schema designed for
 the Northern Great Plains Network plant community monitoring protocol. Currently can only import from a local installation
 of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
 from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
@@ -47,14 +49,16 @@ are row binded, so that all NPGN parks can be queried, summarized, etc. at once.
 \examples{
 \dontrun{
 
-# Import data for AGFO
-importData(type = 'local', dbname = c("FFI_RA_AGFO"))
+# Import data for AGFO and export tables to zip file
+importData(type = 'local', dbname = c("FFI_RA_AGFO"), export = T)
 
-# Import data for all NGPN parks (takes a few seconds)
+# Import data for all NGPN parks (takes a few seconds) from local copy on SSMS
 importData(type = 'local',
            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
-                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+           export = T,
+           export_path = "C:/temp")
 
 # Check that the multiple-park import worked
 table(VIEWS_NGPN$MacroPlot$dbname)

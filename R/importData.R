@@ -128,7 +128,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     setTxtProgressBar(pb, x)
     tbl <- tbls[x]
     tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-      as.data.frame() |> mutate(dbname = dbname)
+      as.data.frame() |> dplyr::mutate(datasource = dbname)
     return(tab)})
 
   tbl_import <- setNames(tbl_import, tbls)
@@ -185,7 +185,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
        # setTxtProgressBar(pb, x)
         tbl <- tbls[x]
         tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-          as.data.frame() |> dplyr::mutate(dbname = dbname[db])
+          as.data.frame() |> dplyr::mutate(datasource = dbname[db])
         return(tab)})
       DBI::dbDisconnect(con)
       tbl_import <- setNames(tbl_import, tbls)
@@ -291,7 +291,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       tbl_import <-
         lapply(seq_along(tbls), function(x){
           setTxtProgressBar(pb,x)
-          read.csv(tbls[x], na.string = c("NA", "NULL"), check.names = FALSE)})
+          tbl <- tbls[x]
+          tab <- read.csv(tbls[x], na.string = c("NA", "NULL"), check.names = FALSE) |>
+            dplyr::mutate(datasource = file_name)
+          return(tab)})
 
       tbl_import <- setNames(tbl_import, z_list_names)
       list2env(tbl_import, envir = env)
@@ -326,6 +329,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
       zip_import <-
       purrr::map(seq_along(import_path), function(ip){
+
+        file_name = file_names[ip]
+
         tryCatch(
           {zfiles = utils::unzip(import_path[ip], list = T)$Name},
            error = function(e){stop(paste0("Unable to import specified zip file: ", ip))})
@@ -359,7 +365,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         tbl_import <-
           lapply(seq_along(tbls), function(x){
-          tbl_temp <- read.csv(tbls[x], na.strings = c("NA", "NULL", ""), check.names = FALSE, as.is = T)
+          tbl_temp <- read.csv(tbls[x], na.strings = c("NA", "NULL", ""), check.names = FALSE, as.is = T) |>
+            dplyr::mutate(datasource = file_name)
 
           # When fields from one park are all NAs vs other parks have data, read.csv doesn't always assign
           # them as consistent field types. Converting these to character by default. If importData returns
@@ -417,7 +424,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         file_list <- list.files(tmp)
 
-        zip_name = paste0("NGPN_FFI_export", format(Sys.Date(), "%Y%m%d"), ".zip")
+        zip_name = paste0("NGPN_FFI_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
 
         zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                   root = tmp,

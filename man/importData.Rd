@@ -39,6 +39,10 @@ environment.}
 \item{import_path}{Quoted string to import a zipped file of csvs if type = 'csv'. The name of the zipped file should be included
 in the path. Can specify multiple paths to import multiple parks/projects.}
 }
+\value{
+Either an environment with database tables as data frames for each imported database, or database
+tables directly in the global environment.
+}
 \description{
 Imports data from FFI SQL Server database or csvs of FFI database tables using the schema designed for
 the Northern Great Plains Network plant community monitoring protocol. Currently can only import from a local installation
@@ -48,7 +52,7 @@ are row binded, so that all NPGN parks can be queried, summarized, etc. at once.
 }
 \examples{
 \dontrun{
-
+#--- From Local install of FFI SQL databases
 # Import data for AGFO and export tables to zip file
 importData(type = 'local', dbname = c("FFI_RA_AGFO"), export = T)
 
@@ -61,9 +65,21 @@ importData(type = 'local',
            export_path = "C:/temp")
 
 # Check that the multiple-park import worked
-table(VIEWS_NGPN$MacroPlot$dbname)
+table(VIEWS_NGPN$MacroPlot$datasource)
+
+#--- From zipped csvs of FFI data
+# Import THRO from zip file
+importData(type = 'csv', import_path = "C:/temp/FFI_RA_THRO.zip")
+
+# Import zipped files of NGPN parks and export as 1 zip file with all parks included
+zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zip", "NGPN_FFI_tables_DETO_20250508.zip",
+          "NGPN_FFI_tables_FOLA_20250508.zip", "NGPN_FFI_tables_FOUS_20250508.zip", "NGPN_FFI_tables_JECA_20250508.zip",
+          "NGPN_FFI_tables_KNRI_20250508.zip", "NGPN_FFI_tables_MORU_20250508.zip", "NGPN_FFI_tables_SCBL_20250508.zip",
+          "NGPN_FFI_tables_THRO_20250508.zip", "NGPN_FFI_tables_WICA_20250508.zip")
+filepath = "C:/Users/KMMiller/OneDrive - DOI/MWR/NGPN_veg/FFI_zips/"
+zips_full <- paste0(filepath, zips)
+importData(type = 'csv', import_path = zips_full, export = T)
 
 }
-
 
 }

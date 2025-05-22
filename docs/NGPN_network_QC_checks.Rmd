@@ -77,6 +77,17 @@ kbl_purpose <- kable(purpose, format = 'html', align = 'c', captions = 'Number o
 
 ```
 
+There are multiple versions of the same purpose, just with slight variations of capitalization or abbreviations, and quite a few macroplots with no purpose listed. Need to dig into the data to determine which of these are attached to NGPN monitoring and whether these need to be cleaned up. At the very least in the vegcomNGPN package, these will be standardized in getMacroPlot function. Questions about standardizing:
+<ol>
+<li>Are **FIRE**, **FX**, **FX Monitoring**, **FX monitoring** and **Fire Effects Monitoring** all the same? How about **FS**?</li>
+<li>Are **FIRE_Dual**, **FX_Dual**, **FX Dual**, and **IM_FX_Dual** the same?</li>
+<li>Are **FIRE_Intensive**, **FIRE_intensive**, **FX_Intensive**, **FX_ Intensive**, **IM_Intensive** the same? Or is **IM_Intensive** separate? What about **Fire/I&M Veg Monitoring Plot**?</li>
+<li>Does **NGP Fire Forest Fuel Veg Protcol** fit anywhere else?</li>
+<li>Are the Panels 1-10 all NGPN? Note the space for one of the Panel9 plots. Is **PanelE** NGPN?</li>
+<li>There are two kinds of blanks. One is "", the other is NA. Do either of these need to be querable?</li>
+<li>Are and of **Forest Fuels and Vegetation**, **Forest and Fuels**, **Treatment**, **Pre- and Post- treatment of fuels**, and **pre- and post- treatment forest and fuels** the same?</li>
+</ol>
+
 ```{r}
 kbl_purpose
 ```
@@ -97,46 +108,94 @@ macroproj2 <- macroproj |>
   summarize(num_rows = n(), .groups = 'drop')
 
 sort(unique(macroproj2$ProjectUnit_Name))
-# based on Table 5 of NGPN Plant Community protocol, but not all represented in the data
+# based on Table 5 of NGPN Plant Community protocol, and Table 6 of SOPs but not all represented in the data
 NGPN_ABAM <- data.frame(park = c("BADL", "BADL", "FOLA", 
                                  "SCBL", "WICA"), 
                         project = c("ABAM Supplemental", "AnnualBrome_Research", "ABAM", 
-                                    "AnnualBrome_Research", "ABAM"))
+                                    "AnnualBrome_Research", "ABAM"),
+                        group = "ABAM")
   
 vegmon_AGFO <- data.frame(park = "AGFO", 
-                          project = c("Park", "Prairie Cluster", "IN-ACTIVE", "Riparian")) 
-                          # Does IN-ACTIVE = "Legacy" in table?; Does Native Prairie = Prairie in table?
-vegmon_BADL <- data.frame(park = "BADL", project = "North Unit") # What about "Park" and "Prairie"
-vegmon_DETO <- data.frame(park = "DETO", project = c("Riparian", "Upland")) 
-  # Riparian = Riparian lowland in table? There's also "Park", "Pine Forest" and "Prairie"
-vegmon_FOLA <- data.frame(park = "FOLA", project = c("Riparian", "Upland")) #Riparian = Riparian lowland in table?
-vegmon_FOUS <- data.frame(park = "FOUS", project = c("Bodmer", "Fort")) # There's also "Park" and "Prairie"
-vegmon_JECA <- data.frame(park = "JECA", project = c("Park")) # There's also "Pine Forest"
-vegmon_KNRI <- data.frame(park = "KNRI", project = c("Park")) 
-vegmon_SCBL <- data.frame(park = "SCBL", project = c("Prairie")) # Park also in data
+                          project = c("Park", "Prairie Cluster", "Riparian"),
+                          group = "NGPN") 
+vegmon_BADL <- data.frame(park = "BADL", project = "North Unit", group = "NGPN") 
+vegmon_DETO <- data.frame(park = "DETO", project = c("Riparian", "Upland"), group = "NGPN") 
+vegmon_FOLA <- data.frame(park = "FOLA", project = c("Riparian", "Upland"), group = "NGPN") 
+vegmon_FOUS <- data.frame(park = "FOUS", project = c("Bodmer", "Fort"), group = "NGPN") 
+vegmon_JECA <- data.frame(park = "JECA", project = c("Park"), group = "NGPN") 
+vegmon_KNRI <- data.frame(park = "KNRI", project = c("Park"), group = "NGPN") 
+vegmon_MORU <- data.frame(park = "MORU", project = c("Park"), group = "NGPN")
+vegmon_SCBL <- data.frame(park = "SCBL", project = c("Prairie", "Park", "Riparian"), group = "NGPN") 
 vegmon_THRO <- data.frame(park = "THRO", 
-                          project = c("North Riparian", "North Upland", "South Riparian", "South Upland")) # there's also "Park"
+                          project = c("North Riparian", "North Upland", "South Riparian", "South Upland"), 
+                          group = "NGPN") # there's also "Park"
 vegmon_WICA <- data.frame(park = "WICA", 
-                          project = c("Park", "Pine Forest")) # Not sure if Pine Forest is the 'Currently wooded areas', 
+                          project = c("Park", "Pine Forest"), group = "NGPN") # Not sure if Pine Forest is the 'Currently wooded areas', 
 # There's also no Riparian in the data, despite being mentioned in table 6. 
 
-proj_mat <- rbind(NGPN_ABAM, vegmon_AGFO, vegmon_BADL, vegmon_DETO, vegmon_FOLA, 
-                  vegmon_FOUS, vegmon_JECA, vegmon_KNRI, vegmon_SCBL, vegmon_THRO, vegmon_WICA)
-proj_mat$NGPN = "X"
-proj_mat
-head(macroproj)
+proj_mat <- rbind(NGPN_ABAM, vegmon_AGFO, vegmon_BADL, vegmon_DETO, 
+                  vegmon_FOLA, vegmon_FOUS, vegmon_JECA, vegmon_KNRI, 
+                  vegmon_MORU, vegmon_SCBL, vegmon_THRO, vegmon_WICA)
 
 proj_sum <- macroproj |> group_by(Project = ProjectUnit_Name, park = park) |> 
   summarize(num_plots = sum(!is.na(MacroPlot_Name)), .groups = 'drop') |> 
   arrange(park) |> 
   left_join(proj_mat, by = c("park", "Project" = "project")) |> 
   pivot_wider(names_from = park, values_from = num_plots) |> 
-  arrange(NGPN, Project)
+  arrange(desc(group), Project)
 
 kbl_proj <- kable(proj_sum, format = 'html', align = 'c', captions = 'Number of MacroPlots per project per park') |> 
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
   column_spec(1:ncol(proj_sum), border_left = "1px solid grey", border_right = "1px solid grey")
 ```
+
+Based on Table 5 NGPN's Plant Community Composition and Structure Monitoring Protocol from 2012, and Table 6 of NGPN's Data Management SOP, the following ProjectUnits in the FFI data appear to be part of NGPN vegetation monitoring, by park. I include ProjectUnits I'm unclear about.
+
+<ul>
+<li><b>AGFO: Park, Riparian</b></li>
+  <ul>
+  <li>There are no **PCP**, **Prairie Cluster Legacy**, or **Prairie** project units in the data for AGFO. Is **Native Prairie** the PCP in Table 5 (narrative), and should it be included in QC/analyses?</li></ul>
+<li><b>BADL: North Unit</b></li> 
+  <ul>
+  <li>Are **ABAM Supplemental** and **AnnualBrome_Research** also actively monitored and should they be included in analyses?</li>
+  <li>Other project units in the data are **Park** and **Prairie**. Should these be included in QC/analyses?</li></ul>
+<li><b>DETO: Riparian (aka Riparian lowland), Upland</b></li>
+  <ul>
+  <li>Other project units in the data are **Park**, **Pine Forest**, and **Prairie**. Should they be included in QC/analyses? </li>
+  </ul>
+<li><b>FOLA: Riparian (aka Riparian lowland), Upland</b></li>
+  <ul>
+  <li>**Park** and **ABAM** are also a project units. Should these be included in QC/analyses?</li>
+  </ul>
+<li><b>FOUS: Bodmer, Fort</b></li>
+  <ul>
+  <li>**Park** and **Prairie** are also project units. Should these be included in QC/analyses?</li></ul>
+<li><b>JECA: Park</b></li>
+  <ul>
+  <li>**Pine Forest** is also a project unit in the data. Should this be included in QC/analyses? </li></ul>
+<li><b>KNRI: Park</b></li>
+  <ul>
+  <li>KNRI isn't mentioned in Table 6 (SOPs), but is in Table 5 (narrative). Is this actively monitored?</li>
+  <li>**Prairie** is also a project unit. Should this be included in QC/analyses?</li>
+  </li></ul>
+<li><b>MNRR:</b> Does not appear to be monitored by NGPN. Two project units exist- **Cedar Removal Study** and **Monitoring**.</li>
+<li><b>MORU: Park</b></li>
+  <ul>
+  <li>**Pine Forest** is also a project unit in the data. Should this be included in QC/analyses?</li></ul>
+<li><b>SCBL: Park, Prairie (aka PCP)</b></li>
+  <ul>
+  <li>Table 5 (narrative) lists **Upland** and **Riparian lowland**, but there aren't project units in the data for these.</li> 
+  <li>Table 6 (SOPs) lists **Riparian lowland** but there isn't a project unit for this. </li>
+  <li>**AnnualBrome_Research** is also a project unit. Should this be included in QC/analyses?</li></ul>
+<li><b>THRO: North Riparian, North Upland, South Riparian, South Upland</b></li>
+  <ul>
+  <li>**Park** and **Prairie** are also project units. Should these be included in QC/analyses?</li></ul>
+  <li><b>WICA: Park, Pine Forest</b></li>
+  <ul>
+  <li>**Prairie** and **ABAM** are also project units with many sites. Should these be included in QC/analyses?</li></ul>
+</ul>
+
+
 
 ```{r}
 kbl_proj

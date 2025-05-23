@@ -163,4 +163,6 @@ getMacroPlot <- function(plot_name = "all", purpose = "all"){
   macro3$MacroPlot_Purpose[macro3$MacroPlot_Purpose %in% c("Pre- and Post- treatment of fuels",
                                                          "pre- and post-treatment forest and fuels")] <- "Pre and post fuels treatment"
   # cleanup project and projectunit
+
+  # Querying steps
 }

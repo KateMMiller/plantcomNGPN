@@ -36,10 +36,6 @@ importData(type = 'local',
 ```
 
 ```{r include = F}
-macroplot <- get("MacroPlot", envir = VIEWS_NGPN)
-mm_proj_macro <- get("MM_ProjectUnit_MacroPlot", envir = VIEWS_NGPN)
-projunit <- get("ProjectUnit", envir = VIEWS_NGPN)
-
 tables <- sort(unique(names(VIEWS_NGPN)))
 tblsum <- map(seq_along(tables), function(x){
              get(tables[x], envir = VIEWS_NGPN) |> group_by(datasource) |>
@@ -199,5 +195,23 @@ Based on Table 5 NGPN's Plant Community Composition and Structure Monitoring Pro
 
 ```{r}
 kbl_proj
+```
+
+
+```{r}
+# Joining macroplot-relevant tables
+macro1 <- full_join(VIEWS_NGPN$MacroPlot, VIEWS_NGPN$MM_ProjectUnit_MacroPlot, 
+                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
+macro2 <- full_join(macro1, VIEWS_NGPN$RegistrationUnit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
+macro3 <- full_join(macro2, VIEWS_NGPN$ProjectUnit, 
+                    by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID", 
+                           "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
+                           "datasource"))
+
+# # Join to sample events
+# proj <- full_join(VIEWS_NGPN$MM_Project_Protocol, VIEWS_NGPN$Project, by = c("MM_Project_GUID" = "Project_GUID", "datasource"))
+# proj2 <- full_join(proj, VIEWS_NGPN$Program, by = c("Project_Program_GUID" = "Program_GUID", "datasource"))
+# 
+
 ```
 

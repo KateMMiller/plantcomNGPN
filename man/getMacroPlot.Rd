@@ -11,7 +11,8 @@ getMacroPlot(plot_name = "all", purpose = "all")
 Can select multiple plots.}
 
 \item{purpose}{Quoted string to return plots with a particular purpose. Note that purpose
-is not always standardized. For example "Panel9" and "Panel 9" are both options for different plots.}
+is not always standardized. For example "Panel9" and "Panel 9" are both options for different plots.
+Can select multiple purposes.}
 
 \item{output}{Quoted string. Options are "short" (default), which only returns most important columns.
 "verbose" returns all columns in the MacroPlot database table.}

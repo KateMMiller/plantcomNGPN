@@ -75,11 +75,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                        export_path = NA, import_path = NA){
   #---- Bug Handling ----
   # Check that suggested package required for this function are installed
-  if(!requireNamespace("odbc", quietly = TRUE)){
+  # Need to make this conditional on type.
+  if(type %in% c("local", "server") & !requireNamespace("odbc", quietly = TRUE)){
     stop("Package 'odbc' needed for this function to work. Please install it.", call. = FALSE)}
-  if(!requireNamespace("DBI", quietly = TRUE)){
+  if(type %in% c("local", "server") & !requireNamespace("DBI", quietly = TRUE)){
     stop("Package 'DBI' needed for this function to work. Please install it.", call. = FALSE)}
-  if(!requireNamespace("dbplyr", quietly = TRUE)){
+  if(type %in% c("local", "server") & !requireNamespace("dbplyr", quietly = TRUE)){
     stop("Package 'dbplyr' needed for this function to work. Please install it.", call. = FALSE)}
   if(!requireNamespace("zip", quietly = TRUE) & export == T){
     stop("Package 'zip' needed when export = TRUE. Please install it.", call. = FALSE)}

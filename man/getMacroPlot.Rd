@@ -11,8 +11,59 @@ getMacroPlot(plot_name = "all", purpose = "all")
 Can select multiple plots.}
 
 \item{purpose}{Quoted string to return plots with a particular purpose. Note that purpose
-is not always standardized. For example "Panel9" and "Panel 9" are both options for different plots.
-Can select multiple purposes.}
+is not standard across parks. This function standardizes some purposes (eg "FX" and "Fire Effects" are both
+called "FX monitoring". The following purposes that can be specified are below.
+\describe{
+\item{"Panel1"}{}
+\item{"Panel2"}{}
+\item{"Panel3"}{}
+\item{"Panel4"}{}
+\item{"Panel5"}{}
+\item{"Panel6"}{}
+\item{"Panel7"}{}
+\item{"Panel8"}{}
+\item{"Panel9"}{}
+\item{"Panel10"}{}
+\item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
+\item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
+\item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
+\item{"Control"}{Unknown use. Only in MNRR.}
+\item{"Daubenmire Plot"}{Unknown use. Only in KNRI.}
+\item{"Early Detection"}{Early detection of invasive species. Found in DETO}
+\item{"FIRE"}{Fire-related monitoring, but unclear of fire effects. Found in JECA and KNRI.}
+\item{"Fire/I&M Veg Monitoring Plot"}{Dual NGPN}
+\item{"Fire/IM Pilot Study Plot"}{}
+\item{"FIRE_Dual"}{}
+\item{"FMH Forest Plot"}{}
+\item{"FMH Grass Plot"}{}
+\item{"FMH Shrub Plot"}{}
+\item{"Forest and Fuels"}{}
+\item{"Forest Fuels and Vegetation"}{}
+\item{"Forest Plot"}{}
+\item{"ForestStructure"}{}
+\item{"FPCM Grassland plot"}{}
+\item{"FS"}{}
+\item{"FX Dual"}{}
+\item{"FX Extensive"}{}
+\item{"FX Monitoring"}{}
+\item{"FX Intensive"}{}
+\item{"HTLN Legacy"}{}
+\item{"I&M_tower_vegetation"}{}
+\item{"IM_FX_Dual"}{}
+\item{"IM_Intensive"}{}
+\item{"IM_veg"}{}
+\item{"Invasives Research"}{}
+\item{"Lafferty Plot"}{}
+\item{"LTEM/FMH"}{}
+\item{"Modified Forest Plot"}{}
+\item{"Modified Shrub Plot"}{}
+\item{"NGP Fire Forest Fuel Veg Protcol"}{}
+\item{"NGP Grassland Plot - Interior Burn Unit"}{}
+\item{"PanelE"}{}
+\item{"Pre- and Post-treatment of fuels"}{}
+\item{"Research"}{}
+\item{"Treatment"}{}
+}}
 
 \item{output}{Quoted string. Options are "short" (default), which only returns most important columns.
 "verbose" returns all columns in the MacroPlot database table.}

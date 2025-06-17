@@ -1,6 +1,6 @@
 #' @title getMacroPlot
 #'
-#' @description This function filters macroplot data by plot name and purpose from FFI data.
+#' @description This function filters FFI macroplot data by park, plot name, and purpose.
 #'
 #' @importFrom dplyr filter full_join select
 #'
@@ -41,45 +41,46 @@
 #' \item{"Panel8"}{NGPN Vegetation Monitoring Panel 8}
 #' \item{"Panel9"}{NGPN Vegetation Monitoring Panel 9}
 #' \item{"Panel10"}{NGPN Vegetation Monitoring Panel 10}
+#' \item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
+#' \item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
+#' \item{"FX Extensive"}{Unknown use. Found in WICA.}
 #' \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 #' \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
 #' \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
 #' \item{"Control"}{Unknown use. Only in MNRR.}
 #' \item{"Daubenmire Plot"}{Unknown use. Only in KNRI.}
 #' \item{"Early Detection"}{Early detection of invasive species. Found in DETO}
-#' \item{"FIRE"}{Fire-related monitoring, but unclear of fire effects. Found in JECA and KNRI.}
-#' \item{"Fire/I&M Veg Monitoring Plot"}{Dual NGPN}
-#' \item{"Fire/IM Pilot Study Plot"}{}
-#' \item{"FIRE_Dual"}{}
-#' \item{"FMH Forest Plot"}{}
-#' \item{"FMH Grass Plot"}{}
-#' \item{"FMH Shrub Plot"}{}
-#' \item{"Forest and Fuels"}{}
-#' \item{"Forest Fuels and Vegetation"}{}
-#' \item{"Forest Plot"}{}
-#' \item{"ForestStructure"}{}
-#' \item{"FPCM Grassland plot"}{}
-#' \item{"FS"}{}
-#' \item{"FX Dual"}{}
-#' \item{"FX Extensive"}{}
-#' \item{"FX Monitoring"}{}
-#' \item{"FX Intensive"}{}
-#' \item{"HTLN Legacy"}{}
-#' \item{"I&M_tower_vegetation"}{}
-#' \item{"IM_FX_Dual"}{}
-#' \item{"IM_Intensive"}{}
-#' \item{"IM_veg"}{}
-#' \item{"Invasives Research"}{}
-#' \item{"Lafferty Plot"}{}
-#' \item{"LTEM/FMH"}{}
-#' \item{"Modified Forest Plot"}{}
-#' \item{"Modified Shrub Plot"}{}
-#' \item{"NGP Fire Forest Fuel Veg Protcol"}{}
-#' \item{"NGP Grassland Plot - Interior Burn Unit"}{}
-#' \item{"PanelE"}{}
-#' \item{"Pre- and Post-treatment of fuels"}{}
-#' \item{"Research"}{}
-#' \item{"Treatment"}{}
+#' \item{"FIRE"}{Unknown use. Found in JECA and KNRI.}
+#' \item{"Fire/I&M Veg Monitoring Plot"}{Unknown use. Found in DETO, KNRI, SCBL, and THRO. ***}
+#' \item{"Fire/IM Pilot Study Plot"}{Unknown use. Only in DETO.}
+#' \item{"FIRE_Dual"}{Unknown use. Only in WICA.}
+#' \item{"FMH Forest Plot"}{Unknown use. Used in BADL, DETO, JECA, KNRI, MORU, SCBL, THRO, WICA. ***}
+#' \item{"FMH Grass Plot"}{Unknown use. Used in AGFO, BADL, DETO, KNRI, SCBL, THRO, WICA. ***}
+#' \item{"FMH Shrub Plot"}{Unknown use. Used in BADL, SCBL, and THRO. ***}
+#' \item{"Forest and Fuels"}{Unknown use. Used in MORU, SCBL, and WICA.}
+#' \item{"Forest Fuels and Vegetation"}{Unknown use. Found in WICA.}
+#' \item{"Forest Plot"}{Unknown use. Found in WICA.}
+#' \item{"ForestStructure"}{Unknown use. Found in KNRI and WICA.}
+#' \item{"FPCM Grassland plot"}{Unknown use. Found in DETO.}
+#' \item{"FS"}{Unknown use. Found in KNRI.}
+#' \item{"FX Monitoring"}{Unknown use. Found in AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA.***}
+#' \item{"HTLN Legacy"}{Prairie cluster legacy plots. Found in AGFO and SCBL.}
+#' \item{"I&M_tower_vegetation"}{Unknown use. Found in DETO.}
+#' \item{"IM_FX_Dual"}{Unknown use. Found in DETO.}
+#' \item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
+#' \item{"IM_veg"}{Unknown use. Found in THRO.}
+#' \item{"Invasives Research"}{Unknown use. Found in DETO, JECA, and WICA.}
+#' \item{"Lafferty Plot"}{Unknown use. Found in MORU.}
+#' \item{"LTEM/FMH"}{Unknown use. Found in AGFO.}
+#' \item{"Modified Forest Plot"}{Unknown use. Found in THRO.}
+#' \item{"Modified Shrub Plot"}{Unknown use. Found in THRO.}
+#' \item{"NGP Fire Forest Fuel Veg Protcol"}{Unknown use (note the misspelling of protocol). Found in DETO.}
+#' \item{"NGP Grassland Plot - Interior Burn Unit"}{Unknown use. Found in BADL.}
+#' \item{"PanelE"}{Unknown use. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO ***}
+#' \item{"Pre- and Post-treatment of fuels"}{Unknown use. Found in JECA.}
+#' \item{"Research"}{Unknown use. Found in WICA.}
+#' \item{"Treatment"}{Unknown use. Found in MNRR.}
+#' }
 #' }
 #'
 #' @param output Quoted string. Options are "short" (default), which only returns most important columns.
@@ -161,18 +162,16 @@ getMacroPlot <- function(park = 'all', plot_name = "all", purpose = "NGPN_VS", o
 
   # Standardize purpose across dataset
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose == "Panel 9"] <- "Panel9"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FX", "Fx", "FX Monitoring", "FX monitoring", "Fire Effects Monitoring")] <-
-    "FX Monitoring"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in%
+                                 c("FX", "Fx", "FX Monitoring", "FX monitoring", "Fire Effects Monitoring")] <- "FX Monitoring"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FX Dual", "FX_Dual")] <- "FX Dual"
-
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Research", "research")] <- "Research"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Determine Strategies for efficient early detection",
                                                            "Determine strategies for efficient early detection",
                                                            "Early Invasives Detection")] <- "Early Detection"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FMH Grass Plot", "FMH Grass Plot ")] <- "FMH Grass Plot"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Intensive", "FIRE_intensive", "FX_Intensive",
-                                                           "FX_ Intensive", "FIRE_intesive")] <-
-    "FX Intensive"
+                                                           "FX_ Intensive", "FIRE_intesive")] <- "FX Intensive"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Extensive")] <- "FX Extensive"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Lafferty Plot", "Lafferty Plot ")] <- "Lafferty Plot"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("invasive research", "Invasives Research",
@@ -209,6 +208,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", purpose = "NGPN_VS", o
   mm_projunit <- mm_projunit_orig[mm_projunit_orig$MM_MacroPlot_GUID %in% guids_macro,]
   # filter regunit on registration_guids
   regunit <- regunit_orig[regunit_orig$RegistrationUnit_GUID %in% guids_regunits,]
+  projunit <- projunit_orig[projunit_orig$ProjectUnit_RegistrationUnitGUID %in% guids_regunits,]
 
   # Joining macroplot-relevant tables
   macro1 <- full_join(macro_b, mm_projunit,

@@ -135,7 +135,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
      error = function(e){stop(error_mess)},
      warning = function(w){stop(error_mess)})
 
-  tbls <<- DBI::dbListTables(con, schema = "dbo")
+  tbls <- DBI::dbListTables(con, schema = "dbo")
 
   # Setup progress bar
   pb <- txtProgressBar(min = 0, max = length(tbls), style = 3)
@@ -152,7 +152,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   tbl_import2 <- tbl_import[sort(names(tbl_import))]
   # remove empty tables
   tbl_import3 <- tbl_import2[sapply(tbl_import2, nrow) > 0]
-  #VIEWS_NGPN <<- new.env()
+
   list2env(tbl_import3, envir = env)
   DBI::dbDisconnect(con)
 
@@ -195,7 +195,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
           error = function(e){stop(error_mess)},
           warning = function(w){stop(error_mess)})
 
-        tbls <<- DBI::dbListTables(con, schema = "dbo")
+        tbls <- DBI::dbListTables(con, schema = "dbo")
 
       # Import views using their names and show progress bar
       tbl_import <- lapply(seq_along(tbls), function(x){
@@ -217,7 +217,6 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     # sort tables alphabetically
     dbflat4 <- dbflat3[sort(names(dbflat3))]
 
-    #IEWS_NGPN <<- new.env()
     list2env(dbflat4, envir = env)
 
     if(export == TRUE){
@@ -425,7 +424,6 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       # sort tables alphabetically
       zipflat4 <- zipflat3[sort(names(zipflat3))]
 
-      #VIEWS_NGPN <<- new.env()
       list2env(zipflat4, envir = env)
 
       if(export == TRUE){

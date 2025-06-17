@@ -4,26 +4,51 @@
 \alias{getMacroPlot}
 \title{getMacroPlot}
 \usage{
-getMacroPlot(plot_name = "all", purpose = "all")
+getMacroPlot(
+  park = "all",
+  plot_name = "all",
+  purpose = "NGPN_VS",
+  output = "short"
+)
 }
 \arguments{
+\item{park}{Filter on park code (aka RegistrationUnit_Name). Can select more than one. Valid inputs:
+\describe{
+\item{"all"}{Include all NGPN parks with FFI data}
+\item{"AGFO"}{Agate Fossil Beds National Monument}
+\item{"BADL"}{Badlands National Park}
+\item{"DETO"}{Devils Tower National Monument}
+\item{"FOLA"}{Fort Laramie National Historic Site}
+\item{"FOUS"}{Fort Union Trading Post National Historic Site}
+\item{"JECA"}{Jewel Cave National Monument}
+\item{"KNRI"}{Knife River Indian Villages National Historic Sites}
+\item{"MORU"}{Mount Rushmore National Monument}
+\item{"SCBL"}{Scotts Bluff National Monument}
+\item{"THRO"}{Theodore Roosevelt National Park}
+\item{"WICA"}{Wind Cave National Park}
+}}
+
 \item{plot_name}{Quoted string to return a particular plot based on name. Default is "all".
-Can select multiple plots.}
+Can select multiple plots. If a plot name is specified that does not occur in the imported data,
+function will error out with a list of unmatched plot names.}
 
 \item{purpose}{Quoted string to return plots with a particular purpose. Note that purpose
 is not standard across parks. This function standardizes some purposes (eg "FX" and "Fire Effects" are both
-called "FX monitoring". The following purposes that can be specified are below.
+called "FX monitoring". The following purposes that can be specified are below. By default, Panels 1-10 are
+selected.
 \describe{
-\item{"Panel1"}{}
-\item{"Panel2"}{}
-\item{"Panel3"}{}
-\item{"Panel4"}{}
-\item{"Panel5"}{}
-\item{"Panel6"}{}
-\item{"Panel7"}{}
-\item{"Panel8"}{}
-\item{"Panel9"}{}
-\item{"Panel10"}{}
+\item{"all"}{All plots in imported FFI database}
+\item{"NGPN_VS"}{NGPN Vegetation Monitoring Panels 1:10}
+\item{"Panel1"}{NGPN Vegetation Monitoring Panel 1}
+\item{"Panel2"}{NGPN Vegetation Monitoring Panel 2}
+\item{"Panel3"}{NGPN Vegetation Monitoring Panel 3}
+\item{"Panel4"}{NGPN Vegetation Monitoring Panel 4}
+\item{"Panel5"}{NGPN Vegetation Monitoring Panel 5}
+\item{"Panel6"}{NGPN Vegetation Monitoring Panel 6}
+\item{"Panel7"}{NGPN Vegetation Monitoring Panel 7}
+\item{"Panel8"}{NGPN Vegetation Monitoring Panel 8}
+\item{"Panel9"}{NGPN Vegetation Monitoring Panel 9}
+\item{"Panel10"}{NGPN Vegetation Monitoring Panel 10}
 \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
 \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
@@ -77,8 +102,22 @@ This function filters macroplot data by plot name and purpose from FFI data.
 \examples{
 \dontrun{
 
-#+++ ADD EXAMPELS +++
+library(vegcomNPGN)
+importData(type = 'local',
+dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+           "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+           "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+export = F)
 
+# query all parks, plots and purposes, and only return main columns
+macro <- getMacroPlot()
+
+# return only plots with NGPN purposes listed as: Panels 1-10
+macro_vs <- getMacroPlot(purpose = "NGPN_VS")
+
+# return NGPN only plots from North Dakota
+macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"), purpose = "NGPN_VS")
+table(macro_nd$RegistrationUnit_Name, macro_nd$MacroPlot_Purpose)
 }
 
 }

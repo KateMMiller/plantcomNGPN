@@ -23,3 +23,7 @@ Suggests:
     odbc,
     zip
 RoxygenNote: 7.3.2
+Collate: 
+    'getMacroPlot.R'
+    'getCoverPoints.R'
+    'importData.R'

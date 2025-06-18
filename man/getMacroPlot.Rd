@@ -7,6 +7,7 @@
 getMacroPlot(
   park = "all",
   plot_name = "all",
+  project = "Park",
   purpose = "NGPN_VS",
   output = "short"
 )
@@ -28,17 +29,62 @@ getMacroPlot(
 \item{"WICA"}{Wind Cave National Park}
 }}
 
-\item{plot_name}{Quoted string to return a particular plot based on name. Default is "all".
+\item{plot_name}{Quoted string to return a particular plot based on name. Default is "all", which if
+purpose and project are set to "NGPN_VS" (default), then only NGPN Plant Community Monitoring plots will be included.
 Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 function will error out with a list of unmatched plot names.}
 
-\item{purpose}{Quoted string to return plots with a particular purpose. Note that purpose
-is not standard across parks. This function standardizes some purposes (eg "FX" and "Fire Effects" are both
-called "FX monitoring". The following purposes that can be specified are below. By default, Panels 1-10 are
-selected.
+\item{project}{Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
+typically is the stratum a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
+plots fall in multiple strata, such as Park and Native Prairie in AGFO. In those cases, the Park stratum is
+selected by default. If a user wants a different stratum than Park, that can be specified using the codes below.
+Valid inputs:
+\describe{
+\item{'all'}{Pull in all project types.}
+\item{"Park"}{Default. *NGPN VS* stratum covering whole park.}
+\item{"ABAM"}{*NGPN VS* stratum in WICA.}
+\item{"Bodmer"}{*NGPN VS* stratum in FOUS.}
+\item{"Cedar Removal Study"}{*NGPN VS* in MNRR.}
+\item{"Deciduous Woodland"}{*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
+\item{"Fort"}{*NGPN VS* stratum in FOUS.}
+\item{"Monitoring"}{*NGPN VS* stratum in MNRR.}
+\item{"Native Prairie"}{*NGPN VS* stratum in AGFO.}
+\item{"North Riparian"}{*NGPN VS* stratum in THRO.}
+\item{"North Upland"}{*NGPN VS* stratum in THRO.}
+\item{"North Unit"}{*NGPN VS* stratum in BADL.}
+\item{"Pine Forest"}{*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
+\item{"Prairie"}{*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
+\item{"Riparian"}{*NGPN VS* stratum in AGFO, DETO, and FOLA.}
+\item{"Shrubland"}{*NGPN VS* stratum in THRO.}
+\item{"South Riparian"}{*NGPN VS* stratum in THRO.}
+\item{"South Upland"}{*NGPN VS* stratum in THRO.}
+\item{"Upland"}{*NGPN VS* stratum in DETO and FOLA.}
+\item{"ABAM Supplemental"}{Unknown use.}
+\item{"AnnualBrome_Research"}{Unknown use.}
+\item{"American Elk Invasive Research"}{Unknown use.}
+\item{"Archaeology JFSP"}{Unknown use.}
+\item{"Belle Fourche Invasive Research"}{Unknown use.}
+\item{"CBI"}{Unknown use.}
+\item{"Centennial Invasive Research"}{Unknown use.}
+\item{"Control Invasive Research"}{Unknown use.}
+\item{"FFI TESTING" }{Unknown use.}
+\item{"Highland Creek TH Herbicide Trial"}{Unknown use.}
+\item{"IN-ACTIVE"}{Unknown use. Also matches with "In-Active" and "Inactive"}
+\item{"Juniper Woodland"}{Unknown use.}
+\item{"Lithograph Invasive Research"}{Unknown use.}
+\item{"Pringle Dog Town Herbicide Trial"}{Unknown use.}
+\item{"Woodland"}{Unknown use.}
+}}
+
+\item{purpose}{Quoted string to return plots with a particular purpose, which typically refers to a characteristic
+of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
+standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring". The following purposes
+that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
+"_FPCM_", "_LPCM_", and "_RCM_") in their name.
 \describe{
 \item{"all"}{All plots in imported FFI database}
-\item{"NGPN_VS"}{NGPN Vegetation Monitoring Panels 1:10}
+\item{"NGPN_VS"}{NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
 \item{"Panel1"}{NGPN Vegetation Monitoring Panel 1}
 \item{"Panel2"}{NGPN Vegetation Monitoring Panel 2}
 \item{"Panel3"}{NGPN Vegetation Monitoring Panel 3}
@@ -49,45 +95,45 @@ selected.
 \item{"Panel8"}{NGPN Vegetation Monitoring Panel 8}
 \item{"Panel9"}{NGPN Vegetation Monitoring Panel 9}
 \item{"Panel10"}{NGPN Vegetation Monitoring Panel 10}
+\item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
+\item{"IM_veg"}{Unknown use. Found in THRO.}
+\item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
+\item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
+\item{"FX Extensive"}{Unknown use. Found in WICA.}
 \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
 \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
 \item{"Control"}{Unknown use. Only in MNRR.}
 \item{"Daubenmire Plot"}{Unknown use. Only in KNRI.}
 \item{"Early Detection"}{Early detection of invasive species. Found in DETO}
-\item{"FIRE"}{Fire-related monitoring, but unclear of fire effects. Found in JECA and KNRI.}
-\item{"Fire/I&M Veg Monitoring Plot"}{Dual NGPN}
-\item{"Fire/IM Pilot Study Plot"}{}
-\item{"FIRE_Dual"}{}
-\item{"FMH Forest Plot"}{}
-\item{"FMH Grass Plot"}{}
-\item{"FMH Shrub Plot"}{}
-\item{"Forest and Fuels"}{}
-\item{"Forest Fuels and Vegetation"}{}
-\item{"Forest Plot"}{}
-\item{"ForestStructure"}{}
-\item{"FPCM Grassland plot"}{}
-\item{"FS"}{}
-\item{"FX Dual"}{}
-\item{"FX Extensive"}{}
-\item{"FX Monitoring"}{}
-\item{"FX Intensive"}{}
-\item{"HTLN Legacy"}{}
-\item{"I&M_tower_vegetation"}{}
-\item{"IM_FX_Dual"}{}
-\item{"IM_Intensive"}{}
-\item{"IM_veg"}{}
-\item{"Invasives Research"}{}
-\item{"Lafferty Plot"}{}
-\item{"LTEM/FMH"}{}
-\item{"Modified Forest Plot"}{}
-\item{"Modified Shrub Plot"}{}
-\item{"NGP Fire Forest Fuel Veg Protcol"}{}
-\item{"NGP Grassland Plot - Interior Burn Unit"}{}
-\item{"PanelE"}{}
-\item{"Pre- and Post-treatment of fuels"}{}
-\item{"Research"}{}
-\item{"Treatment"}{}
+\item{"FIRE"}{Unknown use. Found in JECA and KNRI.}
+\item{"Fire/I&M Veg Monitoring Plot"}{Unknown use. Found in DETO, KNRI, SCBL, and THRO. ***}
+\item{"Fire/IM Pilot Study Plot"}{Unknown use. Only in DETO.}
+\item{"FIRE_Dual"}{Unknown use. Only in WICA.}
+\item{"FMH Forest Plot"}{Unknown use. Used in BADL, DETO, JECA, KNRI, MORU, SCBL, THRO, WICA. ***}
+\item{"FMH Grass Plot"}{Unknown use. Used in AGFO, BADL, DETO, KNRI, SCBL, THRO, WICA. ***}
+\item{"FMH Shrub Plot"}{Unknown use. Used in BADL, SCBL, and THRO. ***}
+\item{"Forest and Fuels"}{Unknown use. Used in MORU, SCBL, and WICA.}
+\item{"Forest Fuels and Vegetation"}{Unknown use. Found in WICA.}
+\item{"Forest Plot"}{Unknown use. Found in WICA.}
+\item{"ForestStructure"}{Unknown use. Found in KNRI and WICA.}
+\item{"FPCM Grassland plot"}{Unknown use. Found in DETO.}
+\item{"FS"}{Unknown use. Found in KNRI.}
+\item{"FX Monitoring"}{Unknown use. Found in AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA.***}
+\item{"HTLN Legacy"}{Prairie cluster legacy plots. Found in AGFO and SCBL.}
+\item{"I&M_tower_vegetation"}{Unknown use. Found in DETO.}
+\item{"IM_FX_Dual"}{Unknown use. Found in DETO.}
+\item{"Invasives Research"}{Unknown use. Found in DETO, JECA, and WICA.}
+\item{"Lafferty Plot"}{Unknown use. Found in MORU.}
+\item{"LTEM/FMH"}{Unknown use. Found in AGFO.}
+\item{"Modified Forest Plot"}{Unknown use. Found in THRO.}
+\item{"Modified Shrub Plot"}{Unknown use. Found in THRO.}
+\item{"NGP Fire Forest Fuel Veg Protcol"}{Unknown use (note the misspelling of protocol). Found in DETO.}
+\item{"NGP Grassland Plot - Interior Burn Unit"}{Unknown use. Found in BADL.}
+\item{"PanelE"}{Unknown use. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO ***}
+\item{"Pre- and Post-treatment of fuels"}{Unknown use. Found in JECA.}
+\item{"Research"}{Unknown use. Found in WICA.}
+\item{"Treatment"}{Unknown use. Found in MNRR.}
 }}
 
 \item{output}{Quoted string. Options are "short" (default), which only returns most important columns.
@@ -97,27 +143,41 @@ selected.
 Returns a data frame of macroplots
 }
 \description{
-This function filters macroplot data by plot name and purpose from FFI data.
+This function filters FFI macroplot data by park, plot name, project, and purpose.
+This function was primarily developed to pull out NGPN plant community monitoring plots. Using
+combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
+tested as thoroughly, and may not return intended results in every case.
 }
 \examples{
 \dontrun{
 
 library(vegcomNPGN)
 importData(type = 'local',
-dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
-           "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
-           "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-export = F)
+  dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+             "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+             "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+  export = F)
+
+# return all NGPN Plant Community Monitoring plots (ie vital signs plots),
+# for the Park stratum and all purposes used by NGPN
+macro_vs <- getMacroPlot()
+table(macro_vs$RegistrationUnit_Name, macro_vs$ProjectUnit_Name)
+
+# return Prairie stratum for AGFO and SCBL for NGPN_VS plots
+macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_VS",
+  project = c("Native Prairie", "Prairie"))
+table(macro_pr_vs$RegistrationUnit_Name, macro_pr_vs$ProjectUnit_Name)
 
 # query all parks, plots and purposes, and only return main columns
-macro <- getMacroPlot()
+macro <- getMacroPlot(purpose = "all", project = "all")
+table(macro$RegistrationUnit_Name, macro$ProjectUnit_Name)
 
-# return only plots with NGPN purposes listed as: Panels 1-10
-macro_vs <- getMacroPlot(purpose = "NGPN_VS")
+# query NGPN only plots from North Dakota
+macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"))
+table(macro_nd$RegistrationUnit_Name, macro_nd$ProjectUnit_Name)
 
-# return NGPN only plots from North Dakota
-macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"), purpose = "NGPN_VS")
-table(macro_nd$RegistrationUnit_Name, macro_nd$MacroPlot_Purpose)
+# query only the Prairie stratum for PARK X
+# ADD EXAMPLE
 }
 
 }

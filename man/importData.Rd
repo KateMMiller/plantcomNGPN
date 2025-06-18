@@ -29,7 +29,7 @@ multiple database names are specified, views will be row bound for tables in com
 indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
 aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).}
 
-\item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
+\item{new_env}{Logical. If TRUE (default), will import tables to NGPN_tables environment. If FALSE, will import tables to global
 environment.}
 
 \item{export}{Logical. If TRUE, will export a zip file of csvs to specified export_path.}
@@ -65,7 +65,7 @@ importData(type = 'local',
            export_path = "C:/temp")
 
 # Check that the multiple-park import worked
-table(VIEWS_NGPN$MacroPlot$datasource)
+table(NGPN_tables$MacroPlot$datasource)
 
 #--- From zipped csvs of FFI data
 # Import THRO from zip file

@@ -23,7 +23,7 @@
 #' indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
 #' aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).
 #'
-#' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
+#' @param new_env Logical. If TRUE (default), will import tables to NGPN_tables environment. If FALSE, will import tables to global
 #' environment.
 #'
 #' @param export Logical. If TRUE, will export a zip file of csvs to specified export_path.
@@ -48,7 +48,7 @@
 #'            export_path = "C:/temp")
 #'
 #' # Check that the multiple-park import worked
-#' table(VIEWS_NGPN$MacroPlot$datasource)
+#' table(NGPN_tables$MacroPlot$datasource)
 #'
 #' #--- From zipped csvs of FFI data
 #' # Import THRO from zip file
@@ -118,8 +118,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   }
 
 
-  if(new_env == TRUE){VIEWS_NGPN <<- new.env()}
-  env <- if(new_env == TRUE){VIEWS_NGPN} else {.GlobalEnv}
+  if(new_env == TRUE){NGPN_tables <<- new.env()}
+  env <- if(new_env == TRUE){NGPN_tables} else {.GlobalEnv}
 
   if(type == "local"){
   error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",

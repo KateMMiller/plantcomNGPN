@@ -121,6 +121,10 @@ macro_vs <- getMacroPlot()
 # MonitoringStatus_Name fixes: 14 plots in the MonitoringStatus table have a non-standard name: 
 # 2009_Plant Community; 2018_Plant Community; 2024_Plant Community.
 
+# Check the different module outputs in the package against the WICA data Dan sent.
 
+# Check covpts_attr$Index has a bunch of blanks in it.
+
+# the join to cover point attributes to cover point sample then sample events, causes many-to-many join in the sample events table. Need to figure out why.
 ```
 

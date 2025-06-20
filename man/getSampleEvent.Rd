@@ -9,7 +9,7 @@ getSampleEvent(
   plot_name = "all",
   project = "Park",
   purpose = "NGPN_VS",
-  mon_stat = "NGPN_VS",
+  mon_status = "NGPN_VS",
   years = 2011:format(Sys.Date(), "\%Y"),
   output = "short"
 )
@@ -111,12 +111,6 @@ Other options include c("CBI plot monitoring" (WICA), "Control" (MNRR), "Daubenm
                         "NGP Fire Forest Fuel Veg Protcol" (DETO), "NGP Grassland Plot - Interior Burn Unit" (BADL),
                         "Pre- and Post-treatment of fuels" (JECA), "Research" (WICA), "Treatment" (MNRR))}
 
-\item{years}{Numeric. Filter on years. Accepted values start at 1997. Default is 2011 to current year,
-which represents the time NGPN plant community monitoring began using latest protocol and sample design.}
-
-\item{output}{Quoted string. Options are "short" (default), which only returns most important columns;
-"verbose" returns all columns in the SampleEvent-related tables.}
-
 \item{mon_status}{Quoted string. Allows you to select different sampling event status types. Default is "NGPN_VS",
 which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_VS below). Note
 that in the data, the status name starts with year. For simplicity, the years argument pulls out specific years,
@@ -132,6 +126,12 @@ Other options include c("00Pre", "00Pre2", "01Burn", "01Post", "01Pre", "01yr01"
                         "Other", "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
                         "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
                         "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02")}
+
+\item{years}{Numeric. Filter on years. Accepted values start at 1997. Default is 2011 to current year,
+which represents the time NGPN plant community monitoring began using latest protocol and sample design.}
+
+\item{output}{Quoted string. Options are "short" (default), which only returns most important columns;
+"verbose" returns all columns in the SampleEvent-related tables.}
 }
 \value{
 Returns a data frame of sample event data

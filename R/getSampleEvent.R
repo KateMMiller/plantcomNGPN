@@ -166,7 +166,7 @@
 #' @export
 
 getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_VS",
-                           mon_stat = "NGPN_VS", years = 2011:format(Sys.Date(), "%Y"),
+                           mon_status = "NGPN_VS", years = 2011:format(Sys.Date(), "%Y"),
                            output = "short"){
   #---- Bug handling ----
   park <- match.arg(park, several.ok = TRUE,
@@ -280,13 +280,14 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
 
   # Drop plots with no sample events
   sampev2 <- mac_samp_monstat[!is.na(mac_samp_monstat$SampleEvent_GUID),]
+  sampev3 <- sampev2[grepl(mon_stat_list, sampev2$MonitoringStatus_Name),] # dropping blanks
 
   # Filter on years
-  sampev3 <- sampev2[sampev2$year %in% years, ]
+  sampev4 <- sampev3[sampev3$year %in% years, ]
 
   sampev_final <- if(output == "short"){
-    sampev3[,keep_cols]
-  } else {sampev3[,full_cols]}
+    sampev4[,keep_cols]
+  } else {sampev4[,full_cols]}
 
   return(sampev_final)
   }

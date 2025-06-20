@@ -61,22 +61,14 @@
 #' \item{"South Riparian"}{*NGPN VS* stratum in THRO.}
 #' \item{"South Upland"}{*NGPN VS* stratum in THRO.}
 #' \item{"Upland"}{*NGPN VS* stratum in DETO and FOLA.}
-#' \item{"ABAM Supplemental"}{Unknown use.}
-#' \item{"AnnualBrome_Research"}{Unknown use.}
-#' \item{"American Elk Invasive Research"}{Unknown use.}
-#' \item{"Archaeology JFSP"}{Unknown use.}
-#' \item{"Belle Fourche Invasive Research"}{Unknown use.}
-#' \item{"CBI"}{Unknown use.}
-#' \item{"Centennial Invasive Research"}{Unknown use.}
-#' \item{"Control Invasive Research"}{Unknown use.}
-#' \item{"FFI TESTING" }{Unknown use.}
-#' \item{"Highland Creek TH Herbicide Trial"}{Unknown use.}
-#' \item{"IN-ACTIVE"}{Unknown use. Also matches with "In-Active" and "Inactive"}
-#' \item{"Juniper Woodland"}{Unknown use.}
-#' \item{"Lithograph Invasive Research"}{Unknown use.}
-#' \item{"Pringle Dog Town Herbicide Trial"}{Unknown use.}
-#' \item{"Woodland"}{Unknown use.}
 #' }
+#' Other options include c("ABAM Supplemental", "AnnualBrome_Research",
+#'                         "American Elk Invasive Research", "Archaeology JFSP",
+#'                         "Belle Fourche Invasive Research", "CBI",
+#'                         "Centennial Invasive Research", "Control Invasive Research",
+#'                         "FFI TESTING", "Highland Creek TH Herbicide Trial",
+#'                         "IN-ACTIVE", "Juniper Woodland", "Lithograph Invasive Research",
+#'                         "Pringle Dog Town Herbicide Trial", "Woodland")
 #'
 #' @param purpose Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
@@ -99,48 +91,46 @@
 #' \item{"PanelE"}{NGPN PCM Extensive. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO.}
 #' \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 #' \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
-#' \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
-#' \item{"Control"}{Unknown use. Only in MNRR.}
-#' \item{"Daubenmire Plot"}{Unknown use. Only in KNRI.}
-#' \item{"Early Detection"}{Early detection of invasive species. Found in DETO}
-#' \item{"FIRE"}{Unknown use. Found in JECA and KNRI.}
-#' \item{"Fire/I&M Veg Monitoring Plot"}{Unknown use. Found in DETO, KNRI, SCBL, and THRO. ***}
-#' \item{"Fire/IM Pilot Study Plot"}{Unknown use. Only in DETO.}
-#' \item{"FIRE_Dual"}{Unknown use. Only in WICA.}
-#' \item{"FMH Forest Plot"}{Unknown use. Used in BADL, DETO, JECA, KNRI, MORU, SCBL, THRO, WICA. ***}
-#' \item{"FMH Grass Plot"}{Unknown use. Used in AGFO, BADL, DETO, KNRI, SCBL, THRO, WICA. ***}
-#' \item{"FMH Shrub Plot"}{Unknown use. Used in BADL, SCBL, and THRO. ***}
-#' \item{"Forest and Fuels"}{Unknown use. Used in MORU, SCBL, and WICA.}
-#' \item{"Forest Fuels and Vegetation"}{Unknown use. Found in WICA.}
-#' \item{"Forest Plot"}{Unknown use. Found in WICA.}
-#' \item{"ForestStructure"}{Unknown use. Found in KNRI and WICA.}
-#' \item{"FPCM Grassland plot"}{Unknown use. Found in DETO.}
-#' \item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
-#' \item{"FX Extensive"}{Unknown use. Found in WICA.}
-#' \item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
-#' \item{"FX Monitoring"}{Unknown use. Found in AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA.***}
-#' \item{"HTLN Legacy"}{Prairie cluster legacy plots. Found in AGFO and SCBL.}
-#' \item{"I&M_tower_vegetation"}{Unknown use. Found in DETO.}
-#' \item{"IM_FX_Dual"}{Unknown use. Found in DETO.}
-#' \item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
-#' \item{"IM_veg"}{Unknown use. Found in THRO.}
-#' \item{"Invasives Research"}{Unknown use. Found in DETO, JECA, and WICA.}
-#' \item{"Lafferty Plot"}{Unknown use. Found in MORU.}
-#' \item{"LTEM/FMH"}{Unknown use. Found in AGFO.}
-#' \item{"Modified Forest Plot"}{Unknown use. Found in THRO.}
-#' \item{"Modified Shrub Plot"}{Unknown use. Found in THRO.}
-#' \item{"NGP Fire Forest Fuel Veg Protcol"}{Unknown use (note the misspelling of protocol). Found in DETO.}
-#' \item{"NGP Grassland Plot - Interior Burn Unit"}{Unknown use. Found in BADL.}
-#' \item{"Pre- and Post-treatment of fuels"}{Unknown use. Found in JECA.}
-#' \item{"Research"}{Unknown use. Found in WICA.}
-#' \item{"Treatment"}{Unknown use. Found in MNRR.}
+#' }
+#' Other options include c("CBI plot monitoring" (WICA), "Control" (MNRR), "Daubenmire Plot" (KNRI),
+#'                         "Early Detection" (DETO), "FIRE" (JECA, KNRI),
+#'                         "Fire/I&M Veg Monitoring Plot" (DETO, KNRI, SCBL, and THRO),
+#'                         "Fire/IM Pilot Study Plot" (DETO), "FIRE_Dual" (WICA),
+#'                         "FMH Forest Plot" (BADL, DETO, JECA, KNRI, MORU, SCBL, THRO, WICA),
+#'                         "FMH Grass Plot" (AGFO, BADL, DETO, KNRI, SCBL, THRO, WICA),
+#'                         "FMH Shrub Plot" (BADL, SCBL, and THRO), "Forest and Fuels" (MORU, SCBL, and WICA.),
+#'                         "Forest Fuels and Vegetation" (WICA), "Forest Plot" (WICA), "ForestStructure" (KNRI and WICA),
+#'                         "FPCM Grassland plot" (DETO), "FX Dual" (DETO and WICA), "FX Extensive" (WICA),
+#'                         "FX Intensive" (BADL, KNRI, THRO), "FX Monitoring" (AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA),
+#'                         "HTLN Legacy" (AGFO and SCBL), "I&M_tower_vegetation (Found in DETO),
+#'                         "IM_FX_Dual" (DETO), "IM_Intensive" (AGFO, FOUS, and THRO), "IM_veg" (THRO),
+#'                         "Invasives Research" (DETO, JECA, and WICA), "Lafferty Plot" (MORU), "LTEM/FMH" (AGFO),
+#'                         "Modified Forest Plot" (THRO), "Modified Shrub Plot" (THRO),
+#'                         "NGP Fire Forest Fuel Veg Protcol" (DETO), "NGP Grassland Plot - Interior Burn Unit" (BADL),
+#'                         "Pre- and Post-treatment of fuels" (JECA), "Research" (WICA), "Treatment" (MNRR))
+#'
+#' @param mon_status Quoted string. Allows you to select different sampling event status types. Default is "NGPN_VS",
+#' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_VS below). Note
+#' that in the data, the status name starts with year. For simplicity, the years argument pulls out specific years,
+#' and mon_status to pull out different status types without considering year. Valid inputs:
+#' \describe{
+#' \item{"NGPN_VS"}{Default. Pulls in records with status of "####_PlantCommunity", "####_FirePlantCommunity", "####_ForestStructure", #### representing year.}
+#' \item{"PlantCommunity"}{####_PlantCommunity only records}
+#' \item{"FirePlantCommunity"}{####_FirePlantCommunity only records}
+#' \item{"ForestStructure"}{####_ForestStructure only records}
+#'
+#' Other options include c("00Pre", "00Pre2", "01Burn", "01Post", "01Pre", "01yr01", "01yr02",
+#'                         "01yr10", "FireOther_1", "Dual", "FPCM_Other_01", "FPCM_Other_02",
+#'                         "Other", "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
+#'                         "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
+#'                         "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02")
 #' }
 #'
 #' @param years Numeric. Filter on years. Accepted values start at 1997. Default is 2011 to current year,
 #' which represents the time NGPN plant community monitoring began using latest protocol and sample design.
 #'
-#' @param output Quoted string. Options are "short" (default), which only returns most important columns.
-#' "verbose" returns all columns in the MacroPlot database table.
+#' @param output Quoted string. Options are "short" (default), which only returns most important columns;
+#' "verbose" returns all columns in the SampleEvent-related tables .
 #'
 #' @examples
 #' \dontrun{
@@ -155,7 +145,6 @@
 #' # return all samples of NGPN Plant Community Monitoring plots (ie vital signs plots),
 #' # for the Park stratum and all purposes used by NGPN from 2011 and later
 #' samp_vs <- getSampleEvent()
-#' table(macro_vs$RegistrationUnit_Name, macro_vs$ProjectUnit_Name)
 #'
 #' # return Prairie stratum for AGFO and SCBL for NGPN_VS plots
 #' samp_pr_vs <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_VS",
@@ -166,19 +155,18 @@
 #'
 #' # query NGPN only plots from North Dakota from 2020:2024
 #' samp_nd <- getSampleEvent(park = c("FOUS", "KNRI", "THRO"), years = 2020:2024)
-#' table(macro_nd$RegistrationUnit_Name, macro_nd$ProjectUnit_Name)
 #'
 #' # query only North and South Upland for THRO with all columns
 #' thro_up <- getSampleEvent(park = "THRO", project = c("North Upland", "South Upland"),
 #'   output = "verbose")
 #' }
 #'
-#' @return Returns a data frame of macroplots
+#' @return Returns a data frame of sample event data
 #'
 #' @export
 
 getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_VS",
-                           years = 2011:format(Sys.Date(), "%Y"),
+                           mon_stat = "NGPN_VS", years = 2011:format(Sys.Date(), "%Y"),
                            output = "short"){
   #---- Bug handling ----
   park <- match.arg(park, several.ok = TRUE,
@@ -207,6 +195,21 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
                                   "Control Invasive Research", "FFI TESTING", "Highland Creek TH Herbicide Trial",
                                   "IN-ACTIVE", "Juniper Woodland", "Lithograph Invasive Research", "Pringle Dog Town Herbicide Trial",
                                   "Woodland"), several.ok = T)
+
+  mon_status <- match.arg(mon_status, c("NGPN_VS", "PlantCommunity", "FirePlantCommunity",
+                                        "ForestStructure", "00Pre", "00Pre2", "01Burn", "01Post",
+                                        "01Pre", "01yr01", "01yr02", "01yr10", "FireOther_1",
+                                        "Dual", "FPCM_Other_01", "FPCM_Other_02", "Other",
+                                        "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
+                                        "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
+                                        "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02"),
+                          several.ok = TRUE)
+
+  mon_status <- if(all(mon_status %in% "NGPN_VS")){c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
+  } else if(length(mon_status) > 1 & any(mon_status %in% "NGPN_VS")){
+    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", mon_status[!mon_status %in% "NGPN_VS"])
+  } else {mon_status}
+
   stopifnot(class(years) %in% c("numeric", "integer"), years >= 1997)
   output <- match.arg(output, c("short", "verbose"))
 
@@ -235,8 +238,17 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   macro_guids <- unique(macro$MacroPlot_GUID)
   macro_proj_guids <- unique(macro$MM_ProjectUnit_GUID)
 
+  # Fix typo in MonitoringStatus_Name
+  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2009_Plant Community"] <- "2009_PlantCommunity"
+  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2018_Plant Community"] <- "2018_PlantCommunity"
+  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2024_Plant Community"] <- "2024_PlantCommunity"
+
+  # filter on monitoring status with grepl
+  mon_stat_list <- paste(mon_status, collapse = "|")
+  monstat2 <- monstat1[grepl(mon_stat_list, monstat1$MonitoringStatus_Name),]
+
   sampev <- sampev1[sampev1$SampleEvent_Plot_GUID %in% macro_guids,]
-  monstat <- monstat1[monstat1$MonitoringStatus_ProjectUnit_GUID %in% macro_proj_guids,]
+  monstat <- monstat2[monstat2$MonitoringStatus_ProjectUnit_GUID %in% macro_proj_guids,]
 
   mac_samp <- left_join(macro, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"))
   mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID",

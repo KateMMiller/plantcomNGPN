@@ -118,5 +118,9 @@ macro_vs <- getMacroPlot()
 # Plots in MacroPlot table that don't have a corresponding SampleEvent:
 #MORU_PCM_066; THRON_PCM_010; THRON_PCM_020; THRON_PCM_021; THRON_PCM_043; THROS_PCM_0029; THROS_PCM_0086
 
+# MonitoringStatus_Name fixes: 14 plots in the MonitoringStatus table have a non-standard name: 
+# 2009_Plant Community; 2018_Plant Community; 2024_Plant Community.
+
+
 ```
 

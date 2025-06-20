@@ -30,15 +30,16 @@ getMacroPlot(
 }}
 
 \item{plot_name}{Quoted string to return a particular plot based on name. Default is "all", which if
-purpose and project are set to "NGPN_VS" (default), then only NGPN Plant Community Monitoring plots will be included.
+purpose is set to "NGPN_VS" (default), and project is set to "Park" (default), then only NGPN Plant Community
+Monitoring plots (e.g.,macroplots with "_PCM_", "_FPCM_", "_LPCM_", and "_RCM_" in their names) will be included.
 Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 function will error out with a list of unmatched plot names.}
 
 \item{project}{Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
-typically is the stratum a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+typically is the strata a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
 c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
-plots fall in multiple strata, such as Park and Native Prairie in AGFO. In those cases, the Park stratum is
-selected by default. If a user wants a different stratum than Park, that can be specified using the codes below.
+plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
+selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
 Valid inputs:
 \describe{
 \item{'all'}{Pull in all project types.}
@@ -79,27 +80,23 @@ Valid inputs:
 
 \item{purpose}{Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
-standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring". The following purposes
+standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
 that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
 "_FPCM_", "_LPCM_", and "_RCM_") in their name.
 \describe{
 \item{"all"}{All plots in imported FFI database}
-\item{"NGPN_VS"}{NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
-\item{"Panel1"}{NGPN Vegetation Monitoring Panel 1}
-\item{"Panel2"}{NGPN Vegetation Monitoring Panel 2}
-\item{"Panel3"}{NGPN Vegetation Monitoring Panel 3}
-\item{"Panel4"}{NGPN Vegetation Monitoring Panel 4}
-\item{"Panel5"}{NGPN Vegetation Monitoring Panel 5}
-\item{"Panel6"}{NGPN Vegetation Monitoring Panel 6}
-\item{"Panel7"}{NGPN Vegetation Monitoring Panel 7}
-\item{"Panel8"}{NGPN Vegetation Monitoring Panel 8}
-\item{"Panel9"}{NGPN Vegetation Monitoring Panel 9}
-\item{"Panel10"}{NGPN Vegetation Monitoring Panel 10}
-\item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
-\item{"IM_veg"}{Unknown use. Found in THRO.}
-\item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
-\item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
-\item{"FX Extensive"}{Unknown use. Found in WICA.}
+\item{"NGPN_VS"}{Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+\item{"Panel1"}{NGPN PCM Panel 1}
+\item{"Panel2"}{NGPN PCM Panel 2}
+\item{"Panel3"}{NGPN PCM Panel 3}
+\item{"Panel4"}{NGPN PCM Panel 4}
+\item{"Panel5"}{NGPN PCM Panel 5}
+\item{"Panel6"}{NGPN PCM Panel 6}
+\item{"Panel7"}{NGPN PCM Panel 7}
+\item{"Panel8"}{NGPN PCM Panel 8}
+\item{"Panel9"}{NGPN PCM Panel 9}
+\item{"Panel10"}{NGPN PCM Panel 10}
+\item{"PanelE"}{NGPN PCM Extensive. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO.}
 \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
 \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
@@ -118,11 +115,15 @@ that can be specified are below. By default, "NGPN_VS" plots are selected, which
 \item{"Forest Plot"}{Unknown use. Found in WICA.}
 \item{"ForestStructure"}{Unknown use. Found in KNRI and WICA.}
 \item{"FPCM Grassland plot"}{Unknown use. Found in DETO.}
-\item{"FS"}{Unknown use. Found in KNRI.}
+\item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
+\item{"FX Extensive"}{Unknown use. Found in WICA.}
+\item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
 \item{"FX Monitoring"}{Unknown use. Found in AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA.***}
 \item{"HTLN Legacy"}{Prairie cluster legacy plots. Found in AGFO and SCBL.}
 \item{"I&M_tower_vegetation"}{Unknown use. Found in DETO.}
 \item{"IM_FX_Dual"}{Unknown use. Found in DETO.}
+\item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
+\item{"IM_veg"}{Unknown use. Found in THRO.}
 \item{"Invasives Research"}{Unknown use. Found in DETO, JECA, and WICA.}
 \item{"Lafferty Plot"}{Unknown use. Found in MORU.}
 \item{"LTEM/FMH"}{Unknown use. Found in AGFO.}
@@ -130,7 +131,6 @@ that can be specified are below. By default, "NGPN_VS" plots are selected, which
 \item{"Modified Shrub Plot"}{Unknown use. Found in THRO.}
 \item{"NGP Fire Forest Fuel Veg Protcol"}{Unknown use (note the misspelling of protocol). Found in DETO.}
 \item{"NGP Grassland Plot - Interior Burn Unit"}{Unknown use. Found in BADL.}
-\item{"PanelE"}{Unknown use. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO ***}
 \item{"Pre- and Post-treatment of fuels"}{Unknown use. Found in JECA.}
 \item{"Research"}{Unknown use. Found in WICA.}
 \item{"Treatment"}{Unknown use. Found in MNRR.}
@@ -146,7 +146,9 @@ Returns a data frame of macroplots
 This function filters FFI macroplot data by park, plot name, project, and purpose.
 This function was primarily developed to pull out NGPN plant community monitoring plots. Using
 combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
-tested as thoroughly, and may not return intended results in every case.
+tested as thoroughly, and may not return intended results in every case. Note that this is more
+of an internal function that other data-related get files source to correctly link table and
+filter on records.
 }
 \examples{
 \dontrun{
@@ -176,8 +178,9 @@ table(macro$RegistrationUnit_Name, macro$ProjectUnit_Name)
 macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"))
 table(macro_nd$RegistrationUnit_Name, macro_nd$ProjectUnit_Name)
 
-# query only the Prairie stratum for PARK X
-# ADD EXAMPLE
+# query only North and South Upland for HTRO
+thro_up <- getMacroPlot(park = "THRO", project = c("North Upland", "South Upland"))
+
 }
 
 }

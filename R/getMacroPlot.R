@@ -3,7 +3,9 @@
 #' @description This function filters FFI macroplot data by park, plot name, project, and purpose.
 #' This function was primarily developed to pull out NGPN plant community monitoring plots. Using
 #' combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
-#' tested as thoroughly, and may not return intended results in every case.
+#' tested as thoroughly, and may not return intended results in every case. Note that this is more
+#' of an internal function that other data-related get files source to correctly link table and
+#' filter on records.
 #'
 #' @importFrom dplyr left_join
 #'
@@ -24,15 +26,16 @@
 #'}
 #'
 #' @param plot_name Quoted string to return a particular plot based on name. Default is "all", which if
-#' purpose and project are set to "NGPN_VS" (default), then only NGPN Plant Community Monitoring plots will be included.
+#' purpose is set to "NGPN_VS" (default), and project is set to "Park" (default), then only NGPN Plant Community
+#' Monitoring plots (e.g.,macroplots with "_PCM_", "_FPCM_", "_LPCM_", and "_RCM_" in their names) will be included.
 #' Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 #' function will error out with a list of unmatched plot names.
 #'
 #' @param project Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
-#' typically is the stratum a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+#' typically is the strata a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
 #' c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
-#' plots fall in multiple strata, such as Park and Native Prairie in AGFO. In those cases, the Park stratum is
-#' selected by default. If a user wants a different stratum than Park, that can be specified using the codes below.
+#' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
+#' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
 #' Valid inputs:
 #' \describe{
 #' \item{'all'}{Pull in all project types.}
@@ -73,27 +76,23 @@
 #'
 #' @param purpose Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
-#' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring". The following purposes
+#' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
 #' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
 #' "_FPCM_", "_LPCM_", and "_RCM_") in their name.
 #' \describe{
 #' \item{"all"}{All plots in imported FFI database}
-#' \item{"NGPN_VS"}{NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
-#' \item{"Panel1"}{NGPN Vegetation Monitoring Panel 1}
-#' \item{"Panel2"}{NGPN Vegetation Monitoring Panel 2}
-#' \item{"Panel3"}{NGPN Vegetation Monitoring Panel 3}
-#' \item{"Panel4"}{NGPN Vegetation Monitoring Panel 4}
-#' \item{"Panel5"}{NGPN Vegetation Monitoring Panel 5}
-#' \item{"Panel6"}{NGPN Vegetation Monitoring Panel 6}
-#' \item{"Panel7"}{NGPN Vegetation Monitoring Panel 7}
-#' \item{"Panel8"}{NGPN Vegetation Monitoring Panel 8}
-#' \item{"Panel9"}{NGPN Vegetation Monitoring Panel 9}
-#' \item{"Panel10"}{NGPN Vegetation Monitoring Panel 10}
-#' \item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
-#' \item{"IM_veg"}{Unknown use. Found in THRO.}
-#' \item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
-#' \item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
-#' \item{"FX Extensive"}{Unknown use. Found in WICA.}
+#' \item{"NGPN_VS"}{Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+#' \item{"Panel1"}{NGPN PCM Panel 1}
+#' \item{"Panel2"}{NGPN PCM Panel 2}
+#' \item{"Panel3"}{NGPN PCM Panel 3}
+#' \item{"Panel4"}{NGPN PCM Panel 4}
+#' \item{"Panel5"}{NGPN PCM Panel 5}
+#' \item{"Panel6"}{NGPN PCM Panel 6}
+#' \item{"Panel7"}{NGPN PCM Panel 7}
+#' \item{"Panel8"}{NGPN PCM Panel 8}
+#' \item{"Panel9"}{NGPN PCM Panel 9}
+#' \item{"Panel10"}{NGPN PCM Panel 10}
+#' \item{"PanelE"}{NGPN PCM Extensive. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO.}
 #' \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
 #' \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
 #' \item{"CBI plot monitoring"}{Unknown use. Only in WICA.}
@@ -112,11 +111,15 @@
 #' \item{"Forest Plot"}{Unknown use. Found in WICA.}
 #' \item{"ForestStructure"}{Unknown use. Found in KNRI and WICA.}
 #' \item{"FPCM Grassland plot"}{Unknown use. Found in DETO.}
-#' \item{"FS"}{Unknown use. Found in KNRI.}
+#' \item{"FX Dual"}{Unknown use. Found in DETO and WICA.}
+#' \item{"FX Extensive"}{Unknown use. Found in WICA.}
+#' \item{"FX Intensive"}{Unknown use. Found in BADL, KNRI, THRO.}
 #' \item{"FX Monitoring"}{Unknown use. Found in AGFO, BADL, DETO, FOUS, KNRI, MORU, SCBL, THRO, and WICA.***}
 #' \item{"HTLN Legacy"}{Prairie cluster legacy plots. Found in AGFO and SCBL.}
 #' \item{"I&M_tower_vegetation"}{Unknown use. Found in DETO.}
 #' \item{"IM_FX_Dual"}{Unknown use. Found in DETO.}
+#' \item{"IM_Intensive"}{Unknown use. Found in AGFO, FOUS, and THRO.}
+#' \item{"IM_veg"}{Unknown use. Found in THRO.}
 #' \item{"Invasives Research"}{Unknown use. Found in DETO, JECA, and WICA.}
 #' \item{"Lafferty Plot"}{Unknown use. Found in MORU.}
 #' \item{"LTEM/FMH"}{Unknown use. Found in AGFO.}
@@ -124,7 +127,6 @@
 #' \item{"Modified Shrub Plot"}{Unknown use. Found in THRO.}
 #' \item{"NGP Fire Forest Fuel Veg Protcol"}{Unknown use (note the misspelling of protocol). Found in DETO.}
 #' \item{"NGP Grassland Plot - Interior Burn Unit"}{Unknown use. Found in BADL.}
-#' \item{"PanelE"}{Unknown use. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO ***}
 #' \item{"Pre- and Post-treatment of fuels"}{Unknown use. Found in JECA.}
 #' \item{"Research"}{Unknown use. Found in WICA.}
 #' \item{"Treatment"}{Unknown use. Found in MNRR.}
@@ -161,8 +163,9 @@
 #' macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"))
 #' table(macro_nd$RegistrationUnit_Name, macro_nd$ProjectUnit_Name)
 #'
-#' # query only the Prairie stratum for PARK X
-#' # ADD EXAMPLE
+#' # query only North and South Upland for HTRO
+#' thro_up <- getMacroPlot(park = "THRO", project = c("North Upland", "South Upland"))
+#'
 #' }
 #'
 #' @return Returns a data frame of macroplots
@@ -177,32 +180,19 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                       "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA"))
   if(any(park == "all")){park = c("AGFO", "BADL", "DETO", "FOLA", "FOUS",
                                   "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA")} else {park}
-  purpose <- match.arg(purpose, c("all", "NGPN_VS",
-                                  "ABAM Supplemental", "AnnualBromeResearch",
-                                  "CBI plot monitoring", "Control", "Daubenmire Plot",
-                                  "Determine strategies for efficient early detection",
-                                  "Determine Strategies for efficient early detection",
-                                  "Early Invasives Detection",
-                                  "FIRE", "Fire Effects Monitoring", "Fire/I&M Veg Monitoring Plot",
-                                  "Fire/IM Pilot Study Plot", "FIRE_Dual",
-                                  "FIRE_Extensive", "FIRE_Intensive", "FIRE_intesive",
-                                  "FS", "Fx", "FX","FX Dual", "FX monitoring", "FX Monitoring", "FX_ Intensive",
-                                  "FX_Dual", "FX_Intensive", "I&M_tower_vegetation", "IM_FX_Dual",
-                                  "IM_Intensive", "IM_veg",
-                                  "FMH Forest Plot", "FMH Grass Plot", "FMH Grass Plot ",
-                                  "FMH Shrub Plot", "Forest and Fuels", "Forest Fuels and Vegetation",
-                                  "LTEM/FMH",
-                                  "Forest Plot", "ForestStructure", "FPCM Grassland plot",
-                                  "HTLN Legacy",
-                                  "invasive research", "Invasives Research", "Invasvies Research",
-                                  "Lafferty Plot", "Lafferty Plot ",
-                                  "Modified Forest Plot", "Modified Shrub Plot", "Modified Shrub Plot ",
-                                  "NGP Fire Forest Fuel Veg Protcol", "NGP Grassland Plot - Interior Burn Unit",
-                                  "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
-                                  "Panel6", "Panel7", "Panel8", "Panel9", "Panel 9", "Panel10",
-                                  "PanelE",
-                                  "pre- and post-treatment forest and fuels", "Pre- and Post-treatment of fuels",
-                                  "research", "Research", "Treatment"), several.ok = TRUE)
+  purpose <- match.arg(purpose, c("all", "NGPN_VS", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
+                                   "Panel6", "Panel7", "Panel8", "Panel9", "Panel10", "PanelE",
+                                   "ABAM Supplemental", "AnnualBromeResearch", "CBI plot monitoring",
+                                   "Control", "Daubenmire Plot", "Early Detection", "FIRE",
+                                   "Fire/I&M Veg Monitoring Plot", "Fire/IM Pilot Study Plot",
+                                   "FIRE_Dual", "FMH Forest Plot", "FMH Grass Plot", "FMH Shrub Plot",
+                                   "Forest and Fuels", "Forest Fuels and Vegetation", "Forest Plot",
+                                   "ForestStructure", "FPCM Grassland plot", "FX Dual", "FX Extensive",
+                                   "FX Intensive", "FX Monitoring", "HTLN Legacy", "I&M_tower_vegetation",
+                                   "IM_FX_Dual", "IM_Intensive", "IM_veg", "Invasives Research", "Lafferty Plot",
+                                   "LTEM/FMH", "Modified Forest Plot", "Modified Shrub Plot",
+                                   "NGP Fire Forest Fuel Veg Protcol", "NGP Grassland Plot - Interior Burn Unit",
+                                   "Pre- and Post-treatment of fuels", "Research", "Treatment"), several.ok = TRUE)
   project <- match.arg(project, c('all', "Park", "ABAM", "Bodmer", "Cedar Removal Study", "Deciduous Woodland",
                                   "Fort", "Monitoring", "Native Prairie", "North Riparian", "North Upland", "North Unit",
                                   "Pine Forest", "Prairie", "Riparian", "Shrubland", "South Riparian", "South Upland",
@@ -223,11 +213,11 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
     mm_projunit <- get("MM_ProjectUnit_MacroPlot", envir = env),
     error = function(e){stop("MM_ProjectUnit_MacroPlot table not found. Please import data.")})
   tryCatch(
-    regunit <- get("RegistrationUnit", envir = env),
-    error = function(e){stop("RegistrationUnit table not found. Please import data.")})
-  tryCatch(
     projunit <- get("ProjectUnit", envir = env),
     error = function(e){stop("ProjectUnit table not found. Please import data.")})
+  tryCatch(
+    regunit <- get("RegistrationUnit", envir = env),
+    error = function(e){stop("RegistrationUnit table not found. Please import data.")})
 
   # Standardize purpose and project across dataset
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose == "Panel 9"] <- "Panel9"
@@ -250,10 +240,10 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                                                            "pre- and post-treatment forest and fuels")] <- "Pre and post fuels treatment"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FS")] <- "ForestStructure" # KNRI_PCM_038
 
-  projunit_orig$ProjectUnit_Name[projunit_orig$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "IN-ACTIVE"
+  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "IN-ACTIVE"
 
   # cleanup project and projectunit data
-  projunit_orig$ProjectUnit_Agency <- "NPS"
+  projunit$ProjectUnit_Agency <- "NPS"
   NGPN_plots <- macro_orig$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro_orig$MacroPlot_Name)]
 
   # Check that specified plot_name matches at least one record in the macroplot table
@@ -286,9 +276,9 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                       by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
   macro2 <- left_join(macro1, regunit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
   macro3 <- left_join(macro2, projunit,
-                       by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
-                              "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
-                              "datasource"))
+                      by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
+                             "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
+                             "datasource"))
   # filter on park
   macro4 <- macro3[macro3$RegistrationUnit_Name %in% park,]
 
@@ -315,6 +305,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                  "MacroPlot_Purpose", "MacroPlot_Type", "ProjectUnit_Name", "ProjectUnit_Agency",
                  "ProjectUnit_Description",
                  "MacroPlot_UTM_X", "MacroPlot_UTM_Y", "MacroPlot_UTMzone", "MacroPlot_Datum",
+                 "MacroPlot_DD_Lat", "MacroPlot_DD_Long",
                  "MacroPlot_Elevation", "MacroPlot_ElevationUnits", "MacroPlot_Azimuth", "MacroPlot_Aspect",
                  "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
                  "MacroPlot_StartPoint", "MacroPlot_Directions", "MacroPlot_Comment",

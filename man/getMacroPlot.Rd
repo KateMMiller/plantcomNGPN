@@ -147,7 +147,7 @@ This function filters FFI macroplot data by park, plot name, project, and purpos
 This function was primarily developed to pull out NGPN plant community monitoring plots. Using
 combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
 tested as thoroughly, and may not return intended results in every case. Note that this is more
-of an internal function that other data-related get files source to correctly link table and
+of an internal function that other data-related getter functions source to correctly link table and
 filter on records.
 }
 \examples{

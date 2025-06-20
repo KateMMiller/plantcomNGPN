@@ -152,7 +152,9 @@ and year. This function was primarily developed to pull out NGPN plant community
 monitoring plots and NGPN PCM vital signs sampling events. Using combinations of plot names,
 projects or purposes that are outside NGPN PCM plots hasn't been tested as thoroughly, and may
 not return intended results in every case. Note that plots in the MacroPlot table that don't have
-a corresponding record in the SampleEvent table are not returned.
+a corresponding record in the SampleEvent table are not returned. Note that this is more
+of an internal function that other data-related getter functions source to correctly link table and
+filter on records.
 }
 \examples{
 \dontrun{

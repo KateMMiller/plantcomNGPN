@@ -14,19 +14,19 @@
 #' @importFrom dplyr left_join select
 #'
 #' @param park Filter on park code (aka RegistrationUnit_Name). Can select more than one. Valid inputs:
-#' \describe{
-#' \item{"all"}{Include all NGPN parks with FFI data}
-#' \item{"AGFO"}{Agate Fossil Beds National Monument}
-#' \item{"BADL"}{Badlands National Park}
-#' \item{"DETO"}{Devils Tower National Monument}
-#' \item{"FOLA"}{Fort Laramie National Historic Site}
-#' \item{"FOUS"}{Fort Union Trading Post National Historic Site}
-#' \item{"JECA"}{Jewel Cave National Monument}
-#' \item{"KNRI"}{Knife River Indian Villages National Historic Sites}
-#' \item{"MORU"}{Mount Rushmore National Monument}
-#' \item{"SCBL"}{Scotts Bluff National Monument}
-#' \item{"THRO"}{Theodore Roosevelt National Park}
-#' \item{"WICA"}{Wind Cave National Park}
+#' \itemize{
+#' \item{"all":} {Include all NGPN parks with FFI data}
+#' \item{"AGFO":} {Agate Fossil Beds National Monument}
+#' \item{"BADL":} {Badlands National Park}
+#' \item{"DETO":} {Devils Tower National Monument}
+#' \item{"FOLA":} {Fort Laramie National Historic Site}
+#' \item{"FOUS":} {Fort Union Trading Post National Historic Site}
+#' \item{"JECA":} {Jewel Cave National Monument}
+#' \item{"KNRI":} {Knife River Indian Villages National Historic Sites}
+#' \item{"MORU":} {Mount Rushmore National Monument}
+#' \item{"SCBL":} {Scotts Bluff National Monument}
+#' \item{"THRO":} {Theodore Roosevelt National Park}
+#' \item{"WICA":} {Wind Cave National Park}
 #'}
 #'
 #' @param plot_name Quoted string to return a particular plot based on name. Default is "all", which if
@@ -41,26 +41,26 @@
 #' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 #' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
 #' Valid inputs:
-#' \describe{
-#' \item{'all'}{Pull in all project types.}
-#' \item{"Park"}{Default. *NGPN VS* stratum covering whole park.}
-#' \item{"ABAM"}{*NGPN VS* stratum in WICA.}
-#' \item{"Bodmer"}{*NGPN VS* stratum in FOUS.}
-#' \item{"Cedar Removal Study"}{*NGPN VS* in MNRR.}
-#' \item{"Deciduous Woodland"}{*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
-#' \item{"Fort"}{*NGPN VS* stratum in FOUS.}
-#' \item{"Monitoring"}{*NGPN VS* stratum in MNRR.}
-#' \item{"Native Prairie"}{*NGPN VS* stratum in AGFO.}
-#' \item{"North Riparian"}{*NGPN VS* stratum in THRO.}
-#' \item{"North Upland"}{*NGPN VS* stratum in THRO.}
-#' \item{"North Unit"}{*NGPN VS* stratum in BADL.}
-#' \item{"Pine Forest"}{*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
-#' \item{"Prairie"}{*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
-#' \item{"Riparian"}{*NGPN VS* stratum in AGFO, DETO, and FOLA.}
-#' \item{"Shrubland"}{*NGPN VS* stratum in THRO.}
-#' \item{"South Riparian"}{*NGPN VS* stratum in THRO.}
-#' \item{"South Upland"}{*NGPN VS* stratum in THRO.}
-#' \item{"Upland"}{*NGPN VS* stratum in DETO and FOLA.}
+#' \itemize{
+#' \item{'all':} {Pull in all project types.}
+#' \item{"Park":} {Default. *NGPN VS* stratum covering whole park.}
+#' \item{"ABAM":} {*NGPN VS* stratum in WICA.}
+#' \item{"Bodmer":} {*NGPN VS* stratum in FOUS.}
+#' \item{"Cedar Removal Study":} {*NGPN VS* in MNRR.}
+#' \item{"Deciduous Woodland":} {*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
+#' \item{"Fort":} {*NGPN VS* stratum in FOUS.}
+#' \item{"Monitoring"} {*NGPN VS* stratum in MNRR.}
+#' \item{"Native Prairie":} {*NGPN VS* stratum in AGFO.}
+#' \item{"North Riparian":} {*NGPN VS* stratum in THRO.}
+#' \item{"North Upland":} {*NGPN VS* stratum in THRO.}
+#' \item{"North Unit":} {*NGPN VS* stratum in BADL.}
+#' \item{"Pine Forest":} {*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
+#' \item{"Prairie":} {*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
+#' \item{"Riparian":} {*NGPN VS* stratum in AGFO, DETO, and FOLA.}
+#' \item{"Shrubland":} {*NGPN VS* stratum in THRO.}
+#' \item{"South Riparian":} {*NGPN VS* stratum in THRO.}
+#' \item{"South Upland":} {*NGPN VS* stratum in THRO.}
+#' \item{"Upland":} {*NGPN VS* stratum in DETO and FOLA.}
 #' }
 #' Other options include c("ABAM Supplemental", "AnnualBrome_Research",
 #'                         "American Elk Invasive Research", "Archaeology JFSP",
@@ -75,22 +75,22 @@
 #' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
 #' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
 #' "_FPCM_", "_LPCM_", and "_RCM_") in their name.
-#' \describe{
-#' \item{"all"}{All plots in imported FFI database}
-#' \item{"NGPN_VS"}{Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
-#' \item{"Panel1"}{NGPN PCM Panel 1}
-#' \item{"Panel2"}{NGPN PCM Panel 2}
-#' \item{"Panel3"}{NGPN PCM Panel 3}
-#' \item{"Panel4"}{NGPN PCM Panel 4}
-#' \item{"Panel5"}{NGPN PCM Panel 5}
-#' \item{"Panel6"}{NGPN PCM Panel 6}
-#' \item{"Panel7"}{NGPN PCM Panel 7}
-#' \item{"Panel8"}{NGPN PCM Panel 8}
-#' \item{"Panel9"}{NGPN PCM Panel 9}
-#' \item{"Panel10"}{NGPN PCM Panel 10}
-#' \item{"PanelE"}{NGPN PCM Extensive. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO.}
-#' \item{"ABAM Supplemental"}{Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
-#' \item{"AnnualBromeResearch"}{Annual Brome Research in BADL and SCBL}
+#' \itemize{
+#' \item{"all":} {All plots in imported FFI database}
+#' \item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+#' \item{"Panel1":} {NGPN PCM Panel 1}
+#' \item{"Panel2":} {NGPN PCM Panel 2}
+#' \item{"Panel3":} {NGPN PCM Panel 3}
+#' \item{"Panel4":} {NGPN PCM Panel 4}
+#' \item{"Panel5":} {NGPN PCM Panel 5}
+#' \item{"Panel6":} {NGPN PCM Panel 6}
+#' \item{"Panel7":} {NGPN PCM Panel 7}
+#' \item{"Panel8":} {NGPN PCM Panel 8}
+#' \item{"Panel9":} {NGPN PCM Panel 9}
+#' \item{"Panel10":} {NGPN PCM Panel 10}
+#' \item{"PanelE":} {NGPN PCM Extensive. Found in DETO, FOLA, JECA, MORU, SCBL, and THRO.}
+#' \item{"ABAM Supplemental":} {Supplemental plots related to ABAM. Only found in BADL, FOLA, and WICA}
+#' \item{"AnnualBromeResearch":} {Annual Brome Research in BADL and SCBL}
 #' }
 #' Other options include c("CBI plot monitoring" (WICA), "Control" (MNRR), "Daubenmire Plot" (KNRI),
 #'                         "Early Detection" (DETO), "FIRE" (JECA, KNRI),
@@ -113,24 +113,24 @@
 #' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_VS below). Note
 #' that in the data, the status name starts with year. For simplicity, the years argument pulls out specific years,
 #' and mon_status to pull out different status types without considering year. Valid inputs:
-#' \describe{
-#' \item{"NGPN_VS"}{Default. Pulls in records with status of "####_PlantCommunity", "####_FirePlantCommunity", "####_ForestStructure", #### representing year.}
-#' \item{"PlantCommunity"}{####_PlantCommunity only records}
-#' \item{"FirePlantCommunity"}{####_FirePlantCommunity only records}
-#' \item{"ForestStructure"}{####_ForestStructure only records}
-#'
+#' \itemize{
+#' \item{"NGPN_VS":} {Default. Pulls in records with status of "####_PlantCommunity", "####_FirePlantCommunity", "####_ForestStructure", #### representing year.}
+#' \item{"PlantCommunity":} {####_PlantCommunity only records}
+#' \item{"FirePlantCommunity":} {####_FirePlantCommunity only records}
+#' \item{"ForestStructure":} {####_ForestStructure only records}
+#' }
 #' Other options include c("00Pre", "00Pre2", "01Burn", "01Post", "01Pre", "01yr01", "01yr02",
 #'                         "01yr10", "FireOther_1", "Dual", "FPCM_Other_01", "FPCM_Other_02",
 #'                         "Other", "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
 #'                         "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
 #'                         "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02")
-#' }
+#'
 #'
 #' @param years Numeric. Filter on years. Accepted values start at 1997. Default is 2011 to current year,
 #' which represents the time NGPN plant community monitoring began using latest protocol and sample design.
 #'
 #' @param output Quoted string. Options are "short" (default), which only returns most important columns;
-#' "verbose" returns all columns in the SampleEvent-related tables .
+#' "verbose" returns all columns in the SampleEvent-related tables.
 #'
 #' @examples
 #' \dontrun{

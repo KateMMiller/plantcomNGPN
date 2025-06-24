@@ -36,8 +36,9 @@
 #' c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
 #' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 #' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
+#' If new projects are added in the future, they will need to be added to the bug handling code in the function.
 #' Valid inputs:
-##' \itemize{
+#' \itemize{
 #' \item{'all':} {Pull in all project types.}
 #' \item{"Park":} {Default. *NGPN VS* stratum covering whole park.}
 #' \item{"ABAM":} {*NGPN VS* stratum in WICA.}
@@ -70,7 +71,8 @@
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
 #' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
 #' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
-#' "_FPCM_", "_LPCM_", and "_RCM_") in their name.
+#' "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
+#' to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
 #' \item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}

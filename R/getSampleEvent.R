@@ -6,7 +6,7 @@
 #' and year. This function was primarily developed to pull out NGPN plant community
 #' monitoring plots and NGPN PCM vital signs sampling events. Using combinations of plot names,
 #' projects or purposes that are outside NGPN PCM plots hasn't been tested as thoroughly, and may
-#' not return intended results in every case. Note that plots in the MacroPlot table that don't have
+#' not return intended results in every case. Plots in the MacroPlot table that don't have
 #' a corresponding record in the SampleEvent table are not returned. Note that this is more
 #' of an internal function that other data-related getter functions source to correctly link table and
 #' filter on records.
@@ -40,6 +40,7 @@
 #' c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
 #' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 #' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
+#' If new projects are added in the future, they will need to be added to the bug handling code in the function.
 #' Valid inputs:
 #' \itemize{
 #' \item{'all':} {Pull in all project types.}
@@ -74,7 +75,8 @@
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
 #' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
 #' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
-#' "_FPCM_", "_LPCM_", and "_RCM_") in their name.
+#' "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
+#' to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
 #' \item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
@@ -112,7 +114,8 @@
 #' @param mon_status Quoted string. Allows you to select different sampling event status types. Default is "NGPN_VS",
 #' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_VS below). Note
 #' that in the data, the status name starts with year. For simplicity, the years argument pulls out specific years,
-#' and mon_status to pull out different status types without considering year. Valid inputs:
+#' and mon_status to pull out different status types without considering year. If new monitoring statuses are added,
+#' they will need to be added to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"NGPN_VS":} {Default. Pulls in records with status of "####_PlantCommunity", "####_FirePlantCommunity", "####_ForestStructure", #### representing year.}
 #' \item{"PlantCommunity":} {####_PlantCommunity only records}
@@ -261,12 +264,9 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   mac_samp_monstat$SampleEvent_Date <-
     format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
            "%Y-%m-%d")
-  mac_samp_monstat$year <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"),
-                             "%Y")
-  mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"),
-                                  "%m")
-  mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"),
-                                  "%j")
+  mac_samp_monstat$year <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+  mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
+  mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
 
   keep_cols <- c("MacroPlot_Name", "RegistrationUnit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
                  "ProjectUnit_Name", "MacroPlot_UTM_X", "MacroPlot_UTM_Y",

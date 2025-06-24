@@ -34,7 +34,7 @@ importData(type = 'local',
 ```
 
 #### Plot List {.tabset}
-WIP- add a table that shows the list of plots for each park, plus a year column showing when it was sampled.
+WIP- add a table that shows the list of plots for each park, plus a year column showing when it was sampled (and if I think that was sampled as part of NGPN VS monitoring).
 ```{r}
 macro <- NGPN_tables$MacroPlot
 plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
@@ -113,7 +113,115 @@ macro_vs <- getMacroPlot()
 # THROS_PCM_0069 Macroplot_SlopeHill and _SlopeTransect has some 9999
 ```
 
+#### Monitoring Status
+```{r}
+macro_guids <- unique(macro_plots$MacroPlot_GUID) # NGPN macroplot_guids for filter
+mm_projunit <- NGPN_tables$MM_ProjectUnit_MacroPlot
+regunit <- NGPN_tables$RegistrationUnit
+projunit <- NGPN_tables$ProjectUnit
+monstat <- NGPN_tables$MonitoringStatus
+mm_monstat_se = NGPN_tables$MM_MonitoringStatus_SampleEvent
+sampev <- NGPN_tables$SampleEvent |> filter(SampleEvent_Plot_GUID %in% macro_guids)
+
+macro1 <- left_join(macro_plots, mm_projunit,
+                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
+macro2 <- left_join(macro1, regunit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
+macro3 <- left_join(macro2, projunit,
+                    by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
+                           "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
+                           "datasource")) |> unique()
+
+mac_samp <- left_join(macro3, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID", "datasource"), 
+                      relationship = "many-to-many")
+mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by= c("SampleEvent_GUID" = "MM_SampleEvent_GUID", "datasource"),
+                         relationship = 'many-to-many')
+mac_samp_monstat <- left_join(mac_samp_mm, monstat,
+                              by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
+                                     "datasource"))
+mac_samp_monstat$SampleEvent_Date <-
+  format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
+        "%Y-%m-%d")
+mac_samp_monstat$year <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
+mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
+
+keep_cols <- c("MacroPlot_Name", "RegistrationUnit_Name", "MacroPlot_Purpose", "MacroPlot_Type", 
+               #"ProjectUnit_Name", 
+               "MacroPlot_UTM_X", "MacroPlot_UTM_Y",
+               "MacroPlot_DD_Lat", "MacroPlot_DD_Long", "MacroPlot_Elevation",
+               "MacroPlot_Aspect", "MacroPlot_Azimuth", "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
+               "SampleEvent_Date", "year", "month", "doy", #"SampleEvent_DefaultMonitoringStatus",
+               "MonitoringStatus_Name", "MonitoringStatus_UV1",
+               "MacroPlot_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID")
+
+mac_samp_monstat2 <- mac_samp_monstat[,keep_cols]
+mac_samp_monstat3 <- mac_samp_monstat2 |> filter(year >= 2011) |> 
+  select(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name) |> unique() |> 
+  group_by(MacroPlot_Name, SampleEvent_Date, year, #ProjectUnit_Name, 
+           MonitoringStatus_Name, #SampleEvent_DefaultMonitoringStatus,
+           ) |> 
+  summarize(num_samps = sum(!is.na(SampleEvent_Date)), .groups = 'drop')
+
+mac_samp_monstat3$year_match <- 
+  ifelse(substr(mac_samp_monstat3$MonitoringStatus_Name, 1, 4) %in% 2010:2024, 1, 0)
+
+mac_samp_monstat4 <- mac_samp_monstat3 |> 
+  filter(year_match == 1) |> 
+  filter(nchar(MonitoringStatus_Name) > 4) |> 
+  filter(!grepl("Other", MonitoringStatus_Name)) |> 
+  group_by(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name) |> 
+  summarize(num_samps = sum(!is.na(year)), .groups = 'drop')  
+  
+mac_samp_monstat4$year_mismatch <- ifelse(
+  mac_samp_monstat4$year != substr(mac_samp_monstat4$MonitoringStatus_Name, 1, 4), 1, 0)
+
+monstat_yr_mismatch <- mac_samp_monstat4 |> filter(year_mismatch == 1) |> select(-num_samps, -year_mismatch, -monstat)
+
+kbl_monstat_yr_mismatch <- kable(monstat_yr_mismatch, format = "html", align = 'c',
+                  caption = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.") |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
+                full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(monstat_yr_mismatch), border_left = "1px solid grey", border_right = "1px solid grey")
+
+mac_samp_monstat4$monstat <- 
+  substr(mac_samp_monstat4$MonitoringStatus_Name, 6, nchar(mac_samp_monstat4$MonitoringStatus_Name))
+
+monstat_typo <- mac_samp_monstat4 |> group_by(MacroPlot_Name, monstat) |> 
+  summarize(years = paste0(year, collapse = ", "),
+            .groups = 'drop') |> 
+  pivot_wider(names_from = monstat, values_from = years)
+
+monstat_typo$inconsist <- rowSums(!is.na(monstat_typo[,2:ncol(monstat_typo)])) 
+monstat_incon <- monstat_typo |> filter(inconsist > 1) |> arrange(MacroPlot_Name) |> 
+  filter(inconsist > 1 | !is.na(`Plant Community`) | !is.na(Dual) | !is.na(PCM_Fire) |
+           !is.na(Dual))
+
+monstat_incon2 <- monstat_incon[,c("MacroPlot_Name", sort(names(monstat_incon[,2:(ncol(monstat_incon)-1)])))]
+
+kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
+                  caption = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name. Plots may be used for different monitoring purposes, but also seems some are incorrect. The years in the cell are years that a given monitoring status was recored (eg 2013 in PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity'.") |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
+                full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(monstat_incon2), border_left = "1px solid grey", border_right = "1px solid grey")
+
+# incon_plot_list <- unique(monstat_incon2$MacroPlot_Name)
+# 
+# monstat_incon_full <- mac_samp_monstat4 |> filter(MacroPlot_Name %in% incon_plot_list) |> 
+#   select(-num_samps) |> arrange(MacroPlot_Name, year, MonitoringStatus_Name)
+
+
+```
+
 #### Sample Event Checks
+```{r}
+kbl_monstat_yr_mismatch
+```
+
+```{r}
+kbl_monstat_incon
+```
+
+
 ```{r}
 # Plots in MacroPlot table that don't have a corresponding SampleEvent:
 #MORU_PCM_066; THRON_PCM_010; THRON_PCM_020; THRON_PCM_021; THRON_PCM_043; THROS_PCM_0029; THROS_PCM_0086
@@ -126,5 +234,14 @@ macro_vs <- getMacroPlot()
 # Check covpts_attr$Index has a bunch of blanks in it.
 
 # the join to cover point attributes to cover point sample then sample events, causes many-to-many join in the sample events table. Need to figure out why.
+
+# Plots with 2 visits within the same year: 
+# AGFO_FPCM_067 in 2019; Same Date; MonitoringStatus_Name = 2019_PlantCommunity vs 2010_PlantCommunity. Same SampleEvent_GUID. I assume thw 2010 record is a mistake and will drop it from the getSampleEvent return by check that years match between dates and monitoring status. SampleEvent_GUID: 5F327BA4-006F-404A-AF37-05FEE4F202D5
+# 
+# JECA_PCM_134 in 2016; 2016-07-05; 2016-09-13; 2016_FirePlantCommunity; 2016_ForestStructure; 01yr02; 2016_ForestStructure; Based on other results from 2016 in JECA, 2016_ForestStructure appears to be the VS sample. 
+# The FFI Data Depot returns 2 sets of CoverPoint data, and they're identical. 
+# 
+# JECA_PCM_038 in 2016; 2016-07-05; 2016-09-13; 2016_FirePlantCommunity; 2016_ForestStructure; 01yr02; 2016_ForestStructure;
+# Also looks like sometimes MonitoringStatus_Name isn't consistent between ForestStructure or PlantCommunity across years, but usually within for the same plots. Then there's FirePlantCommunity, which appears to be different. 
 ```
 

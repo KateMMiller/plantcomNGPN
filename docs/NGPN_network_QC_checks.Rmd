@@ -175,7 +175,7 @@ mac_samp_monstat4 <- mac_samp_monstat3 |>
 mac_samp_monstat4$year_mismatch <- ifelse(
   mac_samp_monstat4$year != substr(mac_samp_monstat4$MonitoringStatus_Name, 1, 4), 1, 0)
 
-monstat_yr_mismatch <- mac_samp_monstat4 |> filter(year_mismatch == 1) |> select(-num_samps, -year_mismatch, -monstat)
+monstat_yr_mismatch <- mac_samp_monstat4 |> filter(year_mismatch == 1) |> select(-num_samps, -year_mismatch)
 
 kbl_monstat_yr_mismatch <- kable(monstat_yr_mismatch, format = "html", align = 'c',
                   caption = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.") |> 

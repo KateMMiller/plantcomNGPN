@@ -19,7 +19,7 @@ options(knitr.kable.NA = '', scipen = 100)
 ### NGPN QC checks {.tabset}
 
 ```{r libs, include = F}
-library(vegcomNGPN)
+library(plantcomNGPN)
 library(tidyverse) # dplyr, purrr, tidyr
 library(knitr) # for kable and include_graphic()
 library(kableExtra) # for custom kable features

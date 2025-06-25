@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, vline = "|")
 options(knitr.kable.NA = '', scipen = 100)
 ```
 
-### NGPN QC checks {.tabset}
+## NGPN QC checks {.tabset}
 
 ```{r libs, include = F}
 library(plantcomNGPN)
@@ -28,22 +28,112 @@ library(kableExtra) # for custom kable features
 ```{r imports, include = F}
 importData(type = 'local',
            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
-                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
            export = F)
 ```
 
-#### Plot List {.tabset}
-WIP- add a table that shows the list of plots for each park, plus a year column showing when it was sampled (and if I think that was sampled as part of NGPN VS monitoring).
+
+### Macroplot Checks {.tabset}
+#### Plot Matrix List {.tabset}
 ```{r}
 macro <- NGPN_tables$MacroPlot
+samp <- NGPN_tables$SampleEvent
+monstat <- NGPN_tables$MonitoringStatus
+mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
+
 plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
 
 macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |> 
-  filter(MacroPlot_Name %in% plots)
+  filter(MacroPlot_Name %in% plots)|>
+  select(MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, MacroPlot_RegistrationUnit_GUID,
+         MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_DD_Lat, MacroPlot_DD_Long,
+         MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
+         MacroPlot_SlopeTransect, MacroPlot_GUID) |> 
+  mutate(park = substr(MacroPlot_Name, 1, 4)) |> 
+  unique()
 
+macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |> 
+  select(MacroPlot_Name, MacroPlot_GUID, SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |> 
+  unique()
+
+# macro_samp2 <- left_join(macro_samp, mm_monstat, 
+#                          by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID", "datasource"))
+# 
+# mac_samp3 <- left_join(macro_samp2, monstat,
+#                        by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
+#                               "datasource"))
+
+macro_samp$SampleEvent_Date <-
+ format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
+macro_samp$year <- format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+
+# mac_samp4 <- mac_samp3 |> filter(year >= 2011) |>
+#   mutate(park = substr(MacroPlot_Name, 1, 4)) |> 
+#   group_by(park, MacroPlot_Name, MonitoringStatus_Base, year) |> 
+#   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |> 
+#   arrange(year, MonitoringStatus_Base) |> 
+#   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |> 
+#   filter(grepl("Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+#           MonitoringStatus_Base)) |> 
+#   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
+#          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |> 
+#   arrange(plottype, plotnum, MonitoringStatus_Base) |> select(-plotnum, -plottype)
+
+macro_samp2 <- macro_samp |> filter(year >= 2011) |>
+  mutate(park = substr(MacroPlot_Name, 1, 4), 
+         SE_DefaultMonStatus_base = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |> 
+  group_by(park, MacroPlot_Name, SE_DefaultMonStatus_base, year) |> 
+  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |> 
+  arrange(year, SE_DefaultMonStatus_base) |> 
+  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |> 
+  filter(grepl("Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+         SE_DefaultMonStatus_base)) |> 
+  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
+         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |> 
+  arrange(plottype, plotnum, SE_DefaultMonStatus_base) |> 
+  select(park, MacroPlot_Name, SE_DefaultMonStatus_base, yr2011:last_col()) |> 
+  select(-plotnum, -plottype)
+
+
+park_list <- sort(unique(macro_plots$park))
+
+```
+
+```{r monstat_park, eval = F}
+df <- macro_samp2 |> filter(park %in% parkcode) |> select(-park)
+
+plot_mat <- 
+kable(df, format = 'html', align = 'c',
+      caption = paste0('Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status and year sampled.',
+                       "Plots with LPCM in their name (legacy plots) are sorted last.", 
+                       "Plots with multiple rows have multiple monitoring statuses recorded over time.", 
+                       "Numbers indicate the number of records for each plot, year, and monitoring status.", 
+                       "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year.",
+                       "Sampling schedule does not exactly follow the 2 on 3 off, so Monitoring Status is not",
+                       " the only way to pull out NGPN PCM monitoring events.")) |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
+                full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(df), border_left = "1px solid grey", border_right = "1px solid grey") |> 
+  collapse_rows(1, valign = "top")
+
+print(plot_mat)
+```
+
+```{r, results = 'asis'}
+for(i in seq_along(park_list)){
+  parkcode = park_list[[i]]
+  cat("##### ", parkcode, "{.tabset}", "\n\n")
+  <<monstat_park>>
+  cat("\n\n")
+  cat("\n\n")
+}
+```
+
+
+```{r}
 macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot, 
-                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", 'datasource'))
+                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
 macroproj <- left_join(macro2, NGPN_tables$ProjectUnit, 
                        by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"))
 
@@ -56,12 +146,11 @@ macroproj_dups <- macroproj2 |> group_by(MacroPlot_Name, MacroPlot_GUID, MacroPl
   summarize(num_rows = sum(!is.na(park)), .groups = 'drop') |> 
   arrange(ProjectUnit_Name) |> select(-MacroPlot_GUID) |> 
   pivot_wider(names_from = ProjectUnit_Name, values_from = num_rows) |> data.frame() |> 
-  select(MacroPlot_Name, MacroPlot_Purpose, Park, everything()) |> 
+  #select(MacroPlot_Name, MacroPlot_Purpose, park, everything()) |> 
   arrange(MacroPlot_Name)
+macroproj_dups$num_recs <- apply(macroproj_dups[,3:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
 
-macroproj_dups$num_recs <- apply(macroproj_dups[,4:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
-
-macro_purp <- macro_plots |> select(park, MacroPlot_Name, MacroPlot_Purpose) |> 
+macro_purp <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |> 
   #unique() |> 
   mutate(pres = 1, 
          MacroPlot_Purpose = ifelse(is.na(MacroPlot_Purpose) | 
@@ -100,7 +189,6 @@ kbl_proj <- kable(macroproj_dups, format = "html", align = 'c',
 kbl_proj
 ```
 
-#### Macroplot Checks
 ```{r}
 # Plots missing X-Y coordinates - usually they have lat/long. Would be helpful to fill in the UTMs too.
 macro_vs <- getMacroPlot()
@@ -113,7 +201,7 @@ macro_vs <- getMacroPlot()
 # THROS_PCM_0069 Macroplot_SlopeHill and _SlopeTransect has some 9999
 ```
 
-#### Monitoring Status
+### Sample Event Checks {.tabset}
 ```{r}
 macro_guids <- unique(macro_plots$MacroPlot_GUID) # NGPN macroplot_guids for filter
 mm_projunit <- NGPN_tables$MM_ProjectUnit_MacroPlot
@@ -124,7 +212,7 @@ mm_monstat_se = NGPN_tables$MM_MonitoringStatus_SampleEvent
 sampev <- NGPN_tables$SampleEvent |> filter(SampleEvent_Plot_GUID %in% macro_guids)
 
 macro1 <- left_join(macro_plots, mm_projunit,
-                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
+                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
 macro2 <- left_join(macro1, regunit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
 macro3 <- left_join(macro2, projunit,
                     by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
@@ -212,7 +300,7 @@ kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
 
 ```
 
-#### Sample Event Checks
+#### Monitoring Status {.tabset}
 ```{r}
 kbl_monstat_yr_mismatch
 ```

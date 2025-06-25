@@ -57,28 +57,9 @@ macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEven
   select(MacroPlot_Name, MacroPlot_GUID, SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |> 
   unique()
 
-# macro_samp2 <- left_join(macro_samp, mm_monstat, 
-#                          by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID", "datasource"))
-# 
-# mac_samp3 <- left_join(macro_samp2, monstat,
-#                        by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
-#                               "datasource"))
-
 macro_samp$SampleEvent_Date <-
  format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
 macro_samp$year <- format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
-
-# mac_samp4 <- mac_samp3 |> filter(year >= 2011) |>
-#   mutate(park = substr(MacroPlot_Name, 1, 4)) |> 
-#   group_by(park, MacroPlot_Name, MonitoringStatus_Base, year) |> 
-#   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |> 
-#   arrange(year, MonitoringStatus_Base) |> 
-#   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |> 
-#   filter(grepl("Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
-#           MonitoringStatus_Base)) |> 
-#   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
-#          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |> 
-#   arrange(plottype, plotnum, MonitoringStatus_Base) |> select(-plotnum, -plottype)
 
 macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   mutate(park = substr(MacroPlot_Name, 1, 4), 
@@ -95,7 +76,6 @@ macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   select(park, MacroPlot_Name, SE_DefaultMonStatus_base, yr2011:last_col()) |> 
   select(-plotnum, -plottype)
 
-
 park_list <- sort(unique(macro_plots$park))
 
 ```
@@ -110,11 +90,22 @@ kable(df, format = 'html', align = 'c',
                        "Plots with multiple rows have multiple monitoring statuses recorded over time.", 
                        "Numbers indicate the number of records for each plot, year, and monitoring status.", 
                        "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year.",
-                       "Sampling schedule does not exactly follow the 2 on 3 off, so Monitoring Status is not",
-                       " the only way to pull out NGPN PCM monitoring events.")) |> 
+                       " Duplicates within a year mean there are multiple dates and SampleEvent_GUIDs for a given year,
+                       which is tricky to accommodate.",
+                       " Sampling schedule also does not exactly follow the 2 on 3 off, so Monitoring Status is not",
+                       " the only way to pull out NGPN PCM monitoring events.")) %>%
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
-                full_width = T, position = 'left', font_size = 10) |> 
-  column_spec(1:ncol(df), border_left = "1px solid grey", border_right = "1px solid grey") |> 
+                full_width = T, position = 'left', font_size = 10) %>%
+  column_spec(1:ncol(df), border_left = "1px solid grey", border_right = "1px solid grey") %>%
+  purrr::reduce(3:ncol(df), function(x, y){
+    col = df[,y]
+    #rows <- which(is.na(df[,y]))
+    column_spec(x, y, background = case_when(is.na(df[,y]) ~ "#ffffff",
+                                             df[,y] == 1 ~ "#ffffff",
+                                             #!df[,y] %in% 1, "#F2F2A0",
+                                             TRUE ~ "#F2F2A0"))
+    #column_spec(x, 1, background = ifelse(is.na(col), "#ffffff", "#F2F2A0"))
+    }, .init = .) %>%
   collapse_rows(1, valign = "top")
 
 print(plot_mat)
@@ -150,7 +141,7 @@ macroproj_dups <- macroproj2 |> group_by(MacroPlot_Name, MacroPlot_GUID, MacroPl
   arrange(MacroPlot_Name)
 macroproj_dups$num_recs <- apply(macroproj_dups[,3:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
 
-macro_purp <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |> 
+macro_purp1 <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |> 
   #unique() |> 
   mutate(pres = 1, 
          MacroPlot_Purpose = ifelse(is.na(MacroPlot_Purpose) | 
@@ -158,21 +149,48 @@ macro_purp <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |>
   arrange(MacroPlot_Purpose) |> 
   pivot_wider(names_from = MacroPlot_Purpose, values_from = pres) |> 
   arrange(MacroPlot_Name)
+
+start_cols <- c("MacroPlot_Name", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6", 
+                "Panel7", "Panel8", "Panel9", "Panel10", "PanelE", "IM_Intensive", 
+                "IM_veg", "IM_FX_Dual")
+other_cols <- sort(setdiff(names(macro_purp1), start_cols))
+
+macro_purp <- macro_purp1[,c(start_cols, other_cols)]
+
 ```
 
 #### Purpose {.tabset}
-This table only includes plots with "_PCM_" in the plot name, which are assumed to be NGPN monitoring plots. 
-```{r include = F}
-kbl_purpose <- kable(macro_purp, format = 'html', align = 'c',
-                     caption = 'NGPN PCM plots by purpose in MacroPlot table') |> 
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
-                full_width = T, position = 'left', font_size = 10) |> 
-  column_spec(1:ncol(macro_purp), border_left = "1px solid grey", border_right = "1px solid grey")
+```{r purpose_park, include = F, eval = F}
+df2 <- macro_purp |> mutate(park = substr(MacroPlot_Name, 1, 4)) |> filter(park == parkcode) |> select(-park)
 
+kbl_purpose <- kable(df2, format = 'html', align = 'c',
+                     caption = paste0('NGPN PCM plots by purpose in MacroPlot table.', 
+                                      'Only includes plots with "PCM" in the plot name, ',
+                                      'which are assumed to be NGPN plant community monitoring plots.',
+                                      "Plots that don't fall in Panels or IM_Intensive are color coded yellow.", 
+                                      " Are the plots highlighted yellow NPGN plant community monitoring plots?", 
+                                      " Can the combination of Monitoring Status and Purpose be used to pull out NGPN PCM sampling events?")) %>% 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
+                full_width = T, position = 'left', font_size = 10) %>%
+  purrr::reduce(14:ncol(df2), function(x, y){
+    col = df2[,y]
+    column_spec(x, y, background = ifelse(is.na(col), "#ffffff", "#F2F2A0"))
+    #column_spec(x, 1, background = ifelse(is.na(col), "#ffffff", "#F2F2A0"))
+    }, .init = .) %>%
+  column_spec(1:ncol(df2), border_left = "1px solid grey", border_right = "1px solid grey")
+
+print(kbl_purpose)
 ```
 
-```{r}
-kbl_purpose
+
+```{r, results = 'asis'}
+for(i in seq_along(park_list)){
+  parkcode = park_list[[i]]
+  cat("##### ", parkcode, "{.tabset}", "\n\n")
+  <<purpose_park>>
+  cat("\n\n")
+  cat("\n\n")
+}
 ```
 
 #### Project {.tabset}

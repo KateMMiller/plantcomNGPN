@@ -1,4 +1,4 @@
-Package: vegcomNGPN
+Package: plantcomNGPN
 Type: Package
 Title: Package for importing, exporting, querying, and summarizing NGPN FFI data. 
 Version: 0.1.0

@@ -148,7 +148,10 @@ QC_table <- QC_check(df = macro_miss_utm, meas_type = "MacroPlot", tab = "Plot I
                      check = "NGPN PCM plots missing UTM X, Y, and/or UTM Zone data.",
                      chk_type = 'error')
 
-kbl_macro_miss_utm <- make_kable(macro_miss_utm, "NGPN PCM plots missing UTM X, Y, and/or Zone data. ")
+kbl_macro_miss_utm <- make_kable(macro_miss_utm, "NGPN PCM plots missing UTM X, Y, and/or Zone data. ") |>
+  column_spec(2, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTM_X), "#F2F2A0", "white")) |>
+  column_spec(3, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTM_Y), "#F2F2A0", "white")) |>
+  column_spec(4, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTMzone), "#F2F2A0", "white"))
 
 park_list
 # Set bounding box for each park and check UTMs and/or lat/long against them:
@@ -363,7 +366,7 @@ QC_table <- rbind(QC_table,
                      chk_type = 'error'))
 
 kbl_monstat_yr_mismatch <- kable(monstat_yr_mismatch, format = "html", align = 'c',
-                                 caption = "Table 4. NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.") |>
+                                 caption = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.") |>
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
                 full_width = T, position = 'left', font_size = 10) |>
   column_spec(1:ncol(monstat_yr_mismatch), border_left = "1px solid grey", border_right = "1px solid grey")
@@ -384,13 +387,17 @@ monstat_incon <- monstat_typo |> filter(inconsist > 1) |> arrange(MacroPlot_Name
 monstat_incon2 <- monstat_incon[,c("MacroPlot_Name", sort(names(monstat_incon[,2:(ncol(monstat_incon)-1)])))]
 
 QC_table <- rbind(QC_table,
-             QC_check(df = monstat_yr_mismatch, meas_type = "SampleEvent", tab = "Monitoring Status",
+             QC_check(df = monstat_incon2, meas_type = "SampleEvent", tab = "Monitoring Status",
                      check = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.",
                      chk_type = 'error')
 )
 
 kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
-                           caption = "Table 5. NGPN PCM plots with inconsistently labeled MonitoringStatus_Name. Plots may be used for different monitoring purposes, but also seems some are incorrect. The years in the cell are years that a given monitoring status was recored (eg 2013 in PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity'.") |>
+                           caption = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
+                           Plots may be used for different monitoring purposes, but also seems some are incorrect.
+                           The years in the cell are years that a given monitoring status was recored (eg 2013 in
+                           PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity').
+                           Note that the first Plant Community column has a space between the words.") |>
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
                 full_width = T, position = 'left', font_size = 10) |>
   column_spec(1:ncol(monstat_incon2), border_left = "1px solid grey", border_right = "1px solid grey")

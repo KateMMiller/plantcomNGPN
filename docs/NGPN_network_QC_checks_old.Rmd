@@ -1,0 +1,223 @@
+---
+output:
+  html_document:
+    css: www/styles.css
+    anchor_sections: FALSE
+    includes:
+      in_header: "header_manual.html"
+
+params:
+  year_curr: 2024 # Current year of sampling
+  all_years: TRUE # If FALSE, only reports on year_curr; TRUE reports on all years; not enabled yet- currently all years
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(echo = FALSE, vline = "|")
+options(knitr.kable.NA = '', scipen = 100)
+```
+
+### NGPN QC checks {.tabset}
+
+#### Table structure {.tabset}
+
+```{r libs, include = F}
+library(plantcomNGPN)
+library(tidyverse) # dplyr, purrr, tidyr
+library(knitr) # for kable and include_graphic()
+library(kableExtra) # for custom kable features
+```
+
+```{r imports, include = F}
+importData(type = 'local',
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+           export = F)
+```
+
+```{r include = F}
+tables <- sort(unique(names(NGPN_tables)))
+tblsum <- map(seq_along(tables), function(x){
+             get(tables[x], envir = NGPN_tables) |> group_by(datasource) |>
+             summarize(Table = tables[x], num_rows = n())
+          }) |> list_rbind() |> data.frame() |>
+  mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource)))
+
+tblsum_wide <- tblsum |> select(-datasource) |> pivot_wider(names_from = park, values_from = num_rows) 
+tblsum_wide$num_parks <- rowSums(!is.na(tblsum_wide[,2:ncol(tblsum_wide)]))
+tblsum_wide$multi_park <- ifelse(tblsum_wide$num_parks > 1, 1, 0)
+tblsum_wide <- tblsum_wide |> arrange(desc(multi_park), Table) |> select(-multi_park)
+
+kbl_tbl <- kable(tblsum_wide, format = 'html', align = "c", caption = "Number of records per park per table.") |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(tblsum_wide), border_left = "1px solid grey", border_right = "1px solid grey")
+  
+```
+
+Based on table below, MNRR doesn't have the complete set of tables as other NGPN parks. WICA has additional tables that likely aren't part of NGPN vegetation monitoring, but rather an additional program. 
+
+```{r}
+kbl_tbl
+```
+
+#### Purpose {.tabset}
+```{r include = F}
+purpose <- NGPN_tables$MacroPlot |> mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |> 
+  group_by(park, Purpose = MacroPlot_Purpose) |> summarize(num_plots = n(), .groups = 'drop') |> 
+  pivot_wider(names_from = park, values_from = num_plots) |> arrange(Purpose)
+
+kbl_purpose <- kable(purpose, format = 'html', align = 'c', captions = 'Number of MacroPlots per purpose per park') |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(purpose), border_left = "1px solid grey", border_right = "1px solid grey")
+
+```
+
+There are multiple versions of the same purpose, just with slight variations of capitalization or abbreviations, and quite a few macroplots with no purpose listed. I standardized where it was obvious in the plantcomNGPN package in getMacroPlot function. Questions about standardizing:
+<ol>
+<li>Is it correct to assume that plots with "_PCM_" in their name are NGPN plant community monitoring plots? Are there exceptions to this?</li>
+<li>KNRI_PCM_038 purpose is "FS". It's the only plot with "FS" as the purpose. Other KNRI plots with "PCM" in their name are Forest Structure or Panels. </li>
+<li>Is Table 6 in the Data Management SOP accurate? </li>
+</ol>
+
+Purposes that I don't think are related to NGPN vegetation monitoring, based on their plot name not including "PCM" and their ProjectUnit_Name not matching a project in NGPN SOP Data Management Table 6. 
+<ol>
+<li>Are **FIRE**, **FX**, **FX Monitoring**, **FX monitoring** and **Fire Effects Monitoring** all the same? How about **FS**?</li>
+<li>Are **FIRE_Dual**, **FX_Dual**, **FX Dual**, and **IM_FX_Dual** the same?</li>
+<li>Are **FIRE_Intensive**, **FIRE_intensive**, **FX_Intensive**, **FX_ Intensive**, **IM_Intensive** the same? Or is **IM_Intensive** separate? What about **Fire/I&M Veg Monitoring Plot**?</li>
+<li>Does **NGP Fire Forest Fuel Veg Protcol** fit anywhere else?</li>
+<li>Are the Panels 1-10 all NGPN? Note the space for one of the Panel9 plots. Is **PanelE** NGPN?</li>
+<li>There are two kinds of blanks. One is "", the other is NA. Do either of these need to be querable?</li>
+<li>Are and of **Forest Fuels and Vegetation**, **Forest and Fuels**, **Treatment**, **Pre- and Post- treatment of fuels**, and **pre- and post- treatment forest and fuels** the same?</li>
+</ol>
+
+```{r}
+kbl_purpose
+```
+
+#### ProjectUnit {.tabset}
+```{r include = F}
+# figure out which tables have "ProjectUnit" in them to find the joining keys
+cols <- map(seq_along(tables), function(x) names(get(tables[x], env = NGPN_tables))) |> set_names(tables)
+cols[grepl("ProjectUnit", cols)==T]
+
+macro2 <- full_join(NGPN_tables$MacroPlot, NGPN_tables$MM_ProjectUnit_MacroPlot, by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", 'datasource'))
+macroproj <- full_join(macro2, NGPN_tables$ProjectUnit, by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"))
+macroproj$park <- substr(macroproj$datasource, nchar(macroproj$datasource)-3, nchar(macroproj$datasource))
+macroproj2 <- macroproj |> 
+  mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |> 
+  select(park, MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, ProjectUnit_Name) |> 
+  group_by(park, MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, ProjectUnit_Name) |> 
+  summarize(num_rows = n(), .groups = 'drop')
+
+#sort(unique(macroproj2$ProjectUnit_Name))
+# based on Table 5 of NGPN Plant Community protocol, and Table 6 of SOPs but not all represented in the data
+NGPN_ABAM <- data.frame(park = c("BADL", "BADL", "FOLA", 
+                                 "SCBL", "WICA"), 
+                        project = c("ABAM Supplemental", "AnnualBrome_Research", "ABAM", 
+                                    "AnnualBrome_Research", "ABAM"),
+                        group = "ABAM")
+  
+vegmon_AGFO <- data.frame(park = "AGFO", 
+                          project = c("Park", "Prairie Cluster", "Riparian"),
+                          group = "NGPN") 
+vegmon_BADL <- data.frame(park = "BADL", project = "North Unit", group = "NGPN") 
+vegmon_DETO <- data.frame(park = "DETO", project = c("Riparian", "Upland"), group = "NGPN") 
+vegmon_FOLA <- data.frame(park = "FOLA", project = c("Riparian", "Upland"), group = "NGPN") 
+vegmon_FOUS <- data.frame(park = "FOUS", project = c("Bodmer", "Fort"), group = "NGPN") 
+vegmon_JECA <- data.frame(park = "JECA", project = c("Park"), group = "NGPN") 
+vegmon_KNRI <- data.frame(park = "KNRI", project = c("Park"), group = "NGPN") 
+vegmon_MORU <- data.frame(park = "MORU", project = c("Park"), group = "NGPN")
+vegmon_SCBL <- data.frame(park = "SCBL", project = c("Prairie", "Park", "Riparian"), group = "NGPN") 
+vegmon_THRO <- data.frame(park = "THRO", 
+                          project = c("North Riparian", "North Upland", "South Riparian", "South Upland"), 
+                          group = "NGPN") # there's also "Park"
+vegmon_WICA <- data.frame(park = "WICA", 
+                          project = c("Park", "Pine Forest"), group = "NGPN") # Not sure if Pine Forest is the 'Currently wooded areas', 
+# There's also no Riparian in the data, despite being mentioned in table 6. 
+
+proj_mat <- rbind(NGPN_ABAM, vegmon_AGFO, vegmon_BADL, vegmon_DETO, 
+                  vegmon_FOLA, vegmon_FOUS, vegmon_JECA, vegmon_KNRI, 
+                  vegmon_MORU, vegmon_SCBL, vegmon_THRO, vegmon_WICA)
+
+proj_sum <- macroproj |> group_by(Project = ProjectUnit_Name, park = park) |> 
+  summarize(num_plots = sum(!is.na(MacroPlot_Name)), .groups = 'drop') |> 
+  arrange(park) |> 
+  left_join(proj_mat, by = c("park", "Project" = "project")) |> 
+  pivot_wider(names_from = park, values_from = num_plots) |> 
+  arrange(desc(group), Project)
+
+kbl_proj <- kable(proj_sum, format = 'html', align = 'c', captions = 'Number of MacroPlots per project per park') |> 
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), full_width = T, position = 'left', font_size = 10) |> 
+  column_spec(1:ncol(proj_sum), border_left = "1px solid grey", border_right = "1px solid grey")
+```
+
+Based on Table 5 NGPN's Plant Community Composition and Structure Monitoring Protocol from 2012, and Table 6 of NGPN's Data Management SOP, the following ProjectUnits in the FFI data appear to be part of NGPN vegetation monitoring, by park. I include ProjectUnits I'm unclear about.
+
+<ul>
+<li><b>AGFO: Park, Riparian</b></li>
+  <ul>
+  <li>There are no **PCP**, **Prairie Cluster Legacy**, or **Prairie** project units in the data for AGFO. Is **Native Prairie** the PCP in Table 5 (narrative), and should it be included in QC/analyses?</li></ul>
+<li><b>BADL: North Unit</b></li> 
+  <ul>
+  <li>Are **ABAM Supplemental** and **AnnualBrome_Research** also actively monitored and should they be included in analyses?</li>
+  <li>Other project units in the data are **Park** and **Prairie**. Should these be included in QC/analyses?</li></ul>
+<li><b>DETO: Riparian (aka Riparian lowland), Upland</b></li>
+  <ul>
+  <li>Other project units in the data are **Park**, **Pine Forest**, and **Prairie**. Should they be included in QC/analyses? </li>
+  </ul>
+<li><b>FOLA: Riparian (aka Riparian lowland), Upland</b></li>
+  <ul>
+  <li>**Park** and **ABAM** are also a project units. Should these be included in QC/analyses?</li>
+  </ul>
+<li><b>FOUS: Bodmer, Fort</b></li>
+  <ul>
+  <li>**Park** and **Prairie** are also project units. Should these be included in QC/analyses?</li></ul>
+<li><b>JECA: Park</b></li>
+  <ul>
+  <li>**Pine Forest** is also a project unit in the data. Should this be included in QC/analyses? </li></ul>
+<li><b>KNRI: Park</b></li>
+  <ul>
+  <li>KNRI isn't mentioned in Table 6 (SOPs), but is in Table 5 (narrative). Is this actively monitored?</li>
+  <li>**Prairie** is also a project unit. Should this be included in QC/analyses?</li>
+  </li></ul>
+<li><b>MNRR:</b> Does not appear to be monitored by NGPN. Two project units exist- **Cedar Removal Study** and **Monitoring**.</li>
+<li><b>MORU: Park</b></li>
+  <ul>
+  <li>**Pine Forest** is also a project unit in the data. Should this be included in QC/analyses?</li></ul>
+<li><b>SCBL: Park, Prairie (aka PCP)</b></li>
+  <ul>
+  <li>Table 5 (narrative) lists **Upland** and **Riparian lowland**, but there aren't project units in the data for these.</li> 
+  <li>Table 6 (SOPs) lists **Riparian lowland** but there isn't a project unit for this. </li>
+  <li>**AnnualBrome_Research** is also a project unit. Should this be included in QC/analyses?</li></ul>
+<li><b>THRO: North Riparian, North Upland, South Riparian, South Upland</b></li>
+  <ul>
+  <li>**Park** and **Prairie** are also project units. Should these be included in QC/analyses?</li></ul>
+  <li><b>WICA: Park, Pine Forest</b></li>
+  <ul>
+  <li>**Prairie** and **ABAM** are also project units with many sites. Should these be included in QC/analyses?</li></ul>
+</ul>
+
+
+
+```{r}
+kbl_proj
+```
+
+
+```{r}
+# Joining macroplot-relevant tables
+macro1 <- full_join(NGPN_tables$MacroPlot, NGPN_tables$MM_ProjectUnit_MacroPlot, 
+                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
+macro2 <- full_join(macro1, NGPN_tables$RegistrationUnit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
+macro3 <- full_join(macro2, NGPN_tables$ProjectUnit, 
+                    by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID", 
+                           "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
+                           "datasource"))
+
+# # Join to sample events
+# proj <- full_join(NGPN_tables$MM_Project_Protocol, NGPN_tables$Project, by = c("MM_Project_GUID" = "Project_GUID", "datasource"))
+# proj2 <- full_join(proj, NGPN_tables$Program, by = c("Project_Program_GUID" = "Program_GUID", "datasource"))
+# 
+
+```
+

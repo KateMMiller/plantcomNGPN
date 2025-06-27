@@ -208,6 +208,10 @@ getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park",
   covpts_attr1 <- get("Cover_Points_metric_Attribute", envir = env)
   spploc <- get("LocalSpecies", envir = env)
   sppmas <- get("MasterSpecies", envir = env)
+  localspp <- get("LocalSpecies", envir = env)
+  mastspp <- get("MasterSpecies", envir = env)
+
+  spp_join <- left_join(localspp, mastspp, by = c("LocalSpecies_GUID" = "MasterSpecies_GUID", 'datasource'))
 
   # Making tables smaller before join
   sampev_guids <- unique(sampev$SampleEvent_GUID)
@@ -217,13 +221,20 @@ getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park",
   # Drop records where Index is blank b/c causes issues in the join
   covpts_attr <- covpts_attr2[!is.na(covpts_attr2$Index),]
 
-  # ENDED HERE: NEED TO JOIN THE TABLES BELOW BEFORE JOINING TO SAMPLEEVENT, WHICH HAS SOME DUPLICATE
-  # SAMPLEEVENT_GUIDS
   samp_cov_as <- inner_join(covpts_samp, covpts_attr, by = c("SampleData_SampleRow_GUID" =
                                                               "AttributeData_SampleRow_GUID"))
 
   samp_covs <- left_join(sampev, covpts_samp, by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
   samp_cova <- left_join(samp_covs, covpts_attr,
                          by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID", "datasource"))
+
+  # Add in species info
+  samp_cov_spp <- left_join(samp_cova, spp_join, by = c("Spp_GUID" = "LocalSpecies_GUID", "datasource"))
+
+  # keep_cols <- c("")
+  # if(output == 'short'){
+  #
+  # }
+
   }
 #table(complete.cases(covpts_attr$Index))

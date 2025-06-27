@@ -68,26 +68,29 @@ macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   unique()
 
 macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
-  select(MacroPlot_Name, MacroPlot_GUID, SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
+  select(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose,
+         SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
   unique()
 
 macro_samp$SampleEvent_Date <-
   format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
 macro_samp$year <- format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
 
 macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   mutate(park = substr(MacroPlot_Name, 1, 4),
          SE_DefaultMonStatus_base = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |>
-  group_by(park, MacroPlot_Name, SE_DefaultMonStatus_base, year) |>
+  select(park, MacroPlot_Name, SE_DefaultMonStatus_base, MacroPlot_Purpose, year) |> unique() |>
+  group_by(park, MacroPlot_Name, SE_DefaultMonStatus_base, MacroPlot_Purpose, year) |>
   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
   arrange(year, SE_DefaultMonStatus_base) |>
   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  filter(grepl("Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+  filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
                SE_DefaultMonStatus_base)) |>
   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
   arrange(plottype, plotnum, SE_DefaultMonStatus_base) |>
-  select(park, MacroPlot_Name, SE_DefaultMonStatus_base, yr2011:last_col()) |>
+  select(park, MacroPlot_Name, MacroPlot_Purpose, SE_DefaultMonStatus_base, yr2011:last_col()) |>
   select(-plotnum, -plottype)
 
 park_list <- sort(unique(macro_plots$park))
@@ -96,6 +99,39 @@ macro_samp_dups <- macro_samp2 |> group_by(MacroPlot_Name) |> summarize(num_mons
   filter(num_monstat > 1) |> select(MacroPlot_Name)
 
 macro_samp2$dup_ms <- ifelse(macro_samp2$MacroPlot_Name %in% macro_samp_dups$MacroPlot_Name, 1, 0)
+
+# Add in monitoringstatus_base from monitoring status table
+monstat <- NGPN_tables$MonitoringStatus
+mm_monstat_se <- NGPN_tables$MM_MonitoringStatus_SampleEvent
+
+macro_samp_ms1 <- left_join(macro_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
+
+macro_samp_ms2 <- left_join(macro_samp_ms1, monstat,
+                            by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
+                                   "datasource"))
+
+macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
+  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
+  filter(grepl("blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+               MonitoringStatus_Base)) |>
+  select(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |> unique() |>
+  group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |>
+  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
+  arrange(year, MonitoringStatus_Base) |>
+  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
+  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
+         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
+  arrange(plottype, plotnum, MonitoringStatus_Base) |>
+  select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col()) |>
+  select(-plotnum, -plottype)
+
+park_list <- sort(unique(macro_plots$park))
+
+macro_samp_ms_dups <- macro_samp_ms |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(MonitoringStatus_Base))) |>
+  filter(num_monstat > 1) |> select(MacroPlot_Name)
+
+macro_samp_ms$dup_ms <- ifelse(macro_samp_ms$MacroPlot_Name %in% macro_samp_ms_dups$MacroPlot_Name, 1, 0)
+
 
 #### Purpose
 macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot,

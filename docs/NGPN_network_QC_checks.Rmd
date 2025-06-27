@@ -42,8 +42,9 @@ source("NGPN_network_QC_checks_compile.R")
 ### Figuring out NGPN_PCM plots/visits {.tabset}
 #### Questions/Notes {.tabset}
 <span style="font-size:12px;">
-<ul><li> In Monitoring Status Table 1, are the different monitoring statuses correct/intentional? </li>
+<ul><li> In Monitoring Status- SE (Table 1), are the different monitoring statuses correct/intentional? </li>
   <ul>
+<li> Is there a reason the SampleEvent_DefaultMonitoringStatus field stopped being consistently populated around 2020? This would be the easiest column to use for filtering because it's already in the SampleEvent table (i.e. doesn't require 2 additional table joins) and is cleaner than the MonitoringStatus table (see Monitoring Status - MS tab). Can the blank statuses be added?</li>
 <li> Is there a difference between AGFO_RCM_216's status of Riparian and RiparianCommunity, or should these be treated as the same thing? </li>
 <li> In DETO, FOLA, JECA, KNRI, MORU, SCBL, THRO, and WICA: is there a difference between ForestStructure, PlantCommunity, and Dual?</li>
 <li> AGFO_PCM_001 has 2 sample events in the SampleEvent table for year 2012. It appears that plot was started on 2012-06-04, and completed on 2012-06-07, and given 2 sample events as a result. If these are really part of the same sampling event, it would be better to assign all records to only one sample event for easier table joining. Can I assign the first sample event to all of the data for this plot in 2012? </li>
@@ -51,20 +52,30 @@ source("NGPN_network_QC_checks_compile.R")
 <li>Sampling schedule of some plots does not exactly follow the 2 years on; 3 years off schedule. Is there a way to tell which visits are part of the GRTS sample design and which are not? Does that matter?</li>
   </ul>
 </ul>
+
+<ul><li>In Monitoring Status- MS (Table 2), are the different monitoring statuses correct/intentional? </li>
+  <ul>
+<li>Is there a difference between PlantCommunity vs FirePlantCommunity, PlantCommunity vs ForestStructure or Dual?</li>
+<li>Note in MORU and SCBL that years were added to the MonitoringStatus_Base (years are included in MonitoringStatus_Name, but not Base). This should be cleaned up, if monitoring status should be filtered on.</li>
+<li>To use the Monitoring Status in this table, I'm going to drop "_" and Year_ from base names. </li>
+<li>It also appears that FirePlantCommunity status doesn't follow 2on:3off sample schedule. I'm guessing those are fire effects related, and not part of NGPN PCM. By default, I'm going to drop those from mon_status = "NGPN_PCM" in functions. </li>
+  </ul>
+</ul>
+
 <ul>
-<li>In Purpose Table 2, are the different monitoring statuses correct/intentional? </li>
+<li>In Purpose (Table 3), are the different monitoring statuses correct/intentional? </li>
   <ul>
   <li>Is purpose a way to distinguish between NGPN PCM plots and other plots? If so, are purposes beyond Panels and IM_Intensive considered part of NPGM PCM? Plots highlighted yellow are the ones in question.</li>
   </ul>
 </ul>
 <ul>
-<li> In Project Table 3, Are plots highlighted yellow part of NGPN PCM?</li>
+<li> In Project (Table 4), Are plots highlighted yellow part of NGPN PCM?</li>
   <ul><li> Are there any plots that aren't Park = 1 but fall in other project/strata that should or should not be included if filtering on a strata other than park?
   </ul>
 </ul>
 </span>
 
-#### Monitoring Status {.tabset}
+#### Monitoring Status - SE {.tabset}
 ```{r monstat_park, eval = F}
 df <- macro_samp2 |> filter(park %in% parkcode) |> select(-park)
 yrs <- names(df[,grepl("yr", names(df))])
@@ -73,17 +84,25 @@ df$dup <- rowSums(df[,yrs] > 1, na.rm = T)
 
 plot_mat <- 
 kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
-      caption = paste0('Table 1. Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status and year sampled. ',
+      caption = paste0('Table 1. Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status, purpose, and year sampled. ',
                        "Only plots with 'PCM' in their name are included. ",
                        "Plots with LPCM in their name (legacy plots) are sorted last. ", "<br>","<br>",
                        
-                       "Plots with multiple rows have multiple monitoring statuses recorded over time, 
-                       and are color coded <b style='background-color:orange;'>orange</b>. ",
+                       "The monitoring status in this table comes from the SampleEvent$SampleEvent_DefaultMonitoringStatus ", 
+                       "column, which appears to have stopped being consistently populated after 2020 ",
+                       "(see <b style='background-color:#AFAFAF;'>greyed</b> cells). It would be great to ",
+                       "have this column populated, as it means one less table join and the data pre2020 are cleaner/have ",
+                       "fewer typos than the base monitoring statuses specified in the MonitoringStatus table ",
+                       "(see Monitoring Status - MS tab). ",
+                       
+                       "Plots with multiple rows have multiple monitoring statuses recorded over time, ",
+                       "and are color coded <b style='background-color:orange;'>orange</b>. ",
                        "Are the different monitoring statuses correct/intentional? <br>", "<br>",
                        
+                       
                        "Values indicate the number of records for each plot, year, and monitoring status. ", 
-                       "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year and 
-                       are highlighted <b style='background-color:#F2F2A0;'>yellow</b>. ",
+                       "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year and ",
+                       "are highlighted <b style='background-color:#F2F2A0;'>yellow</b>. ",
                        "Duplicates within a year mean there are multiple dates and SampleEvent_GUIDs for a given year,
                        which is tricky to accommodate in table joins/analysis. It looks like these are plots that were 
                        started on one day and finished on another. It would be better to just use the first day and
@@ -94,7 +113,7 @@ kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
                 full_width = T, position = 'left', font_size = 10) %>%
   column_spec(1:(ncol(df)-2), border_left = "1px solid grey", border_right = "1px solid grey") %>%
-  purrr::reduce(3:(ncol(df)-2), function(x, y){
+  purrr::reduce(4:(ncol(df)-2), function(x, y){
     col = df[,y]
     column_spec(x, y, background = case_when(is.na(df[,y]) ~ "#ffffff",
                                              df[,y] == 1 ~ "#ffffff",
@@ -103,6 +122,7 @@ kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
   column_spec(1, background = case_when(df$dup_ms > 0 ~ "orange",
                                         df$dup > 0 ~ "#F2F2A0", 
                                         TRUE ~ "white")) %>%
+  column_spec(3, background = ifelse(df$SE_DefaultMonStatus_base == "blank", "#AFAFAF", "white")) %>%
   collapse_rows(1, valign = "top")
 
 print(plot_mat)
@@ -118,6 +138,68 @@ for(i in seq_along(park_list)){
 }
 ```
 
+#### Monitoring Status - MS {.tabset}
+```{r monstat_ms_park, eval = F}
+dfms <- macro_samp_ms |> filter(park %in% parkcode) |> select(-park)
+yrs <- names(dfms[,grepl("yr", names(dfms))])
+
+dfms$dup <- rowSums(dfms[,yrs] > 1, na.rm = T)
+
+plot_mat_ms <- 
+kable(dfms |> select(-dup, -dup_ms), format = 'html', align = 'c',
+      caption = paste0('Table 2. Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status, purpose, and year sampled. ',
+                       "Only plots with 'PCM' in their name are included. ",
+                       "Plots with LPCM in their name (legacy plots) are sorted last. ", "<br>","<br>",
+                       
+                       "The monitoring status in this table comes from the MonitoringStatus$MonitoringStatus_Base ", 
+                       "column, which has typos (eg '_' in the name) that make it difficult to use as a filter. ",
+                       "Typos are indicated by <b style='background-color:#ff9797;'>red</b>. ",
+                       
+                       "Plots with multiple rows have multiple monitoring statuses recorded over time, ",
+                       "and are color coded <b style='background-color:orange;'>orange</b>. ",
+                       "Are the different monitoring statuses correct/intentional? Does one indicate a NGPN sample event, ",
+                       "and another indicate a fire effects or other sample event? <br>", "<br>",
+                       
+                       
+                       "Values indicate the number of records for each plot, year, and monitoring status. ", 
+                       "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year and ",
+                       "are highlighted <b style='background-color:#F2F2A0;'>yellow</b>. ",
+                       "Duplicates within a year mean there are multiple dates and SampleEvent_GUIDs for a given year,
+                       which is tricky to accommodate in table joins/analysis. It looks like these are plots that were 
+                       started on one day and finished on another. It would be better to just use the first day and
+                       SampleEvent in those cases.", "<br>","<br>",
+                       
+                       "Sampling schedule also does not exactly follow the 2 on 3 off, so Monitoring Status is not ",
+                       "the only way to pull out NGPN PCM monitoring events?")) %>%
+  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
+                full_width = T, position = 'left', font_size = 10) %>%
+  column_spec(1:(ncol(dfms)-2), border_left = "1px solid grey", border_right = "1px solid grey") %>%
+  purrr::reduce(4:(ncol(dfms)-2), function(x, y){
+    col = dfms[,y]
+    column_spec(x, y, background = case_when(is.na(dfms[,y]) ~ "#ffffff",
+                                             dfms[,y] == 1 ~ "#ffffff",
+                                             TRUE ~ "#F2F2A0"))}, .init = .) %>%
+  #column_spec(1, background = ifelse(df$dup > 0, "#F2F2A0", "#ffffff")) %>%
+  column_spec(1, background = case_when(dfms$dup_ms > 0 ~ "orange",
+                                        dfms$dup > 0 ~ "#F2F2A0", 
+                                        TRUE ~ "white")) %>%
+  column_spec(3, background = ifelse(grepl("_|' '", dfms$MonitoringStatus_Base), "#ff9797", "white")) %>%
+  collapse_rows(1, valign = "top")
+
+print(plot_mat_ms)
+```
+
+```{r, results = 'asis'}
+for(i in seq_along(park_list)){
+  parkcode = park_list[[i]]
+  cat("##### ", parkcode, "{.tabset}", "\n\n")
+  <<monstat_ms_park>>
+  cat("\n\n")
+  cat("\n\n")
+}
+```
+
+
 #### Purpose {.tabset}
 ```{r purpose_park, include = F, eval = F}
 df2 <- macro_purp |> mutate(park = substr(MacroPlot_Name, 1, 4)) |> filter(park == parkcode) |> select(-park)
@@ -127,7 +209,7 @@ df3 <- df2 |> arrange(nonvs, MacroPlot_Name)
 
 kbl_purpose <- kable(df3 |> select(-nonvs), 
                      format = 'html', align = 'c',
-                     caption = paste0('Table 2. NGPN PCM plots by purpose in MacroPlot table. ', 
+                     caption = paste0('Table 3. NGPN PCM plots by purpose in MacroPlot table. ', 
                                       'Only includes plots with "PCM" in the plot name, ',
                                       'which are assumed to be NGPN plant community monitoring plots.',
                                       " Plots that with a purpose other than Panel# or IM_Intensive are 
@@ -165,7 +247,7 @@ for(i in seq_along(park_list)){
 df4 <- macroproj_dups |> filter(park %in% parkcode) |> select(-park) |> arrange(desc(nonvs), MacroPlot_Name)
 
 kbl_proj <- kable(df4 |> select(-num_recs, -nonvs), format = "html", align = 'c',
-                  caption = "Table 3. NGPN PCM plots by project (strata) and purpose in the MacroPlot table. 
+                  caption = "Table 4. NGPN PCM plots by project (strata) and purpose in the MacroPlot table. 
                   Columns starting at Park indicate that a plot is in a given strata. 
                   Plots may be in multiple stratum. Plots highlighted in <b style='background-color:#F2F2A0;'>yellow</b>
                   have a MacroPlot_Purpose that I'm unclear if these are NGPM PCM plots and are sorted at the bottom. 

@@ -7,7 +7,7 @@
 #' monitoring plots and NGPN PCM vital signs sampling events. Using combinations of plot names,
 #' projects or purposes that are outside NGPN PCM plots hasn't been tested as thoroughly, and may
 #' not return intended results in every case. Plots in the MacroPlot table that don't have
-#' a corresponding record in the SampleEvent table are not returned. Note that this is more
+#' a corresponding record in the SampleEvent table are not returned unless complete_events = F. Note that this is more
 #' of an internal function that other data-related getter functions source to correctly link table and
 #' filter on records.
 #'
@@ -29,14 +29,14 @@
 #' \item{"WICA":} {Wind Cave National Park}
 #'}
 #'
-#' @param plot_name Quoted string to return a particular plot based on name. Default is "all", which if
-#' purpose is set to "NGPN_VS" (default), and project is set to "Park" (default), then only NGPN Plant Community
+#' @param plot_name Quoted string to return a particular plot based on MacroPlot_Name. Default is "all", which if
+#' purpose is set to "NGPN_PCM" (default), and project is set to "Park" (default), then only NGPN Plant Community
 #' Monitoring plots (e.g.,macroplots with "_PCM_", "_FPCM_", "_LPCM_", and "_RCM_" in their names) will be included.
 #' Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 #' function will error out with a list of unmatched plot names.
 #'
 #' @param project Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
-#' typically is the strata a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+#' typically is the strata a given plot belongs to. By default, selects "NGPN_PCM" plots, which are plots with
 #' c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
 #' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 #' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
@@ -44,24 +44,24 @@
 #' Valid inputs:
 #' \itemize{
 #' \item{'all':} {Pull in all project types.}
-#' \item{"Park":} {Default. *NGPN VS* stratum covering whole park.}
-#' \item{"ABAM":} {*NGPN VS* stratum in WICA.}
-#' \item{"Bodmer":} {*NGPN VS* stratum in FOUS.}
-#' \item{"Cedar Removal Study":} {*NGPN VS* in MNRR.}
-#' \item{"Deciduous Woodland":} {*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
-#' \item{"Fort":} {*NGPN VS* stratum in FOUS.}
-#' \item{"Monitoring"} {*NGPN VS* stratum in MNRR.}
-#' \item{"Native Prairie":} {*NGPN VS* stratum in AGFO.}
-#' \item{"North Riparian":} {*NGPN VS* stratum in THRO.}
-#' \item{"North Upland":} {*NGPN VS* stratum in THRO.}
-#' \item{"North Unit":} {*NGPN VS* stratum in BADL.}
-#' \item{"Pine Forest":} {*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
-#' \item{"Prairie":} {*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
-#' \item{"Riparian":} {*NGPN VS* stratum in AGFO, DETO, and FOLA.}
-#' \item{"Shrubland":} {*NGPN VS* stratum in THRO.}
-#' \item{"South Riparian":} {*NGPN VS* stratum in THRO.}
-#' \item{"South Upland":} {*NGPN VS* stratum in THRO.}
-#' \item{"Upland":} {*NGPN VS* stratum in DETO and FOLA.}
+#' \item{"Park":} {Default. *NGPN_PCM* stratum covering whole park.}
+#' \item{"ABAM":} {*NGPN_PCM* stratum in WICA.}
+#' \item{"Bodmer":} {*NGPN_PCM* stratum in FOUS.}
+#' \item{"Cedar Removal Study":} {*NGPN_PCM* in MNRR.}
+#' \item{"Deciduous Woodland":} {*NGPN_PCM* covers KNRI (2 plots) and THROS (1 plot).}
+#' \item{"Fort":} {*NGPN_PCM* stratum in FOUS.}
+#' \item{"Monitoring"} {*NGPN_PCM* stratum in MNRR.}
+#' \item{"Native Prairie":} {*NGPN_PCM* stratum in AGFO.}
+#' \item{"North Riparian":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"North Upland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"North Unit":} {*NGPN_PCM* stratum in BADL.}
+#' \item{"Pine Forest":} {*NGPN_PCM* stratum in DETO, JECA, MORU, and WICA.}
+#' \item{"Prairie":} {*NGPN_PCM* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
+#' \item{"Riparian":} {*NGPN_PCM* stratum in AGFO, DETO, and FOLA.}
+#' \item{"Shrubland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"South Riparian":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"South Upland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"Upland":} {*NGPN_PCM* stratum in DETO and FOLA.}
 #' }
 #' Other options include c("ABAM Supplemental", "AnnualBrome_Research",
 #'                         "American Elk Invasive Research", "Archaeology JFSP",
@@ -74,12 +74,12 @@
 #' @param purpose Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
 #' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
-#' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
+#' that can be specified are below. By default, "NGPN_PCM" plots are selected, which includes all plots with c("_PCM_",
 #' "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
 #' to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
-#' \item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
 #' \item{"Panel1":} {NGPN PCM Panel 1}
 #' \item{"Panel2":} {NGPN PCM Panel 2}
 #' \item{"Panel3":} {NGPN PCM Panel 3}
@@ -111,13 +111,12 @@
 #'                         "NGP Fire Forest Fuel Veg Protcol" (DETO), "NGP Grassland Plot - Interior Burn Unit" (BADL),
 #'                         "Pre- and Post-treatment of fuels" (JECA), "Research" (WICA), "Treatment" (MNRR))
 #'
-#' @param mon_status Quoted string. Allows you to select different sampling event status types. Default is "NGPN_VS",
-#' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_VS below). Note
-#' that in the data, the status name starts with year. For simplicity, the years argument pulls out specific years,
-#' and mon_status to pull out different status types without considering year. If new monitoring statuses are added,
-#' they will need to be added to the bug handling code in the function. Valid inputs:
+#' @param mon_status Quoted string. Allows you to select different MonitoringStatus$MonitoringStatus_Base types. Default is "NGPN_PCM",
+#' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_PCM below).
+#' If new monitoring statuses are added, they will need to be added to the bug handling code in the function. Valid inputs:
 #' \itemize{
-#' \item{"NGPN_VS":} {Default. Pulls in records with status of "####_PlantCommunity", "####_FirePlantCommunity", "####_ForestStructure", #### representing year.}
+#' \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status base of "PlantCommunity", "FirePlantCommunity", "ForestStructure".
+#' Note that some base names have _, spaces, or years in them. These are cleaned up in the function until they're fixed in the databse.}
 #' \item{"PlantCommunity":} {####_PlantCommunity only records}
 #' \item{"FirePlantCommunity":} {####_FirePlantCommunity only records}
 #' \item{"ForestStructure":} {####_ForestStructure only records}
@@ -126,11 +125,15 @@
 #'                         "01yr10", "FireOther_1", "Dual", "FPCM_Other_01", "FPCM_Other_02",
 #'                         "Other", "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
 #'                         "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
-#'                         "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02")
+#'                         "PCM_Fire", "Fire", "Ext", "00Pre02")
 #'
 #'
 #' @param years Numeric. Filter on years. Accepted values start at 1997. Default is 2011 to current year,
 #' which represents the time NGPN plant community monitoring began using latest protocol and sample design.
+#'
+#' @param complete_events Logical. If TRUE (Default) only returns sample events with associated sample data
+#' (eg Cover Point Data). If FALSE, returns all sample events with a record in the SampleEvent table.
+#' +++++ NOT YET ENABLED +++++
 #'
 #' @param output Quoted string. Options are "short" (default), which only returns most important columns;
 #' "verbose" returns all columns in the SampleEvent-related tables.
@@ -149,8 +152,8 @@
 #' # for the Park stratum and all purposes used by NGPN from 2011 and later
 #' samp_vs <- getSampleEvent()
 #'
-#' # return Prairie stratum for AGFO and SCBL for NGPN_VS plots
-#' samp_pr_vs <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_VS",
+#' # return Prairie stratum for AGFO and SCBL for NGPN_PCM plots
+#' samp_pr_vs <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM",
 #'   project = c("Native Prairie", "Prairie"))
 #'
 #' # query all sites, all years
@@ -168,16 +171,16 @@
 #'
 #' @export
 
-getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_VS",
-                           mon_status = "NGPN_VS", years = 2011:format(Sys.Date(), "%Y"),
-                           output = "short"){
+getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_PCM",
+                           mon_status = "NGPN_PCM", years = 2011:format(Sys.Date(), "%Y"),
+                           complete_events = TRUE, output = "short"){
   #---- Bug handling ----
   park <- match.arg(park, several.ok = TRUE,
                     c("all", "AGFO", "BADL", "DETO", "FOLA", "FOUS",
                       "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA"))
   if(any(park == "all")){park = c("AGFO", "BADL", "DETO", "FOLA", "FOUS",
                                   "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA")} else {park}
-  purpose <- match.arg(purpose, c("all", "NGPN_VS", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
+  purpose <- match.arg(purpose, c("all", "NGPN_PCM", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
                                    "Panel6", "Panel7", "Panel8", "Panel9", "Panel10", "PanelE",
                                    "ABAM Supplemental", "AnnualBromeResearch", "CBI plot monitoring",
                                    "Control", "Daubenmire Plot", "Early Detection", "FIRE",
@@ -199,21 +202,22 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
                                   "IN-ACTIVE", "Juniper Woodland", "Lithograph Invasive Research", "Pringle Dog Town Herbicide Trial",
                                   "Woodland"), several.ok = T)
 
-  mon_status <- match.arg(mon_status, c("NGPN_VS", "PlantCommunity", "FirePlantCommunity",
+  mon_status <- match.arg(mon_status, c("NGPN_PCM", "PlantCommunity", "FirePlantCommunity",
                                         "ForestStructure", "00Pre", "00Pre2", "01Burn", "01Post",
                                         "01Pre", "01yr01", "01yr02", "01yr10", "FireOther_1",
                                         "Dual", "FPCM_Other_01", "FPCM_Other_02", "Other",
                                         "PCM_Other", "FireOther_2", "FPCM_Other", "FireOther",
                                         "FireOther_FuelReduction", "FPCM_Other_03", "FireOther_3", "Fire_Other",
-                                        "PCM_Fire", "Plant Community", "Fire", "Ext", "00Pre02"),
+                                        "PCM_Fire", "Fire", "Ext", "00Pre02"),
                           several.ok = TRUE)
 
-  mon_status <- if(all(mon_status %in% "NGPN_VS")){c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
-  } else if(length(mon_status) > 1 & any(mon_status %in% "NGPN_VS")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", mon_status[!mon_status %in% "NGPN_VS"])
+  mon_status <- if(all(mon_status %in% "NGPN_PCM")){c("PlantCommunity","ForestStructure")#, "FirePlantCommunity")
+  } else if(length(mon_status) > 1 & any(mon_status %in% "NGPN_PCM")){
+    c("PlantCommunity", "ForestStructure", mon_status[!mon_status %in% "NGPN_PCM"])
   } else {mon_status}
 
   stopifnot(class(years) %in% c("numeric", "integer"), years >= 1997)
+  stopifnot(class(complete_events) == 'logical')
   output <- match.arg(output, c("short", "verbose"))
 
   #---- Compile data ----
@@ -246,7 +250,21 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2018_Plant Community"] <- "2018_PlantCommunity"
   monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2024_Plant Community"] <- "2024_PlantCommunity"
 
+  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("Plant Community", "_PlantCommunity")] <- "PlantCommunity"
+  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("2018_PlantCommunity", "2019_PlantCommunity")] <- "PlantCommunity"
+  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_Riparian")] <- "Riparian"
+  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_ForestStructure")] <- "ForestStructure"
+  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_FirePlantCommunity")] <- "FirePlantCommunity"
+
+  # Does the AGFO_FPCM_067 2010_PlantCommunity for 2019 affect things downstream
+
   # filter on monitoring status with grepl
+  # SampleEvent$SampleEvent_DefaultMonitoringStatus wasn't consistently entered after 2019.
+  # Have to connect with the monstatus table to get monitoring status.
+  # table(complete.cases(samp_vs$SampleEvent_DefaultMonitoringStatus), samp_vs$year)
+  # Need to drop some columns, including filtering out projects not specified, so don't get a
+  # bunch of duplicates in the data.
+
   mon_stat_list <- paste(mon_status, collapse = "|")
   monstat2 <- monstat1[grepl(mon_stat_list, monstat1$MonitoringStatus_Name),]
 
@@ -273,7 +291,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
                  "MacroPlot_DD_Lat", "MacroPlot_DD_Long", "MacroPlot_Elevation",
                  "MacroPlot_Aspect", "MacroPlot_Azimuth", "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
                  "SampleEvent_Date", "year", "month", "doy", "SampleEvent_DefaultMonitoringStatus",
-                 "MonitoringStatus_Name", "MonitoringStatus_UV1",
+                 "MonitoringStatus_Base", "MonitoringStatus_Name", "MonitoringStatus_UV1",
                  "MacroPlot_GUID", "MM_ProjectUnit_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID")
 
   full_cols <- c(keep_cols, setdiff(names(mac_samp_monstat), keep_cols)) # for logical col order
@@ -285,9 +303,13 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   # Filter on years
   sampev4 <- sampev3[sampev3$year %in% years, ]
 
+  # Drop AGFO_PCM_067 MonitoringStatus_Name = 2010_PlantCommunity for 2019
+  sampev5 <- sampev4[!(sampev4$MacroPlot_Name == "AGFO_FPCM_067" & sampev4$year == 2019 &
+                       sampev4$MonitoringStatus_Name == "2010_PlantCommunity"),]
+
   sampev_final <- if(output == "short"){
-    sampev4[,keep_cols]
-  } else {sampev4[,full_cols]}
+    sampev5[,keep_cols]
+  } else {sampev5[,full_cols]}
 
   return(sampev_final)
   }

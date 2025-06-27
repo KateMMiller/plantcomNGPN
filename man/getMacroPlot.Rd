@@ -8,7 +8,7 @@ getMacroPlot(
   park = "all",
   plot_name = "all",
   project = "Park",
-  purpose = "NGPN_VS",
+  purpose = "NGPN_PCM",
   output = "short"
 )
 }
@@ -29,14 +29,14 @@ getMacroPlot(
 \item{"WICA":} {Wind Cave National Park}
 }}
 
-\item{plot_name}{Quoted string to return a particular plot based on name. Default is "all", which if
-purpose is set to "NGPN_VS" (default), and project is set to "Park" (default), then only NGPN Plant Community
+\item{plot_name}{Quoted string to return a particular plot based on MacroPlot_Name. Default is "all", which if
+purpose is set to "NGPN_PCM" (default), and project is set to "Park" (default), then only NGPN Plant Community
 Monitoring plots (e.g.,macroplots with "_PCM_", "_FPCM_", "_LPCM_", and "_RCM_" in their names) will be included.
 Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 function will error out with a list of unmatched plot names.}
 
 \item{project}{Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
-typically is the strata a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+typically is the strata a given plot belongs to. By default, selects "NGPN_PCM" plots, which are plots with
 c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
 plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
@@ -44,24 +44,24 @@ If new projects are added in the future, they will need to be added to the bug h
 Valid inputs:
 \itemize{
 \item{'all':} {Pull in all project types.}
-\item{"Park":} {Default. *NGPN VS* stratum covering whole park.}
-\item{"ABAM":} {*NGPN VS* stratum in WICA.}
-\item{"Bodmer":} {*NGPN VS* stratum in FOUS.}
-\item{"Cedar Removal Study":} {*NGPN VS* in MNRR.}
-\item{"Deciduous Woodland":} {*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
-\item{"Fort":} {*NGPN VS* stratum in FOUS.}
-\item{"Monitoring"} {*NGPN VS* stratum in MNRR.}
-\item{"Native Prairie":} {*NGPN VS* stratum in AGFO.}
-\item{"North Riparian":} {*NGPN VS* stratum in THRO.}
-\item{"North Upland":} {*NGPN VS* stratum in THRO.}
-\item{"North Unit":} {*NGPN VS* stratum in BADL.}
-\item{"Pine Forest":} {*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
-\item{"Prairie":} {*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
-\item{"Riparian":} {*NGPN VS* stratum in AGFO, DETO, and FOLA.}
-\item{"Shrubland":} {*NGPN VS* stratum in THRO.}
-\item{"South Riparian":} {*NGPN VS* stratum in THRO.}
-\item{"South Upland":} {*NGPN VS* stratum in THRO.}
-\item{"Upland":} {*NGPN VS* stratum in DETO and FOLA.}
+\item{"Park":} {Default. *NGPN_PCM* stratum covering whole park.}
+\item{"ABAM":} {*NGPN_PCM* stratum in WICA.}
+\item{"Bodmer":} {*NGPN_PCM* stratum in FOUS.}
+\item{"Cedar Removal Study":} {*NGPN_PCM* in MNRR.}
+\item{"Deciduous Woodland":} {*NGPN_PCM* covers KNRI (2 plots) and THROS (1 plot).}
+\item{"Fort":} {*NGPN_PCM* stratum in FOUS.}
+\item{"Monitoring"} {*NGPN_PCM* stratum in MNRR.}
+\item{"Native Prairie":} {*NGPN_PCM* stratum in AGFO.}
+\item{"North Riparian":} {*NGPN_PCM* stratum in THRO.}
+\item{"North Upland":} {*NGPN_PCM* stratum in THRO.}
+\item{"North Unit":} {*NGPN_PCM* stratum in BADL.}
+\item{"Pine Forest":} {*NGPN_PCM* stratum in DETO, JECA, MORU, and WICA.}
+\item{"Prairie":} {*NGPN_PCM* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
+\item{"Riparian":} {*NGPN_PCM* stratum in AGFO, DETO, and FOLA.}
+\item{"Shrubland":} {*NGPN_PCM* stratum in THRO.}
+\item{"South Riparian":} {*NGPN_PCM* stratum in THRO.}
+\item{"South Upland":} {*NGPN_PCM* stratum in THRO.}
+\item{"Upland":} {*NGPN_PCM* stratum in DETO and FOLA.}
 }
 Other options include c("ABAM Supplemental", "AnnualBrome_Research",
                         "American Elk Invasive Research", "Archaeology JFSP",
@@ -74,12 +74,12 @@ Other options include c("ABAM Supplemental", "AnnualBrome_Research",
 \item{purpose}{Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
 standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
-that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
+that can be specified are below. By default, "NGPN_PCM" plots are selected, which includes all plots with c("_PCM_",
 "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
 to the bug handling code in the function. Valid inputs:
 \itemize{
 \item{"all":} {All plots in imported FFI database}
-\item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+\item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
 \item{"Panel1":} {NGPN PCM Panel 1}
 \item{"Panel2":} {NGPN PCM Panel 2}
 \item{"Panel3":} {NGPN PCM Panel 3}
@@ -140,8 +140,8 @@ importData(type = 'local',
 macro_vs <- getMacroPlot()
 table(macro_vs$RegistrationUnit_Name, macro_vs$ProjectUnit_Name)
 
-# return Prairie stratum for AGFO and SCBL for NGPN_VS plots
-macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_VS",
+# return Prairie stratum for AGFO and SCBL for NGPN_PCM plots
+macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM",
   project = c("Native Prairie", "Prairie"))
 table(macro_pr_vs$RegistrationUnit_Name, macro_pr_vs$ProjectUnit_Name)
 

@@ -25,14 +25,14 @@
 #' \item{"WICA":} {Wind Cave National Park}
 #'}
 #'
-#' @param plot_name Quoted string to return a particular plot based on name. Default is "all", which if
-#' purpose is set to "NGPN_VS" (default), and project is set to "Park" (default), then only NGPN Plant Community
+#' @param plot_name Quoted string to return a particular plot based on MacroPlot_Name. Default is "all", which if
+#' purpose is set to "NGPN_PCM" (default), and project is set to "Park" (default), then only NGPN Plant Community
 #' Monitoring plots (e.g.,macroplots with "_PCM_", "_FPCM_", "_LPCM_", and "_RCM_" in their names) will be included.
 #' Can select multiple plots. If a plot name is specified that does not occur in the imported data,
 #' function will error out with a list of unmatched plot names.
 #'
 #' @param project Quoted string to return plots of a particular project, based on ProjectUnit_Name. In NGPN, this
-#' typically is the strata a given plot belongs to. By default, selects "NGPN_VS" plots, which are plots with
+#' typically is the strata a given plot belongs to. By default, selects "NGPN_PCM" plots, which are plots with
 #' c("_PCM_", "_FPCM_", "_LPCM_", and "_RCM_") in their name and the "Park" stratum for those plots. Note that some
 #' plots fall in multiple stratum, such as Park and Native Prairie in AGFO. In those cases, the Park strata is
 #' selected by default. If a user wants a different strata than "Park", that can be specified using the codes below.
@@ -40,24 +40,24 @@
 #' Valid inputs:
 #' \itemize{
 #' \item{'all':} {Pull in all project types.}
-#' \item{"Park":} {Default. *NGPN VS* stratum covering whole park.}
-#' \item{"ABAM":} {*NGPN VS* stratum in WICA.}
-#' \item{"Bodmer":} {*NGPN VS* stratum in FOUS.}
-#' \item{"Cedar Removal Study":} {*NGPN VS* in MNRR.}
-#' \item{"Deciduous Woodland":} {*NGPN VS* covers KNRI (2 plots) and THROS (1 plot).}
-#' \item{"Fort":} {*NGPN VS* stratum in FOUS.}
-#' \item{"Monitoring"} {*NGPN VS* stratum in MNRR.}
-#' \item{"Native Prairie":} {*NGPN VS* stratum in AGFO.}
-#' \item{"North Riparian":} {*NGPN VS* stratum in THRO.}
-#' \item{"North Upland":} {*NGPN VS* stratum in THRO.}
-#' \item{"North Unit":} {*NGPN VS* stratum in BADL.}
-#' \item{"Pine Forest":} {*NGPN VS* stratum in DETO, JECA, MORU, and WICA.}
-#' \item{"Prairie":} {*NGPN VS* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
-#' \item{"Riparian":} {*NGPN VS* stratum in AGFO, DETO, and FOLA.}
-#' \item{"Shrubland":} {*NGPN VS* stratum in THRO.}
-#' \item{"South Riparian":} {*NGPN VS* stratum in THRO.}
-#' \item{"South Upland":} {*NGPN VS* stratum in THRO.}
-#' \item{"Upland":} {*NGPN VS* stratum in DETO and FOLA.}
+#' \item{"Park":} {Default. *NGPN_PCM* stratum covering whole park.}
+#' \item{"ABAM":} {*NGPN_PCM* stratum in WICA.}
+#' \item{"Bodmer":} {*NGPN_PCM* stratum in FOUS.}
+#' \item{"Cedar Removal Study":} {*NGPN_PCM* in MNRR.}
+#' \item{"Deciduous Woodland":} {*NGPN_PCM* covers KNRI (2 plots) and THROS (1 plot).}
+#' \item{"Fort":} {*NGPN_PCM* stratum in FOUS.}
+#' \item{"Monitoring"} {*NGPN_PCM* stratum in MNRR.}
+#' \item{"Native Prairie":} {*NGPN_PCM* stratum in AGFO.}
+#' \item{"North Riparian":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"North Upland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"North Unit":} {*NGPN_PCM* stratum in BADL.}
+#' \item{"Pine Forest":} {*NGPN_PCM* stratum in DETO, JECA, MORU, and WICA.}
+#' \item{"Prairie":} {*NGPN_PCM* stratum in BADL, DETO, FOUS, KNRI, SCBL, THRO, and WICA.}
+#' \item{"Riparian":} {*NGPN_PCM* stratum in AGFO, DETO, and FOLA.}
+#' \item{"Shrubland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"South Riparian":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"South Upland":} {*NGPN_PCM* stratum in THRO.}
+#' \item{"Upland":} {*NGPN_PCM* stratum in DETO and FOLA.}
 #' }
 #' Other options include c("ABAM Supplemental", "AnnualBrome_Research",
 #'                         "American Elk Invasive Research", "Archaeology JFSP",
@@ -70,12 +70,12 @@
 #' @param purpose Quoted string to return plots with a particular purpose, which typically refers to a characteristic
 #' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
 #' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
-#' that can be specified are below. By default, "NGPN_VS" plots are selected, which includes all plots with c("_PCM_",
+#' that can be specified are below. By default, "NGPN_PCM" plots are selected, which includes all plots with c("_PCM_",
 #' "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
 #' to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
-#' \item{"NGPN_VS":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
+#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name}
 #' \item{"Panel1":} {NGPN PCM Panel 1}
 #' \item{"Panel2":} {NGPN PCM Panel 2}
 #' \item{"Panel3":} {NGPN PCM Panel 3}
@@ -125,8 +125,8 @@
 #' macro_vs <- getMacroPlot()
 #' table(macro_vs$RegistrationUnit_Name, macro_vs$ProjectUnit_Name)
 #'
-#' # return Prairie stratum for AGFO and SCBL for NGPN_VS plots
-#' macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_VS",
+#' # return Prairie stratum for AGFO and SCBL for NGPN_PCM plots
+#' macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM",
 #'   project = c("Native Prairie", "Prairie"))
 #' table(macro_pr_vs$RegistrationUnit_Name, macro_pr_vs$ProjectUnit_Name)
 #'
@@ -147,7 +147,7 @@
 #'
 #' @export
 
-getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_VS",
+getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_PCM",
                          output = "short"){
   #---- Bug handling ----
   park <- match.arg(park, several.ok = TRUE,
@@ -155,7 +155,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                       "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA"))
   if(any(park == "all")){park = c("AGFO", "BADL", "DETO", "FOLA", "FOUS",
                                   "JECA", "KNRI", "MORU", "SCBL", "THRO", "WICA")} else {park}
-  purpose <- match.arg(purpose, c("all", "NGPN_VS", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
+  purpose <- match.arg(purpose, c("all", "NGPN_PCM", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5",
                                    "Panel6", "Panel7", "Panel8", "Panel9", "Panel10", "PanelE",
                                    "ABAM Supplemental", "AnnualBromeResearch", "CBI plot monitoring",
                                    "Control", "Daubenmire Plot", "Early Detection", "FIRE",
@@ -228,10 +228,10 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
       stop(paste0("The following specified plot names do not have matching records in the MacroPlot table: "),
            paste0(typo_names, collapse = ", "))}
 
-  # Create plot list to filter on [may need to tweak this depending on if needs outside NGPN_VS]
+  # Create plot list to filter on [may need to tweak this depending on if needs outside NGPN_PCM]
   plot_list1 <- if(any(plot_name == "all")){plot_names} else {plot_name}
-  plot_list <- if(all(purpose == "NGPN_VS") & any(plot_name == "all")){NGPN_plots
-  } else if(!any(plot_name %in% "all") & any(purpose == "NGPN_VS")){intersect(plot_list1, NGPN_plots)
+  plot_list <- if(all(purpose == "NGPN_PCM") & any(plot_name == "all")){NGPN_plots
+  } else if(!any(plot_name %in% "all") & any(purpose == "NGPN_PCM")){intersect(plot_list1, NGPN_plots)
   } else if(any(plot_name %in% "all") & any(purpose %in% "all") & any(project %in% "all")){plot_list1
   } else {plot_name}
 
@@ -239,7 +239,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   macro_a <- macro_orig[macro_orig$MacroPlot_Name %in% plot_list,]
 
   # Set purpose list if all is selected
-  purpose_list <- if(any(purpose %in% c("all", "NGPN_VS"))){
+  purpose_list <- if(any(purpose %in% c("all", "NGPN_PCM"))){
     unique(macro_a$MacroPlot_Purpose)
   } else {unique(purpose)}
 
@@ -257,8 +257,8 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   # filter on park
   macro4 <- macro3[macro3$RegistrationUnit_Name %in% park,]
 
-  # Set project list if all or NGPN_VS selected
-  project_list <- if(any(project %in% c("all", "NGPN_VS"))){
+  # Set project list if all or NGPN_PCM selected
+  project_list <- if(any(project %in% c("all", "NGPN_PCM"))){
     unique(macro3$ProjectUnit_Name)
   } else {unique(project)}
 

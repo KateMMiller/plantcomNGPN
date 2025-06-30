@@ -27,4 +27,5 @@ Collate:
     'getMacroPlot.R'
     'getSampleEvent.R'
     'getCoverPointData.R'
+    'getTaxa.R'
     'importData.R'

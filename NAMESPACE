@@ -3,6 +3,7 @@
 export(getCoverPointData)
 export(getMacroPlot)
 export(getSampleEvent)
+export(getTaxa)
 export(importData)
 importFrom(dplyr,bind_rows)
 importFrom(dplyr,collect)

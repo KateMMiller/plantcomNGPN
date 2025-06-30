@@ -183,7 +183,7 @@ kable(dfms |> select(-dup, -dup_ms), format = 'html', align = 'c',
   column_spec(1, background = case_when(dfms$dup_ms > 0 ~ "orange",
                                         dfms$dup > 0 ~ "#F2F2A0", 
                                         TRUE ~ "white")) %>%
-  column_spec(3, background = ifelse(grepl("_|' '", dfms$MonitoringStatus_Base), "#ff9797", "white")) %>%
+  column_spec(3, background = ifelse(grepl("_|201' '", dfms$MonitoringStatus_Base), "#ff9797", "white")) %>%
   collapse_rows(1, valign = "top")
 
 print(plot_mat_ms)

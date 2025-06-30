@@ -148,13 +148,24 @@ sample year, and other parameters.
 \examples{
 \dontrun{
 
-library(vegcomNPGN)
+library(plantcomNGPN)
 importData(type = 'local',
 dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
            "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
            "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 export = F)
-#+++++ UPDATE +++++
+
+# get all cover point data for all parks, all years, for NGPN_PCM plots
+covpts <- getCoverPointData()
+
+# return Prairie stratum for AGFO and SCBL
+covpts_pr <- getCoverPointData(park = c("AGFO", "SCBL"), project = c("Native Prairie", "Prairie"))
+
+# get cover point data for strata besides park
+
+# add example where add some macroplot columns back
+
+# add example where add some taxa columns back
 
 }
 

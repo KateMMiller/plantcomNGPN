@@ -156,7 +156,7 @@ filter on records.
 \examples{
 \dontrun{
 
-library(vegcomNPGN)
+library(plantcomNGPN)
 importData(type = 'local',
   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",

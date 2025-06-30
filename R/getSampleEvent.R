@@ -113,7 +113,10 @@
 #'
 #' @param mon_status Quoted string. Allows you to select different MonitoringStatus$MonitoringStatus_Base types. Default is "NGPN_PCM",
 #' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_PCM below).
-#' If new monitoring statuses are added, they will need to be added to the bug handling code in the function. Valid inputs:
+#' If new monitoring statuses are added, they will need to be added to the bug handling code in the function.
+#' Note that until the Monitoring Status data are cleaned up (either in the SampleEvent or MonitoringStatus table,
+#' blank monitoring status codes will also be returned by default.
+#' Valid inputs:
 #' \itemize{
 #' \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status base of "PlantCommunity", "FirePlantCommunity", "ForestStructure".
 #' Note that some base names have _, spaces, or years in them. These are cleaned up in the function until they're fixed in the databse.}
@@ -141,7 +144,7 @@
 #' @examples
 #' \dontrun{
 #'
-#' library(vegcomNPGN)
+#' library(plantcomNGPN)
 #' importData(type = 'local',
 #'   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #'              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
@@ -211,7 +214,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
                                         "PCM_Fire", "Fire", "Ext", "00Pre02"),
                           several.ok = TRUE)
 
-  mon_status <- if(all(mon_status %in% "NGPN_PCM")){c("PlantCommunity","ForestStructure")#, "FirePlantCommunity")
+  mon_status <- if(all(mon_status %in% "NGPN_PCM")){c("PlantCommunity","ForestStructure", "")#, "FirePlantCommunity")
   } else if(length(mon_status) > 1 & any(mon_status %in% "NGPN_PCM")){
     c("PlantCommunity", "ForestStructure", mon_status[!mon_status %in% "NGPN_PCM"])
   } else {mon_status}
@@ -224,39 +227,38 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   env <- if(exists("NGPN_tables")){NGPN_tables} else {.GlobalEnv}
   macro <- getMacroPlot(park = park, plot_name = plot_name, project = project, purpose = purpose,
                         output = "short")|>
-    select(MacroPlot_Name, RegistrationUnit_Name, MacroPlot_Purpose, MacroPlot_Type,
-           ProjectUnit_Name, MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_DD_Lat, MacroPlot_DD_Long,
-           MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
-           MacroPlot_SlopeTransect, MacroPlot_GUID, MM_ProjectUnit_GUID)
+    select(MacroPlot_Name, Unit_Name, MacroPlot_Purpose, MacroPlot_Type,
+           ProjectUnit_Name, RegistrationUnit_GUID, UTM_X, UTM_Y, UTMzone, DD_Lat, DD_Long,
+           Elevation, Aspect, Azimuth, SlopeHill,
+           SlopeTransect, MacroPlot_GUID, MM_ProjectUnit_GUID)
 
   tryCatch(
-    monstat1 <- get("MonitoringStatus", envir = env),
+    monstat <- get("MonitoringStatus", envir = env) |> select(-datasource),
     error = function(e){stop("MonitoringStatus table not found. Please import data.")})
 
   tryCatch(
-    mm_monstat_se <- get("MM_MonitoringStatus_SampleEvent", envir = env),
+    mm_monstat_se <- get("MM_MonitoringStatus_SampleEvent", envir = env) |> select(-datasource),
     error = function(e){stop("MM_MonitoringStatus_SampleEvent table not found. Please import data.")})
 
   tryCatch(
-    sampev1 <- get("SampleEvent", envir = env),
+    sampev <- get("SampleEvent", envir = env) |> select(-datasource),
     error = function(e){stop("SampleEvent table not found. Please import data.")})
 
   # Use to make some tables smaller before join
   macro_guids <- unique(macro$MacroPlot_GUID)
-  macro_proj_guids <- unique(macro$MM_ProjectUnit_GUID)
+  macro_proj_units <- unique(macro$Unit_Name)
 
-  # Fix typo in MonitoringStatus_Name
-  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2009_Plant Community"] <- "2009_PlantCommunity"
-  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2018_Plant Community"] <- "2018_PlantCommunity"
-  monstat1$MonitoringStatus_Name[monstat1$MonitoringStatus_Name == "2024_Plant Community"] <- "2024_PlantCommunity"
+  # Fix typos in MonitoringStatus_Name and MonitoringStatus_Base
+  monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2009_Plant Community"] <- "2009_PlantCommunity"
+  monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2018_Plant Community"] <- "2018_PlantCommunity"
+  monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2024_Plant Community"] <- "2024_PlantCommunity"
 
-  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("Plant Community", "_PlantCommunity")] <- "PlantCommunity"
-  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("2018_PlantCommunity", "2019_PlantCommunity")] <- "PlantCommunity"
-  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_Riparian")] <- "Riparian"
-  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_ForestStructure")] <- "ForestStructure"
-  monstat1$MonitoringStatus_Base[monstat1$MonitoringStatus_Base %in% c("_FirePlantCommunity")] <- "FirePlantCommunity"
-
-  # Does the AGFO_FPCM_067 2010_PlantCommunity for 2019 affect things downstream
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base == "2016_"] <- "PlantCommunity"
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("Plant Community", "_PlantCommunity")] <- "PlantCommunity"
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("2018_PlantCommunity", "2019_PlantCommunity")] <- "PlantCommunity"
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_Riparian")] <- "Riparian"
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_ForestStructure")] <- "ForestStructure"
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_FirePlantCommunity")] <- "FirePlantCommunity"
 
   # filter on monitoring status with grepl
   # SampleEvent$SampleEvent_DefaultMonitoringStatus wasn't consistently entered after 2019.
@@ -266,18 +268,20 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   # bunch of duplicates in the data.
 
   mon_stat_list <- paste(mon_status, collapse = "|")
-  monstat2 <- monstat1[grepl(mon_stat_list, monstat1$MonitoringStatus_Name),]
+  #monstat2 <- monstat1[grepl(mon_stat_list, monstat1$MonitoringStatus_Name),]
 
-  sampev <- sampev1[sampev1$SampleEvent_Plot_GUID %in% macro_guids,]
-  monstat <- monstat2[monstat2$MonitoringStatus_ProjectUnit_GUID %in% macro_proj_guids,]
+  #sampev <- sampev1[sampev1$SampleEvent_Plot_GUID %in% macro_guids,]
+  #monstat <- monstat2[monstat2$Unit_Name %in% macro_proj_units,]
 
   mac_samp <- left_join(macro, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"))
-  mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID",
-                                                           "datasource"))
+  mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
   mac_samp_monstat <- left_join(mac_samp_mm, monstat,
                                 by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
-                                       "MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID",
-                                       "datasource"))
+                                       "MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID"))
+
+  mac_samp_monstat_anti <- anti_join(mac_samp_mm, monstat,
+                                by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
+                                       "MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID"))
 
   mac_samp_monstat$SampleEvent_Date <-
     format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
@@ -286,19 +290,24 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
   mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
 
-  keep_cols <- c("MacroPlot_Name", "RegistrationUnit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
-                 "ProjectUnit_Name", "MacroPlot_UTM_X", "MacroPlot_UTM_Y",
-                 "MacroPlot_DD_Lat", "MacroPlot_DD_Long", "MacroPlot_Elevation",
-                 "MacroPlot_Aspect", "MacroPlot_Azimuth", "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
-                 "SampleEvent_Date", "year", "month", "doy", "SampleEvent_DefaultMonitoringStatus",
+  # Drop table names from column names where I can
+  names(mac_samp_monstat)[names(mac_samp_monstat) == "SampleEvent_DefaultMonitoringStatus"] <- "DefaultMonitoringStatus"
+
+  keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
+                 "ProjectUnit_Name", "UTM_X", "UTM_Y", "UTMzone",
+                 "DD_Lat", "DD_Long", "Elevation",
+                 "Aspect", "Azimuth", "SlopeHill", "SlopeTransect",
+                 "SampleEvent_Date", "year", "month", "doy", "DefaultMonitoringStatus",
                  "MonitoringStatus_Base", "MonitoringStatus_Name", "MonitoringStatus_UV1",
-                 "MacroPlot_GUID", "MM_ProjectUnit_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID")
+                 "MacroPlot_GUID", "MM_ProjectUnit_GUID", "SampleEvent_GUID", "RegistrationUnit_GUID",
+                 "MM_MonitoringStatus_GUID")
 
   full_cols <- c(keep_cols, setdiff(names(mac_samp_monstat), keep_cols)) # for logical col order
 
   # Drop plots with no sample events
   sampev2 <- mac_samp_monstat[!is.na(mac_samp_monstat$SampleEvent_GUID),]
-  sampev3 <- sampev2[grepl(mon_stat_list, sampev2$MonitoringStatus_Name),] # dropping blanks
+  sampev3 <- sampev2[grepl(mon_stat_list, sampev2$DefaultMonitoringStatus),]
+  # monstat1[grepl(mon_stat_list, monstat1$MonitoringStatus_Name),]
 
   # Filter on years
   sampev4 <- sampev3[sampev3$year %in% years, ]

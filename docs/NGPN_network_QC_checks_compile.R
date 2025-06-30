@@ -112,7 +112,8 @@ macro_samp_ms2 <- left_join(macro_samp_ms1, monstat,
 
 macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(grepl("blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+  filter(grepl(
+    "blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian|2016_$|2011|2012|2014|2015",
                MonitoringStatus_Base)) |>
   select(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |> unique() |>
   group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |>
@@ -472,5 +473,7 @@ QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = "QC ch
 # JECA_PCM_038 in 2016; 2016-07-05; 2016-09-13; 2016_FirePlantCommunity; 2016_ForestStructure; 01yr02; 2016_ForestStructure;
 # Also looks like sometimes MonitoringStatus_Name isn't consistent between ForestStructure or PlantCommunity across years, but usually within for the same plots. Then there's FirePlantCommunity, which appears to be different.
 
+#+++++ Species Checks +++++++
+# Find any inconsistencies between master species, local species, and aux species
 
 

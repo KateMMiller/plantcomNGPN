@@ -1,5 +1,6 @@
 #' @include getMacroPlot.R
 #' @include getSampleEvent.R
+#' @include getTaxa.R
 #'
 #' @title getCoverPointData
 #'
@@ -133,13 +134,24 @@
 #' @examples
 #' \dontrun{
 #'
-#' library(vegcomNPGN)
+#' library(plantcomNGPN)
 #' importData(type = 'local',
 #' dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #'            "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
 #'            "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #' export = F)
-#' #+++++ UPDATE +++++
+#'
+#' # get all cover point data for all parks, all years, for NGPN_PCM plots
+#' covpts <- getCoverPointData()
+#'
+#' # return Prairie stratum for AGFO and SCBL
+#' covpts_pr <- getCoverPointData(park = c("AGFO", "SCBL"), project = c("Native Prairie", "Prairie"))
+#'
+#' # get cover point data for strata besides park
+#'
+#' # add example where add some macroplot columns back
+#'
+#' # add example where add some taxa columns back
 #'
 #' }
 #'
@@ -204,37 +216,52 @@ getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park",
                            purpose = purpose, mon_status = mon_status, years = years,
                            complete_events = complete_events, output = 'short')
 
-  covpts_samp1 <- get("Cover_Points_metric_Sample", envir = env)
-  covpts_attr1 <- get("Cover_Points_metric_Attribute", envir = env)
-  spploc <- get("LocalSpecies", envir = env)
-  sppmas <- get("MasterSpecies", envir = env)
-  localspp <- get("LocalSpecies", envir = env)
-  mastspp <- get("MasterSpecies", envir = env)
+  covpts_samp1 <-   tryCatch(get("Cover_Points_metric_Sample", envir = env) |> select(-datasource),
+                             error = function(e){stop("Cover_Points_metric_Sample table not found. Please import data.")})
+  covpts_attr1 <- tryCatch(get("Cover_Points_metric_Attribute", envir = env) |> select(-datasource),
+                           error = function(e){stop("Cover_Points_metric_Attribute table not found. Please import data.")})
 
-  spp_join <- left_join(localspp, mastspp, by = c("LocalSpecies_GUID" = "MasterSpecies_GUID", 'datasource'))
+  spptbl <- getTaxa() |> select(Spp_GUID, RegistrationUnitGUID, Symbol, ITIS_TSN, ScientificName,
+                                CommonName, Nativity, Invasive, Cultural, Concern, UserAdded)
+
 
   # Making tables smaller before join
   sampev_guids <- unique(sampev$SampleEvent_GUID)
   covpts_samp <- covpts_samp1[covpts_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(covpts_samp$SampleData_SampleRow_GUID)
   covpts_attr2 <- covpts_attr1[covpts_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
   # Drop records where Index is blank b/c causes issues in the join
   covpts_attr <- covpts_attr2[!is.na(covpts_attr2$Index),]
 
-  samp_cov_as <- inner_join(covpts_samp, covpts_attr, by = c("SampleData_SampleRow_GUID" =
-                                                              "AttributeData_SampleRow_GUID"))
+  ## Join coverpoints sample and attribute table first
+  # samp_cov_as <- left_join(covpts_samp, covpts_attr, by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+  #                                                            "datasource"))
 
   samp_covs <- left_join(sampev, covpts_samp, by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
+
   samp_cova <- left_join(samp_covs, covpts_attr,
-                         by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID", "datasource"))
+                         by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID"))
 
   # Add in species info
-  samp_cov_spp <- left_join(samp_cova, spp_join, by = c("Spp_GUID" = "LocalSpecies_GUID", "datasource"))
+  samp_cov_spp <- left_join(samp_cova, spptbl, by = c("Spp_GUID",
+                                                      "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  # keep_cols <- c("")
-  # if(output == 'short'){
-  #
-  # }
+  keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose",
+                 "ProjectUnit_Name", "UTM_X", "UTM_Y", "UTMzone", "Elevation",
+                 "Aspect", "Azimuth", "SlopeHill", "SlopeTransect",
+                 "SampleEvent_Date", "year", "month", "doy", "DefaultMonitoringStatus",
+                 "MonitoringStatus_Base",
+                 "Visited", "NumTran", "TranLen", "NumPtsTran", "Offset", "UV1Desc", "SaComment",
+                 "Index", "Transect", "Point", "Tape", "Order", "Height", "CanopyLayer", "Status",
+                 "Comment", "Symbol", "ITIS_TSN", "ScientificName", "CommonName",
+                 "Nativity", "Invasive", "Cultural", "Concern",
+                 "MacroPlot_GUID", "SampleEvent_GUID", "RegistrationUnit_GUID", "Spp_GUID")
 
+  final_names <- if(output == "short"){keep_cols
+  } else {c(keep_cols, sort(setdiff(names(samp_cov_spp), keep_cols)))}
+
+  sampcov_final <- samp_cov_spp[,final_names]
+
+  return(sampcov_final)
   }
-#table(complete.cases(covpts_attr$Index))

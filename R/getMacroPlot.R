@@ -5,7 +5,8 @@
 #' combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
 #' tested as thoroughly, and may not return intended results in every case. Note that this is more
 #' of an internal function that other data-related getter functions source to correctly link table and
-#' filter on records.
+#' filter on records. Note that table names at the beginning of column names are dropped from output
+#' for easier coding/analysis.
 #'
 #' @importFrom dplyr left_join
 #'
@@ -113,7 +114,7 @@
 #' @examples
 #' \dontrun{
 #'
-#' library(vegcomNPGN)
+#' library(plantcomNGPN)
 #' importData(type = 'local',
 #'   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #'              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
@@ -264,30 +265,43 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
 
   macro5 <- macro4[macro4$ProjectUnit_Name %in% project_list,]
 
-  #macro5 <- macro5[,keep_cols]
-  # Return only park project for plots found in multiple strata, so only 1 record per plot returned
-  # dup_plots <- macro5 |> group_by(MacroPlot_Name) |>
-  #   summarize(num_recs = sum(!is.na(ProjectUnit_Name)), .groups = 'drop')
-  #
-  # macro6 <- left_join(macro5, dup_plots, by = "MacroPlot_Name") |>
-  #   mutate(keep = ifelse(!is.na(num_recs) & ProjectUnit_Name == "Park", 1,
-  #                        ifelse(num_recs == 1, 1, 0))) |>
-  #   filter(keep == 1) |> select(-keep)
+  # hacky way to keep tblname_UV1 as is
+  names(macro5)[names(macro5) == "MacroPlot_UV1"] <- "MacroPlotUV1"
+  names(macro5)[names(macro5) == "MacroPlot_UV2"] <- "MacroPlotUV2"
+  names(macro5)[names(macro5) == "MacroPlot_UV3"] <- "MacroPlotUV3"
+  names(macro5)[names(macro5) == "MacroPlot_UV4"] <- "MacroPlotUV4"
+  names(macro5)[names(macro5) == "MacroPlot_UV5"] <- "MacroPlotUV5"
+  names(macro5)[names(macro5) == "MacroPlot_UV6"] <- "MacroPlotUV6"
+  names(macro5)[names(macro5) == "MacroPlot_UV7"] <- "MacroPlotUV7"
+  names(macro5)[names(macro5) == "MacroPlot_UV8"] <- "MacroPlotUV8"
+  names(macro5)[names(macro5) == "MacroPlot_GUID"] <- "MacroPlotGUID"
+  names(macro5)[names(macro5) == "MacroPlot_Comment"] <- "MacroPlotComment"
+  names(macro5)[names(macro5) == "MacroPlot_Name"] <- "MacroPlotName"
+  names(macro5)[names(macro5) == "MacroPlot_Purpose"] <- "MacroPlotPurpose"
+  names(macro5)[names(macro5) == "MacroPlot_Type"] <- "MacroPlotType"
+  names(macro5)[names(macro5) == "ProjectUnit_Name"] <- "ProjectUnitName"
+  names(macro5)[names(macro5) == "MM_ProjectUnit_GUID"] <- "MM_ProjectUnitGUID"
+  names(macro5)[names(macro5) == "RegistrationUnit_GUID"] <- "RegUnitGUID"
 
+  # Drop table names from most column names for easier coding
+  names(macro5) <-
+    gsub("^MacroPlot_|^ProjectUnit_|^Registration", "", names(macro5))
+
+  # Add the _ back
+  names(macro5) <- gsub("MacroPlot", "MacroPlot_", names(macro5))
+  names(macro5) <- gsub("ProjectUnit", "ProjectUnit_", names(macro5))
+  names(macro5) <- gsub("RegUnit", "RegistrationUnit_", names(macro5))
 
   # Compile final dataset
-  keep_cols <- c("MacroPlot_Name", "RegistrationUnit_Name",
-                 "MacroPlot_Purpose", "MacroPlot_Type", "ProjectUnit_Name", "ProjectUnit_Agency",
-                 "ProjectUnit_Description",
-                 "MacroPlot_UTM_X", "MacroPlot_UTM_Y", "MacroPlot_UTMzone", "MacroPlot_Datum",
-                 "MacroPlot_DD_Lat", "MacroPlot_DD_Long",
-                 "MacroPlot_Elevation", "MacroPlot_ElevationUnits", "MacroPlot_Azimuth", "MacroPlot_Aspect",
-                 "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
-                 "MacroPlot_StartPoint", "MacroPlot_Directions", "MacroPlot_Comment",
+  keep_cols <- c("MacroPlot_Name", "Unit_Name",
+                 "MacroPlot_Purpose", "MacroPlot_Type", "ProjectUnit_Name", "Agency",
+                 "UTM_X", "UTM_Y", "UTMzone", "Datum", "DD_Lat", "DD_Long",
+                 "Elevation", "ElevationUnits", "Azimuth", "Aspect",
+                 "SlopeHill", "SlopeTransect",
+                 "StartPoint", "Directions", "MacroPlot_Comment",
                  "MacroPlot_UV1", "MacroPlot_UV2", "MacroPlot_UV3", "MacroPlot_UV4", "MacroPlot_UV5",
-                 "MacroPlot_UV6", "MacroPlot_UV7", "MacroPlot_UV8", "MacroPlot_Metadata",
-                 "MacroPlot_GUID", "MacroPlot_Original_GUID", "MM_ProjectUnit_GUID",
-                 "ProjectUnit_Original_GUID", "datasource")
+                 "MacroPlot_UV6", "MacroPlot_UV7", "MacroPlot_UV8", "Metadata",
+                 "MacroPlot_GUID", "RegistrationUnit_GUID", "MM_ProjectUnit_GUID", "datasource")
 
   macro6 <-
   if(output == "short"){macro5[,keep_cols]

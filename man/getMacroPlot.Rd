@@ -123,12 +123,13 @@ This function was primarily developed to pull out NGPN plant community monitorin
 combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
 tested as thoroughly, and may not return intended results in every case. Note that this is more
 of an internal function that other data-related getter functions source to correctly link table and
-filter on records.
+filter on records. Note that table names at the beginning of column names are dropped from output
+for easier coding/analysis.
 }
 \examples{
 \dontrun{
 
-library(vegcomNPGN)
+library(plantcomNGPN)
 importData(type = 'local',
   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",

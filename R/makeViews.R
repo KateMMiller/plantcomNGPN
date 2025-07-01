@@ -3,10 +3,11 @@
 #' @description Internal function that runs within importData that creates the views for each
 #' NGPN-specific sampling protocols of FFI. Views are Cover_Points_Metric, Cover_Species_Composition,
 #' Density_Belts_Metric, Density_Quadrats_Metric, Disturbance_History, MacroPlot_SampleEvents,
-#' Surface_Fuels, Taxa_Table, Trees_Metric. Function only compiles data for plots with "PCM",
-#' "FPCM", "LPCM", or "RCM" in the MacroPlot_Name, and start at 2011 when NGPN-specific monitoring began.
+#' Surface_Fuels_1000Hr, Surface_Fuels_Fine, Surface_Fuels_Duff, Taxa_Table, Trees_Metric.
+#' Function only compiles data for plots with "PCM", "FPCM", "LPCM", or "RCM" in the MacroPlot_Name,
+#' and starts at 2011, the year NGPN-specific monitoring began.
 #'
-#' @importFrom dplyr arrange left_join
+#' @importFrom dplyr filter left_join right_join
 #'
 #' @examples
 #' \dontrun{
@@ -277,12 +278,14 @@ makeViews <- function(){
 
   cols_view_start <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name", "Elevation",
                        "Azimuth", "Aspect", "SlopeHill", "SlopeTransect", "SampleEvent_Date", "year")
-  cols_view_end <- c("MacroPlot_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID",
+  cols_view_end <- c("UV1Desc", "UV2Desc", "UV3Desc", "SaComment",
+                     "MacroPlot_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID",
                      "MM_ProjectUnit_GUID", "Spp_GUID")
   cols_taxa_start <- c("Symbol", "ITIS_TSN", "ScientificName", "CommonName")
   cols_taxa_end <- c("Nativity", "Invasive", "Cultural", "Concern", "LifeCycle", "LifeForm_Name",
                      "NotBiological", "Species_Description", "Species_Comment")
-  cols_covpt <- c("Index", "Transect", "Point", "Tape", "Order", "Height", "Status")
+  cols_covpt <- c("Visited", "NumTran", "TranLen", 'NumPtsTran', "Offset",
+                  "Index", "Transect", "Point", "Tape", "Order", "Height", "Status")
 
   Cover_Points_Metric <- samp_cov_spp[order(samp_cov_spp$MacroPlot_Name, samp_cov_spp$year,
                                             samp_cov_spp$Index, samp_cov_spp$ScientificName),
@@ -290,7 +293,290 @@ makeViews <- function(){
                                         cols_covpt,
                                         cols_taxa_end, cols_view_end)]
 
+  #---- Cover_Species_Composition View ----
+  covcomp_samp1 <-   tryCatch(get("Cover_SpeciesComposition_metric_Sample", envir = env),
+                             error = function(e){
+                               stop("Cover_SpeciesComposition_metric_Sample table not found. Please import NGPN FFI data tables.")})
+  covcomp_attr1 <- tryCatch(get("Cover_SpeciesComposition_metric_Attribute", envir = env),
+                           error = function(e){
+                             stop("Cover_Points_metric_Attribute table not found. Please import NGPN FFI data tables.")})
 
+  # Making tables smaller before joins
+  covcomp_samp <- covcomp_samp1[covcomp_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(covcomp_samp$SampleData_SampleRow_GUID)
+  covcomp_attr2 <- covcomp_attr1[covcomp_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_comps <- left_join(MacroPlot_SampleEvents, covcomp_samp,
+                          by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_compa <- left_join(samp_comps, covcomp_attr2,
+                         by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                "datasource"),
+                         relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  samp_comp_spp <- left_join(samp_compa, Taxa_Table,
+                             by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+
+  cols_covcomp <- c("Index", "Status", "SizeCl", "AgeCl", "Cover", "Height", "Comment", "UV1", "UV2", "UV3")
+
+  Cover_Species_Composition <-
+    samp_comp_spp[order(samp_comp_spp$MacroPlot_Name, samp_comp_spp$year,
+                        samp_comp_spp$Index, samp_comp_spp$ScientificName),
+                 c(cols_view_start, cols_taxa_start,
+                   cols_covcomp,
+                   cols_taxa_end, cols_view_end)]
+
+  #---- Density_Belts_Metric View ----
+  densbelt_samp1 <-   tryCatch(get("Density_Belts_metric_Sample", envir = env),
+                              error = function(e){
+                                stop("Density_Belts_metric_Sample table not found. Please import NGPN FFI data tables.")})
+  densbelt_attr1 <- tryCatch(get("Density_Belts_metric_Attribute", envir = env),
+                            error = function(e){
+                              stop("Density_Belts_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  densbelt_samp <- densbelt_samp1[densbelt_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(densbelt_samp$SampleData_SampleRow_GUID)
+  densbelt_attr2 <- densbelt_attr1[densbelt_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_densbs <- left_join(MacroPlot_SampleEvents, densbelt_samp,
+                          by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_densba <- left_join(samp_densbs, densbelt_attr2,
+                          by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                 "datasource"),
+                          relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  samp_densb_spp <- left_join(samp_densba, Taxa_Table,
+                             by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+
+  cols_densbelt <- c("Visited", "NumTran", "NumSubbelt", "TranLen", "TranWid", "Area",
+                     "Index", "Transect", "Subbelt", "Status", "SizeCl", "AgeCl",
+                     "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
+
+  Density_Belt_Transect <-
+    samp_densb_spp[order(samp_densb_spp$MacroPlot_Name, samp_densb_spp$year,
+                         samp_densb_spp$Index, samp_densb_spp$ScientificName),
+                  c(cols_view_start, cols_taxa_start,
+                    cols_densbelt,
+                    cols_taxa_end, cols_view_end)]
+
+  #---- Density_Quadrats_Metric View ----
+  densquad_samp1 <-   tryCatch(get("Density_Quadrats_metric_Sample", envir = env),
+                               error = function(e){
+                                 stop("Density_Quadrats_metric_Sample table not found. Please import NGPN FFI data tables.")})
+  densquad_attr1 <- tryCatch(get("Density_Quadrats_metric_Attribute", envir = env),
+                             error = function(e){
+                               stop("Density_Quadrats_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  densquad_samp <- densquad_samp1[densquad_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(densquad_samp$SampleData_SampleRow_GUID)
+  densquad_attr2 <- densquad_attr1[densquad_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_densqs <- left_join(MacroPlot_SampleEvents, densquad_samp,
+                           by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_densqa <- left_join(samp_densqs, densquad_attr2,
+                           by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                  "datasource"),
+                           relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  samp_densq_spp <- left_join(samp_densqa, Taxa_Table,
+                              by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+
+  cols_densquad <- c("Visited", "NumTran", "NumQuadTran", "QuadLen", "QuadWid", "Area",
+                     "Index", "Transect", "Quadrat", "Status", "SizeCl", "AgeCl",
+                     "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
+
+  Density_quad_Transect <-
+    samp_densq_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
+                         samp_densq_spp$Index, samp_densq_spp$ScientificName),
+                   c(cols_view_start, cols_taxa_start,
+                     cols_densquad,
+                     cols_taxa_end, cols_view_end)]
+
+  #---- Disturbance_History View ----
+  disthist_samp1 <-   tryCatch(get("DisturbanceHistory_Sample", envir = env),
+                               error = function(e){
+                                 stop("DisturbanceHistory_Sample table not found. Please import NGPN FFI data tables.")})
+  disthist_attr1 <- tryCatch(get("DisturbanceHistory_Attribute", envir = env),
+                             error = function(e){
+                               stop("DisturbanceHistory_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  disthist_samp <- disthist_samp1[disthist_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(disthist_samp$SampleData_SampleRow_GUID)
+  disthist_attr2 <- disthist_attr1[disthist_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_dists <- left_join(MacroPlot_SampleEvents, disthist_samp,
+                           by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_dista <- left_join(samp_dists, disthist_attr2,
+                           by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                  "datasource"),
+                           relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  cols_dist <- c("Index", "ChAgent", "SevCode", "StartYr", "StartMo", "StartDy",
+                 "EndYr", "EndMo", "EndDy", "DatePrec", "ChgDesc", "Comment",
+                 "UV1", "UV2", "UV3")
+
+  cols_view_end_nospp <- cols_view_end[!cols_view_end %in% "Spp_GUID"]
+
+  Disturbance_History <-
+    samp_dista[order(samp_dista$MacroPlot_Name, samp_dista$year,
+                     samp_dista$Index),
+                   c(cols_view_start, cols_dist, cols_view_end_nospp)]
+
+
+  #---- Surface_Fuels_1000Hr View ----
+  surf1000_samp1 <-   tryCatch(get("SurfaceFuels_1000Hr_Sample", envir = env),
+                               error = function(e){
+                                 stop("SurfaceFuels_1000Hr_Sample table not found. Please import NGPN FFI data tables.")})
+  surf1000_attr1 <- tryCatch(get("SurfaceFuels_1000Hr_Attribute", envir = env),
+                             error = function(e){
+                               stop("SurfaceFuels_1000Hr_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  surf1000_samp <- surf1000_samp1[surf1000_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(surf1000_samp$SampleData_SampleRow_GUID)
+  surf1000_attr2 <- surf1000_attr1[surf1000_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_surf1000s <- left_join(MacroPlot_SampleEvents, surf1000_samp,
+                          by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_surf1000a <- left_join(samp_surf1000s, surf1000_attr2,
+                          by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                 "datasource"),
+                          relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  cols_surf1000 <- c("Visited", "NumTran", "TranLen", "Index", "Transect", "Slope", "LogNum", "Dia",
+                     "DecayCl", "CWDFuConSt", "Comment", "UV1", "UV2", "UV3")
+
+  Surface_Fuels_1000Hr <-
+    samp_surffinea[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
+                     samp_surf1000a$Index),
+               c(cols_view_start, cols_surf1000, cols_view_end_nospp)]
+
+  #---- Surface_Fuels_Fine View ----
+  surffine_samp1 <-   tryCatch(get("SurfaceFuels_Fine_Sample", envir = env),
+                               error = function(e){
+                                 stop("SurfaceFuels_Fine_Sample table not found. Please import NGPN FFI data tables.")})
+  surffine_attr1 <- tryCatch(get("SurfaceFuels_Fine_Attribute", envir = env),
+                             error = function(e){
+                               stop("SurfaceFuels_Fine_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  surffine_samp <- surffine_samp1[surffine_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(surffine_samp$SampleData_SampleRow_GUID)
+  surffine_attr2 <- surffine_attr1[surffine_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_surffines <- left_join(MacroPlot_SampleEvents, surffine_samp,
+                              by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_surffinea <- left_join(samp_surffines, surffine_attr2,
+                              by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                     "datasource"),
+                              relationship = 'many-to-many') # b/c multiple projects/macroplot
+  names(samp_surffinea)[names(samp_surffinea) == "Azimuth.x"] <- "Azimuth"
+  names(samp_surffinea)[names(samp_surffinea) == "Azimuth.y"] <- "Azimuth_Fuels"
+
+  cols_surffine <- c("Visited", "NumTran", "OneHrTranLen", "TenHrTranLen", "HunHrTranLen",
+                     "Index", "Transect", "Azimuth_Fuels", "Slope", "OneHr", "TenHr", "HunHr", "FWDFuConSt",
+                     "Comment", "UV1", "UV2", "UV3")
+
+  Surface_Fuels_Fine <-
+    samp_surffinea[order(samp_surffinea$MacroPlot_Name, samp_surffinea$year,
+                         samp_surffinea$Index),
+                   c(cols_view_start, cols_surffine, cols_view_end_nospp)]
+
+  #---- Surface_Fuels_Duff View ----
+  surfduff_samp1 <-   tryCatch(get("SurfaceFuels_Duff_Litter_Sample", envir = env),
+                               error = function(e){
+                                 stop("SurfaceFuels_Duff_Litter_Sample table not found. Please import NGPN FFI data tables.")})
+  surfduff_attr1 <- tryCatch(get("SurfaceFuels_Duff_Litter_Attribute", envir = env),
+                             error = function(e){
+                               stop("SurfaceFuels_Duff_Litter_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  surfduff_samp <- surfduff_samp1[surfduff_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(surfduff_samp$SampleData_SampleRow_GUID)
+  surfduff_attr2 <- surfduff_attr1[surfduff_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  samp_surfduffs <- left_join(MacroPlot_SampleEvents, surfduff_samp,
+                              by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+
+  samp_surfduffa <- left_join(samp_surfduffs, surfduff_attr2,
+                              by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                     "datasource"),
+                              relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  cols_surfduff <- c("Visited", "NumTran", "Index", "Transect", "SampLoc", "OffSet", "LittDep",
+                     "DuffDep", "FuelbedDep", "DLFuConSt", "Comment", "UV1", "UV2", "UV3")
+
+  Surface_Fuels_Duff <-
+    samp_surfduffa[order(samp_surfduffa$MacroPlot_Name, samp_surfduffa$year,
+                         samp_surfduffa$Index),
+                   c(cols_view_start, cols_surfduff, cols_view_end_nospp)]
+
+  #---- Trees_Metric ----
+  tree_samp1 <-   tryCatch(get("Trees_Individuals_metric_Sample", envir = env),
+                           error = function(e){
+                             stop("Trees_Individuals_metric_Sample table not found. Please import NGPN FFI data tables.")})
+  tree_attr1 <- tryCatch(get("Trees_Individuals_metric_Attribute", envir = env),
+                         error = function(e){
+                           stop("Trees_Individuals_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+
+  # Making tables smaller before joins
+  tree_samp <- tree_samp1[tree_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
+  samprow_guids <- unique(tree_samp$SampleData_SampleRow_GUID)
+  tree_attr <- tree_attr1[tree_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
+
+  # Not all parks/plots have tree data associated, making the left_joins bring in a bunch of blank rows.
+  # Using all plots with a tree recorded in the tree_samp1 to filter out non-tree plots
+  samp_treesrj <- right_join(MacroPlot_SampleEvents, tree_samp,
+                             by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
+  samp_treearj <- right_join(samp_trees, tree_attr2,
+                          by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                 "datasource"),
+                          relationship = 'many-to-many') # b/c multiple projects/macroplot
+  tree_samp_plots <- sort(unique(samp_treearj$MacroPlot_Name))
+
+  samp_trees <- left_join(MacroPlot_SampleEvents, tree_samp,
+                          by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource")) |>
+    filter(MacroPlot_Name %in% tree_samp_plots)
+
+  samp_treea <- left_join(samp_trees, tree_attr2,
+                           by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
+                                  "datasource"),
+                           relationship = 'many-to-many') # b/c multiple projects/macroplot
+
+  samp_tree_spp <- left_join(samp_treea, Taxa_Table,
+                              by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+
+  cols_tree <- c("QTR", "SubFrac", "TagNo", "Status", "DBH", "CrwnCl", "LiCrBHt",
+                 "CrwnRad", "DRC", "Comment", "UV1", "UV2", "UV3")
+
+  # tree columns not used by NGPN
+  #c("Ht", "CrwnRto", "CrFuBHt", "Age", "GrwthRt", "Mort", "DecayCl", "LaddBaseHt", "LaddMaxHt",
+  # "NuLiStems", "NuDeStems", "EqDia", "XCoord", "YCoord", "CKR", "CharHt",
+  # "ScorchHt", "CrScPct", "DamCd1", "DamSev1", "DamCd2", "DamSev2", "DamCd3",
+  # "DamSev3", "DamCd4", "DamSev4", "DamCd5", "DamSev5")
+
+  Trees_Metric <-
+    samp_tree_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
+                         samp_densq_spp$Index, samp_densq_spp$ScientificName),
+                   c(cols_view_start, cols_taxa_start,
+                     cols_tree,
+                     cols_taxa_end, cols_view_end)]
+
+    #CBI is Composite_Burn_Index
+
+  #---- Add views to VIEWS_NGPN ----
+  view_names <- c("Cover_Points_Metric", "Cover_Species_Composition", "Density_Belts_Metric",
+                 "Density_Quadrats_Metric", "Disturbance_History", "MacroPlot_SampleEvents",
+                 "Surface_Fuels_1000Hr", "Surface_Fuels_Fine", "Surface_Fuels_Duff", "Taxa_Table",
+                 "Trees_Metric")
 
   }
 

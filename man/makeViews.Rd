@@ -13,8 +13,9 @@ Returns flattened views of NGPN fire effects data
 Internal function that runs within importData that creates the views for each
 NGPN-specific sampling protocols of FFI. Views are Cover_Points_Metric, Cover_Species_Composition,
 Density_Belts_Metric, Density_Quadrats_Metric, Disturbance_History, MacroPlot_SampleEvents,
-Surface_Fuels, Taxa_Table, Trees_Metric. Function only compiles data for plots with "PCM",
-"FPCM", "LPCM", or "RCM" in the MacroPlot_Name, and start at 2011 when NGPN-specific monitoring began.
+Surface_Fuels_1000Hr, Surface_Fuels_Fine, Surface_Fuels_Duff, Taxa_Table, Trees_Metric.
+Function only compiles data for plots with "PCM", "FPCM", "LPCM", or "RCM" in the MacroPlot_Name,
+and starts at 2011, the year NGPN-specific monitoring began.
 }
 \examples{
 \dontrun{

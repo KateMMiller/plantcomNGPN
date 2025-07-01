@@ -5,7 +5,8 @@
 #' Density_Belts_Metric, Density_Quadrats_Metric, Disturbance_History, MacroPlot_SampleEvents,
 #' Surface_Fuels_1000Hr, Surface_Fuels_Fine, Surface_Fuels_Duff, Taxa_Table, Trees_Metric.
 #' Function only compiles data for plots with "PCM", "FPCM", "LPCM", or "RCM" in the MacroPlot_Name,
-#' and starts at 2011, the year NGPN-specific monitoring began.
+#' and starts at 2011, the year NGPN-specific monitoring began. If new_env = TRUE in importData(),
+#' views will be saved to VIEWS_NGPN environment. If new_env = F, views will be saved to global environment.
 #'
 #' @importFrom dplyr filter left_join right_join
 #'
@@ -17,8 +18,7 @@
 #' importData(type = 'local',
 #'   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #'              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
-#'              "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-#'   export = F)
+#'              "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
 #'
 #' }
 #'
@@ -430,9 +430,9 @@ makeViews <- function(){
 
 
   #---- Surface_Fuels_1000Hr View ----
-  surf1000_samp1 <-   tryCatch(get("SurfaceFuels_1000Hr_Sample", envir = env),
-                               error = function(e){
-                                 stop("SurfaceFuels_1000Hr_Sample table not found. Please import NGPN FFI data tables.")})
+  surf1000_samp1 <- tryCatch(get("SurfaceFuels_1000Hr_Sample", envir = env),
+                             error = function(e){
+                               stop("SurfaceFuels_1000Hr_Sample table not found. Please import NGPN FFI data tables.")})
   surf1000_attr1 <- tryCatch(get("SurfaceFuels_1000Hr_Attribute", envir = env),
                              error = function(e){
                                stop("SurfaceFuels_1000Hr_Attribute table not found. Please import NGPN FFI data tables.")})
@@ -454,7 +454,7 @@ makeViews <- function(){
                      "DecayCl", "CWDFuConSt", "Comment", "UV1", "UV2", "UV3")
 
   Surface_Fuels_1000Hr <-
-    samp_surffinea[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
+    samp_surf1000a[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
                      samp_surf1000a$Index),
                c(cols_view_start, cols_surf1000, cols_view_end_nospp)]
 
@@ -536,7 +536,7 @@ makeViews <- function(){
   # Using all plots with a tree recorded in the tree_samp1 to filter out non-tree plots
   samp_treesrj <- right_join(MacroPlot_SampleEvents, tree_samp,
                              by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID", "datasource"))
-  samp_treearj <- right_join(samp_trees, tree_attr2,
+  samp_treearj <- right_join(samp_treesrj, tree_attr2,
                           by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
                                  "datasource"),
                           relationship = 'many-to-many') # b/c multiple projects/macroplot
@@ -577,6 +577,44 @@ makeViews <- function(){
                  "Density_Quadrats_Metric", "Disturbance_History", "MacroPlot_SampleEvents",
                  "Surface_Fuels_1000Hr", "Surface_Fuels_Fine", "Surface_Fuels_Duff", "Taxa_Table",
                  "Trees_Metric")
+
+  if(new_env == TRUE){VIEWS_NGPN <<- new.env()}
+  env_views <- if(new_env == TRUE){VIEWS_NGPN} else {.GlobalEnv}
+
+  assign("Cover_Points_Metric", Cover_Points_Metric, envir = env_views)
+  assign("Cover_Species_Composition", Cover_Species_Composition, envir = env_views)
+  assign("Density_Belts_Metric", Density_Belts_Metric, envir = env_views)
+  assign("Density_Quadrats_Metric", Disturbance_History, envir = env_views)
+  assign("MacroPlot_SampleEvents", MacroPlot_SampleEvents, envir = env_views)
+  assign("Surface_Fuels_1000Hr", Surface_Fuels_1000Hr, envir = env_views)
+  assign("Surface_Fuels_Fine", Surface_Fuels_Fine, envir = env_views)
+  assign("Surface_Fuels_Duff", Surface_Fuels_Duff, envir = env_views)
+  assign("Taxa_Table", Taxa_Table, envir = env_views)
+  assign("Trees_Metric", Trees_Metric, envir = env_views)
+
+  if(export_views == TRUE){
+    dir.create(tmp <- tempfile())
+
+    invisible(lapply(seq_along(view_names), function(x){
+      temp_tbl = get(view_names[x], envir = env_views)
+      write.csv(temp_tbl,
+                paste0(tmp, "\\", view_names[x], ".csv"),
+                row.names = FALSE)
+    }))
+
+    view_list <- list.files(tmp)
+    park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
+
+    zip_name = paste0("NGPN_FFI_views_", format(Sys.Date(), "%Y%m%d"), ".zip")
+
+    zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
+              root = tmp,
+              files = view_list)
+  }
+
+  noquote(paste0("Export of views complete and saved to ", export_pathn, "\\", zip_name))
+
+  return(env_views)
 
   }
 

@@ -15,7 +15,8 @@ NGPN-specific sampling protocols of FFI. Views are Cover_Points_Metric, Cover_Sp
 Density_Belts_Metric, Density_Quadrats_Metric, Disturbance_History, MacroPlot_SampleEvents,
 Surface_Fuels_1000Hr, Surface_Fuels_Fine, Surface_Fuels_Duff, Taxa_Table, Trees_Metric.
 Function only compiles data for plots with "PCM", "FPCM", "LPCM", or "RCM" in the MacroPlot_Name,
-and starts at 2011, the year NGPN-specific monitoring began.
+and starts at 2011, the year NGPN-specific monitoring began. If new_env = TRUE in importData(),
+views will be saved to VIEWS_NGPN environment. If new_env = F, views will be saved to global environment.
 }
 \examples{
 \dontrun{
@@ -25,8 +26,7 @@ library(plantcomNGPN)
 importData(type = 'local',
   dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
              "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
-             "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-  export = F)
+             "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
 
 }
 

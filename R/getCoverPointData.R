@@ -217,9 +217,9 @@ getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park",
                            complete_events = complete_events, output = 'short')
 
   covpts_samp1 <-   tryCatch(get("Cover_Points_metric_Sample", envir = env) |> select(-datasource),
-                             error = function(e){stop("Cover_Points_metric_Sample table not found. Please import data.")})
+                             error = function(e){stop("Cover_Points_metric_Sample table not found. Please import NGPN FFI data tables.")})
   covpts_attr1 <- tryCatch(get("Cover_Points_metric_Attribute", envir = env) |> select(-datasource),
-                           error = function(e){stop("Cover_Points_metric_Attribute table not found. Please import data.")})
+                           error = function(e){stop("Cover_Points_metric_Attribute table not found. Please import NGPN FFI data tables.")})
 
   spptbl <- getTaxa() |> select(Spp_GUID, RegistrationUnitGUID, Symbol, ITIS_TSN, ScientificName,
                                 CommonName, Nativity, Invasive, Cultural, Concern, UserAdded)

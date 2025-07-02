@@ -41,19 +41,19 @@ getTaxa <- function(output = "short"){
   env <- if(exists("NGPN_tables")){NGPN_tables} else {.GlobalEnv}
 
   tryCatch(localspp <- get("LocalSpecies", envir = env),
-    error = function(e){stop("LocalSpecies table not found. Please import data.")})
+    error = function(e){stop("LocalSpecies table not found. Please import NGPN FFI data tables.")})
 
   tryCatch(mastspp <- get("MasterSpecies", envir = env),
-    error = function(e){stop("MasterSpecies table not found. Please import data. ")})
+    error = function(e){stop("MasterSpecies table not found. Please import NGPN FFI data tables. ")})
 
   tryCatch(auxspp <- get("AuxSpecies", envir = env),
-    error = function(e){stop("AuxSpecies table not found. Please import data.")})
+    error = function(e){stop("AuxSpecies table not found. Please import NGPN FFI data tables.")})
 
   tryCatch(regunit <- get("RegistrationUnit", envir = env),
-    error = function(e){stop("RegistrationUnit table not found. Please import data.")})
+    error = function(e){stop("RegistrationUnit table not found. Please import NGPN FFI data tables.")})
 
   tryCatch(lifeform <- get("LU_LifeForm", envir = env),
-    error = function(e){stop("LU_LifeForm table not found. Please import data.")})
+    error = function(e){stop("LU_LifeForm table not found. Please import NGPN FFI data tables.")})
 
   # NGPN does not appear to use the SpeciesPickList, so not including here.
   # lifecycle doesn't appear to be used much by NGPN, so not including it here.

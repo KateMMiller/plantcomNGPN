@@ -139,24 +139,24 @@ importData(type = 'local',
 # return all NGPN Plant Community Monitoring plots (ie vital signs plots),
 # for the Park stratum and all purposes used by NGPN
 macro_vs <- getMacroPlot()
-table(macro_vs$RegistrationUnit_Name, macro_vs$ProjectUnit_Name)
+table(macro_vs$Unit_Name, macro_vs$ProjectUnit_Name)
 
 # return Prairie stratum for AGFO and SCBL for NGPN_PCM plots
 macro_pr_vs <- getMacroPlot(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM",
   project = c("Native Prairie", "Prairie"))
-table(macro_pr_vs$RegistrationUnit_Name, macro_pr_vs$ProjectUnit_Name)
+table(macro_pr_vs$Unit_Name, macro_pr_vs$ProjectUnit_Name)
 
 # query all parks, plots and purposes, and only return main columns
 macro <- getMacroPlot(purpose = "all", project = "all")
-table(macro$RegistrationUnit_Name, macro$ProjectUnit_Name)
+table(macro$Unit_Name, macro$ProjectUnit_Name)
 
 # query NGPN only plots from North Dakota
 macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"))
-table(macro_nd$RegistrationUnit_Name, macro_nd$ProjectUnit_Name)
+table(macro_nd$Unit_Name, macro_nd$ProjectUnit_Name)
 
 # query only North and South Upland for HTRO
 thro_up <- getMacroPlot(park = "THRO", project = c("North Upland", "South Upland"))
-
+table(thro_up$Unit_Name, thro_up$ProjectUnit_Name)
 }
 
 }

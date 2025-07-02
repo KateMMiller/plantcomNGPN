@@ -116,7 +116,10 @@ Other options include c("CBI plot monitoring" (WICA), "Control" (MNRR), "Daubenm
 
 \item{mon_status}{Quoted string. Allows you to select different MonitoringStatus$MonitoringStatus_Base types. Default is "NGPN_PCM",
 which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_PCM below).
-If new monitoring statuses are added, they will need to be added to the bug handling code in the function. Valid inputs:
+If new monitoring statuses are added, they will need to be added to the bug handling code in the function.
+Note that until the Monitoring Status data are cleaned up (either in the SampleEvent or MonitoringStatus table,
+blank monitoring status codes will also be returned by default.
+Valid inputs:
 \itemize{
 \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status base of "PlantCommunity", "FirePlantCommunity", "ForestStructure".
 Note that some base names have _, spaces, or years in them. These are cleaned up in the function until they're fixed in the databse.}

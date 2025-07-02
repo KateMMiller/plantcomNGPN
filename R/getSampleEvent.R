@@ -11,7 +11,7 @@
 #' of an internal function that other data-related getter functions source to correctly link table and
 #' filter on records.
 #'
-#' @importFrom dplyr left_join select
+#' @importFrom dplyr filter left_join select
 #'
 #' @param park Filter on park code (aka RegistrationUnit_Name). Can select more than one. Valid inputs:
 #' \itemize{
@@ -234,15 +234,15 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
 
   tryCatch(
     monstat <- get("MonitoringStatus", envir = env) |> select(-datasource),
-    error = function(e){stop("MonitoringStatus table not found. Please import data.")})
+    error = function(e){stop("MonitoringStatus table not found. Please import NGPN FFI data tables.")})
 
   tryCatch(
     mm_monstat_se <- get("MM_MonitoringStatus_SampleEvent", envir = env) |> select(-datasource),
-    error = function(e){stop("MM_MonitoringStatus_SampleEvent table not found. Please import data.")})
+    error = function(e){stop("MM_MonitoringStatus_SampleEvent table not found. Please import NGPN FFI data tables.")})
 
   tryCatch(
     sampev <- get("SampleEvent", envir = env) |> select(-datasource),
-    error = function(e){stop("SampleEvent table not found. Please import data.")})
+    error = function(e){stop("SampleEvent table not found. Please import NGPN FFI data tables.")})
 
   # Use to make some tables smaller before join
   macro_guids <- unique(macro$MacroPlot_GUID)
@@ -278,11 +278,6 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   mac_samp_monstat <- left_join(mac_samp_mm, monstat,
                                 by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
                                        "MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID"))
-
-  mac_samp_monstat_anti <- anti_join(mac_samp_mm, monstat,
-                                by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
-                                       "MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID"))
-
   mac_samp_monstat$SampleEvent_Date <-
     format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
            "%Y-%m-%d")
@@ -315,6 +310,8 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   # Drop AGFO_PCM_067 MonitoringStatus_Name = 2010_PlantCommunity for 2019
   sampev5 <- sampev4[!(sampev4$MacroPlot_Name == "AGFO_FPCM_067" & sampev4$year == 2019 &
                        sampev4$MonitoringStatus_Name == "2010_PlantCommunity"),]
+  sampev5 <- sampev4 |> filter(!(MacroPlot_Name %in% "AGFO_FPCM_067" & sampev4$year %in% 2019 &
+                                   sampev4$MonitoringStatus_Name %in% "2010_PlantCommunity"))
 
   sampev_final <- if(output == "short"){
     sampev5[,keep_cols]

@@ -67,6 +67,20 @@ macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   unique()
 
+# Find plots with no sample events (moved later to the sample events section)
+# macro_samp_check <- left_join(macro |> filter(MacroPlot_Name %in% plots),
+#                               samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"))
+#
+# no_samps <- macro_samp_check[is.na(macro_samp_check $SampleEvent_GUID),
+#                        c("MacroPlot_Name", "MacroPlot_Purpose", "MacroPlot_GUID")]
+#
+# QC_table <- QC_check(df = no_samps, meas_type = "MacroPlot", tab = "Plot Info",
+#                      check = "NGPN PCM MacroPlots with no associated sample events.",
+#                      chk_type = 'check')
+#
+# kbl_no_samps <- make_kable(no_samps, cap = "NGPN PCM MacroPlots with no associated sample events.")
+
+# Continue compiling sample data
 macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
   select(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose,
          SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
@@ -446,6 +460,10 @@ sampev_ms_include <- tab_include(sampev_ms_check)
 # check if Sample Event checks returned at least 1 record to determine whether to include that tab in report
 sampev_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
 sampev_include <- tab_include(sampev_check)
+
+#---- Cover Point Data ----
+# Add check that finds blank Index values (are these important? there are a lot)
+
 
 ###### Compile final QC Table ######
 # revise for different color combos for checks (99 vs 90)? Drop for checks vs. errors?

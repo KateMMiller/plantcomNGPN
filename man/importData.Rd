@@ -9,7 +9,8 @@ importData(
   server = NA,
   dbname = "FFI_RA_AGFO",
   new_env = T,
-  export = F,
+  export_views = F,
+  export_tables = F,
   export_path = NA,
   import_path = NA
 )
@@ -29,10 +30,14 @@ multiple database names are specified, views will be row bound for tables in com
 indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
 aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).}
 
-\item{new_env}{Logical. If TRUE (default), will import tables to NGPN_tables environment. If FALSE, will import tables to global
+\item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 environment.}
 
-\item{export}{Logical. If TRUE, will export a zip file of csvs to specified export_path.}
+\item{export_views}{Logical. If TRUE, will export a zip file of csvs to specified export_path for the flattened views of the data.
+Views are the analysis-ready files that have all associated MacroPlot, Sample Event, and sample data for a given FFI protocol (e.g. Point Intercept).}
+
+\item{export_tables}{Logical. If TRUE, will export a zip file of csvs to specified export_path for the raw data tables from the FFI database.
+The raw tables are what can be imported the same as importing from a local instance of the FFI database.}
 
 \item{export_path}{Quoted string to export zipped csvs to if export = TRUE. If not specified, will export to the working directory.}
 
@@ -48,20 +53,25 @@ Imports data from FFI SQL Server database or csvs of FFI database tables using t
 the Northern Great Plains Network plant community monitoring protocol. Currently can only import from a local installation
 of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
 from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
-are row binded, so that all NPGN parks can be queried, summarized, etc. at once.
+are row binded, so that all NPGN parks can be queried, summarized, etc. at once. After raw FFI tables are imported, they
+are then joined into flattened views for each protocol. The raw tables and views can both be exported via the export
+arguments. Function is slow if running for all parks and exporting tables or views. Once the views are created/exported,
+they can be imported using importViews() **Still in development** for faster importing.
 }
 \examples{
 \dontrun{
+library(plantcomNGPN)
 #--- From Local install of FFI SQL databases
 # Import data for AGFO and export tables to zip file
-importData(type = 'local', dbname = c("FFI_RA_AGFO"), export = T)
+importData(type = 'local', dbname = c("FFI_RA_AGFO"), export_tables = T, export_views = T)
 
 # Import data for all NGPN parks (takes a few seconds) from local copy on SSMS
+# and export both the analysis-ready views and the raw tables.
 importData(type = 'local',
            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-           export = T,
+           export_views = T, export_tables = T,
            export_path = "C:/temp")
 
 # Check that the multiple-park import worked
@@ -78,7 +88,7 @@ zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zi
           "NGPN_FFI_tables_THRO_20250508.zip", "NGPN_FFI_tables_WICA_20250508.zip")
 filepath = "C:/Users/KMMiller/OneDrive - DOI/MWR/NGPN_veg/FFI_zips/"
 zips_full <- paste0(filepath, zips)
-importData(type = 'csv', import_path = zips_full, export = T)
+importData(type = 'csv', import_path = zips_full, export_tables = T)
 
 }
 

@@ -129,12 +129,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   cat(noquote("Importing data tables."), "\n\n")
 
-  #if(new_env == TRUE){
-  #   NGPN_tables <<- new.env()
-  # #  }
-  env <- environment()#if(new_env == TRUE){
-  #   NGPN_tables#} else {
-     #.GlobalEnv#}
+  env <- environment()
 
   if(type == "local"){
   error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",

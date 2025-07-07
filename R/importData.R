@@ -30,6 +30,9 @@
 #' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 #' environment.
 #'
+#' @param keep_tables Logical. If TRUE, will return the raw FFI database tables in a NGPN_tables environment. If FALSE (default),
+#' only returns the flattened views. This feature is primarily for internal use to QC the original data.
+#'
 #' @param export_views Logical. If TRUE, will export a zip file of csvs to specified export_path for the flattened views of the data.
 #' Views are the analysis-ready files that have all associated MacroPlot, Sample Event, and sample data for a given FFI protocol (e.g. Point Intercept).
 #'
@@ -82,7 +85,7 @@
 #'
 
 importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T, export_views = F,
-                       export_tables = F, export_path = NA, import_path = NA){
+                       export_tables = F, export_path = NA, import_path = NA, keep_tables = F){
   #---- Bug Handling ----
   # Check that suggested package required for this function are installed
   # Need to make this conditional on type.
@@ -100,6 +103,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   stopifnot(is.logical(export_tables))
   if(any(type %in% c("local", "server")) & any(is.na(dbname))){stop("Must specify a dbname if type is 'local' or 'server'")}
   if(type == "server" & is.na(server)){stop("Must specify a server address if type = 'server'")}
+  stopifnot(is.logical(keep_tables))
 
   #++++++ Update as more features are added ++++++
   if(type %in% c("server")){stop(paste0("Sorry, type = ", type, " is not yet enabled."))}
@@ -130,7 +134,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   cat(noquote("Importing data tables."), "\n\n")
 
-  env <- environment()
+  env <- if(keep_tables == TRUE){
+    NGPN_tables <<- new.env()
+  } else {environment()}
 
   if(type == "local"){
   error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",
@@ -166,6 +172,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   list2env(tbl_import3, envir = env)
   DBI::dbDisconnect(con)
+
+  if(keep_tables == TRUE){
+    NGPN_tables <<- new.env()
+    list2env(tbl_import2[sapply(tbl_import2, nrow) > 0], envir = NGPN_tables)
+  }
 
   if(export_tables == TRUE){
     dir.create(tmp <- tempfile())
@@ -228,6 +239,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     dbflat4 <- dbflat3[sort(names(dbflat3))]
 
     list2env(dbflat4, envir = env)
+
+    if(keep_tables == TRUE){
+      NGPN_tables <<- new.env()
+      list2env(dbflat3[sort(names(dbflat3))], envir = NGPN_tables)
+    }
 
     if(export_tables == TRUE){
       dir.create(tmp <- tempfile())
@@ -300,7 +316,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       # I'll update csv_list1 above and use the same tables for each park.
 
       # Check for missing views
-      if(length(miss_tbls) > 0){stop("Missing the following tables from the specified import_path: ",
+      if(length(miss_tbls) > 0){warning("The following tables are not included in specified database: ",
                                      paste0(miss_tbls, collapse = ", "))}
 
       # Since the missing test passed, clean up files so only includes names in view_list, but
@@ -323,7 +339,14 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
           return(tab)})
 
       tbl_import <- setNames(tbl_import, z_list_names)
+      tbl_import2 <- tbl_import
       list2env(tbl_import, envir = env)
+
+      if(keep_tables == TRUE){
+        NGPN_tables <<- new.env()
+        list2env(tbl_import2, envir = NGPN_tables)
+      }
+
       # Close progress bar
       close(pb)
 
@@ -435,6 +458,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       zipflat4 <- zipflat3[sort(names(zipflat3))]
 
       list2env(zipflat4, envir = env)
+
+      if(keep_tables == TRUE){
+        NGPN_tables <<- new.env()
+        list2env(zipflat3[sort(names(zipflat3))], envir = NGPN_tables)
+      }
 
       if(export_tables == TRUE){
         dir.create(tmp <- tempfile())

@@ -12,7 +12,8 @@ importData(
   export_views = F,
   export_tables = F,
   export_path = NA,
-  import_path = NA
+  import_path = NA,
+  keep_tables = F
 )
 }
 \arguments{
@@ -43,6 +44,9 @@ The raw tables are what can be imported the same as importing from a local insta
 
 \item{import_path}{Quoted string to import a zipped file of csvs if type = 'csv'. The name of the zipped file should be included
 in the path. Can specify multiple paths to import multiple parks/projects.}
+
+\item{keep_tables}{Logical. If TRUE, will return the raw FFI database tables in a NGPN_tables environment. If FALSE (default),
+only returns the flattened views. This feature is primarily for internal use to QC the original data.}
 }
 \value{
 Either an environment with database tables as data frames for each imported database, or database

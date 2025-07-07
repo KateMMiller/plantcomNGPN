@@ -540,12 +540,20 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   macro4$sampled <- 1
 
   # make project column wide, so more efficient shape
-  MacroPlots <- macro4 |> pivot_wider(names_from = "ProjectUnit_Name",
+  macro5 <- macro4 |> pivot_wider(names_from = "ProjectUnit_Name",
                                       values_from = "sampled",
                                       values_fill = 0,
                                       names_prefix = "ProjectUnit_") |>
     data.frame()
-  colnames(MacroPlots) <- gsub(" ", "_", colnames(MacroPlots))
+
+  colnames(macro5) <- gsub(" ", "_", colnames(macro5))
+  # order projectunit columns
+  macro_names <- names(macro5[!grepl("ProjectUnit_", names(macro5))])
+  proj_names1 <- names(macro5[grepl("ProjectUnit_", names(macro5))])
+  proj_names <- c("ProjectUnit_Park", sort(proj_names1[!proj_names1 %in% "ProjectUnit_Park"]))
+
+  MacroPlots <- data.frame(macro5[order(macro5$MacroPlot_Name),
+                           c(macro_names, proj_names)])
 
   #---- SampleEvents View ----
   #### Compile Sample Event Data ####

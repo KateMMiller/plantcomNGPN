@@ -510,7 +510,30 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     regunit <- get("RegistrationUnit", envir = env),
     error = function(e){stop("RegistrationUnit table not found. Please import NGPN FFI data tables.")})
 
-  # cleanup project and projectunit data
+  # Clean up purpose
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose == "Panel 9"] <- "Panel9"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in%
+                                 c("FX", "Fx", "FX Monitoring", "FX monitoring", "Fire Effects Monitoring")] <- "FX Monitoring"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FX Dual", "FX_Dual")] <- "FX Dual"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Research", "research")] <- "Research"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Determine Strategies for efficient early detection",
+                                                                   "Determine strategies for efficient early detection",
+                                                                   "Early Invasives Detection")] <- "Early Detection"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FMH Grass Plot", "FMH Grass Plot ")] <- "FMH Grass Plot"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Intensive", "FIRE_intensive", "FX_Intensive",
+                                                                   "FX_ Intensive", "FIRE_intesive")] <- "FX Intensive"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Extensive")] <- "FX Extensive"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Lafferty Plot", "Lafferty Plot ")] <- "Lafferty Plot"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("invasive research", "Invasives Research",
+                                                                   "Invasvies Research")] <- "Invasives Research"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Modified Shrub Plot", "Modified Shrub Plot ")] <- "Modified Shrub Plot"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Pre- and Post- treatment of fuels",
+                                                                   "pre- and post-treatment forest and fuels")] <- "Pre and post fuels treatment"
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FS")] <- "ForestStructure" # KNRI_PCM_038
+
+  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "IN-ACTIVE"
+
+    # cleanup project and projectunit data
   projunit$ProjectUnit_Agency <- "NPS"
   NGPN_plots <- macro_orig$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro_orig$MacroPlot_Name)]
   macro <- macro_orig[macro_orig$MacroPlot_Name %in% NGPN_plots,]

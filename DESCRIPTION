@@ -24,7 +24,3 @@ Suggests:
     odbc,
     zip
 RoxygenNote: 7.3.2
-Collate: 
-    'getPlotEvents.R'
-    'getCoverPointData.R'
-    'importData.R'

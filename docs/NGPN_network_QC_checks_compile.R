@@ -7,7 +7,7 @@
 #            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
 #                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-#            export = F)
+#            keep_tables = T)
 
 ### Functions
 # Summarize results of QC check
@@ -93,23 +93,24 @@ macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_Defa
 
 macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   mutate(park = substr(MacroPlot_Name, 1, 4),
-         SE_DefaultMonStatus_base = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |>
-  select(park, MacroPlot_Name, SE_DefaultMonStatus_base, MacroPlot_Purpose, year) |> unique() |>
-  group_by(park, MacroPlot_Name, SE_DefaultMonStatus_base, MacroPlot_Purpose, year) |>
+         DefaultMonitoringStatus = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |>
+  select(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |> unique() |>
+  group_by(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |>
   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
-  arrange(year, SE_DefaultMonStatus_base) |>
+  arrange(year, DefaultMonitoringStatus) |>
   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
   filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
-               SE_DefaultMonStatus_base)) |>
+               DefaultMonitoringStatus)) |>
   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  arrange(plottype, plotnum, SE_DefaultMonStatus_base) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, SE_DefaultMonStatus_base, yr2011:last_col()) |>
+  #arrange(plottype, plotnum, DefaultMonitoringStatus) |>
+  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose) |>
+  select(park, MacroPlot_Name, MacroPlot_Purpose, DefaultMonitoringStatus, yr2011:last_col()) |>
   select(-plotnum, -plottype)
 
 park_list <- sort(unique(macro_plots$park))
 
-macro_samp_dups <- macro_samp2 |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(SE_DefaultMonStatus_base))) |>
+macro_samp_dups <- macro_samp2 |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(DefaultMonitoringStatus))) |>
   filter(num_monstat > 1) |> select(MacroPlot_Name)
 
 macro_samp2$dup_ms <- ifelse(macro_samp2$MacroPlot_Name %in% macro_samp_dups$MacroPlot_Name, 1, 0)
@@ -136,7 +137,7 @@ macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  arrange(plottype, plotnum, MonitoringStatus_Base) |>
+  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base) |>
   select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col()) |>
   select(-plotnum, -plottype)
 

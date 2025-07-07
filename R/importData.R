@@ -568,7 +568,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     error = function(e){stop("SampleEvent table not found. Please import NGPN FFI data tables.")})
 
   # Use to make some tables smaller before join
-  macro_guids <- unique(macroplot$MacroPlot_GUID)
+  macro_guids <- unique(MacroPlots$MacroPlot_GUID)
 
   # Fix typos in MonitoringStatus_Name and MonitoringStatus_Base
   monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2009_Plant Community"] <- "2009_PlantCommunity"

@@ -191,7 +191,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
     file_list <- list.files(tmp)
     park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
-    zip_name = paste0("NGPN_FFI_export_", park, "_", format(Sys.Date(), "%Y%m%d"), ".zip")
+    zip_name = paste0("NGPN_FFI_table_export_", park, "_", format(Sys.Date(), "%Y%m%d"), ".zip")
 
     zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
               root = tmp,
@@ -258,7 +258,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
       file_list <- list.files(tmp)
 
-      zip_name = paste0("NGPN_FFI_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
+      zip_name = paste0("NGPN_FFI_table_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
 
       zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                 root = tmp,

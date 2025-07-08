@@ -61,7 +61,7 @@ plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot
 macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   filter(MacroPlot_Name %in% plots)|>
   select(MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, MacroPlot_RegistrationUnit_GUID,
-         MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_UTMzone, MacroPlot_DD_Lat, MacroPlot_DD_Long,
+         MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_UTMzone, MacroPlot_Datum, MacroPlot_DD_Lat, MacroPlot_DD_Long,
          MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
          MacroPlot_SlopeTransect, MacroPlot_GUID) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
@@ -268,7 +268,8 @@ QC_table <- rbind(QC_table,
 kbl_out_pts_utm <- make_kable(out_pts_utm, cap = "NGPN PCM MacroPlot UTM coordinates that are not within the park boundary.")
 
 # NPGN plots with non-standard datum
-datum <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y, UTMzone, Datum) |> filter(!Datum %in% "NAD83")
+datum <- macro_plots |> select(MacroPlot_Name, MacroPlot_UTM_X, MacroPlot_UTM_Y,
+                               MacroPlot_UTMzone, MacroPlot_Datum) |> filter(!MacroPlot_Datum %in% "NAD83")
 QC_table <- rbind(QC_table,
                   QC_check(df = datum, meas_type = "MacroPlot", tab = "Plot Info",
                            check = "NGPN PCM plot coordinates with datum not matching 'NAD83'.",

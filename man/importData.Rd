@@ -49,8 +49,7 @@ in the path. Can specify multiple paths to import multiple parks/projects.}
 only returns the flattened views. This feature is primarily for internal use to QC the original data.}
 }
 \value{
-Either an environment with database tables as data frames for each imported database, or database
-tables directly in the global environment.
+Either an environment of NGPN_PCM views as data frames and possibly an environment of the original FFI database tables.
 }
 \description{
 Imports data from FFI SQL Server database or csvs of FFI database tables using the schema designed for

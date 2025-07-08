@@ -78,8 +78,7 @@
 #'
 #' }
 #'
-#' @returns Either an environment with database tables as data frames for each imported database, or database
-#' tables directly in the global environment.
+#' @returns Either an environment of NGPN_PCM views as data frames and possibly an environment of the original FFI database tables.
 #'
 #' @export
 #'
@@ -531,9 +530,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                                                                    "pre- and post-treatment forest and fuels")] <- "Pre and post fuels treatment"
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FS")] <- "ForestStructure" # KNRI_PCM_038
 
-  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "IN-ACTIVE"
+  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "INACTIVE"
 
-    # cleanup project and projectunit data
+  # cleanup project and projectunit data
   projunit$ProjectUnit_Agency <- "NPS"
   NGPN_plots <- macro_orig$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro_orig$MacroPlot_Name)]
   macro <- macro_orig[macro_orig$MacroPlot_Name %in% NGPN_plots,]
@@ -586,9 +585,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       "datasource")
 
   # Had to drop description and MM_ProjectUnit_GUID to make macroplot rows unique
-
   macro4 <- macro3[,keep_cols_macro]
   macro4$sampled <- 1
+
+  # Replace spaces and . with "_", so easier to query
+  macro4$ProjectUnit_Name <- gsub(" ", "_", macro4$ProjectUnit_Name)
 
   # make project column wide, so more efficient shape
   macro5 <- macro4 |> pivot_wider(names_from = "ProjectUnit_Name",
@@ -598,6 +599,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     data.frame()
 
   colnames(macro5) <- gsub(" ", "_", colnames(macro5))
+
   # order projectunit columns
   macro_names <- names(macro5[!grepl("ProjectUnit_", names(macro5))])
   proj_names1 <- names(macro5[grepl("ProjectUnit_", names(macro5))])

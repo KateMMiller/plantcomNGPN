@@ -3,6 +3,7 @@
 export(getCoverPointData)
 export(getMacroPlot)
 export(importData)
+export(importViews)
 importFrom(dplyr,bind_rows)
 importFrom(dplyr,collect)
 importFrom(dplyr,filter)

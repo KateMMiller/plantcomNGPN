@@ -267,6 +267,15 @@ QC_table <- rbind(QC_table,
 
 kbl_out_pts_utm <- make_kable(out_pts_utm, cap = "NGPN PCM MacroPlot UTM coordinates that are not within the park boundary.")
 
+# NPGN plots with non-standard datum
+datum <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y, UTMzone, Datum) |> filter(!Datum %in% "NAD83")
+QC_table <- rbind(QC_table,
+                  QC_check(df = datum, meas_type = "MacroPlot", tab = "Plot Info",
+                           check = "NGPN PCM plot coordinates with datum not matching 'NAD83'.",
+                           chk_type = 'error'))
+
+kbl_datum <- make_kable(datum, cap = "NGPN PCM plot coordinates with datum not matching 'NAD83'")
+
 # For plots with lat/long only, check if they're within the park bounds. This helps if we need to use the lat/longs
 # to generate the UTMs. I'm not proud that I didn't iterate on this.
 macro_plots_DD <- macro_plots |> select(MacroPlot_Name, MacroPlot_DD_Lat, MacroPlot_DD_Long) |>

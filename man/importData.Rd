@@ -57,9 +57,11 @@ the Northern Great Plains Network plant community monitoring protocol. Currently
 of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
 from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
 are row binded, so that all NPGN parks can be queried, summarized, etc. at once. After raw FFI tables are imported, they
-are then joined into flattened views for each protocol. The raw tables and views can both be exported via the export
-arguments. Function is slow if running for all parks and exporting tables or views. Once the views are created/exported,
-they can be imported using importViews() **Still in development** for faster importing.
+are then joined into flattened views for each protocol. The views currently only include plots that are part of NGPN PCM monitoring,
+and only include sample events from 2011 and on, but this can be revised as needed. The raw tables with all data and views of
+only NGPN PCM plots >= 2011 can both be  exported via the export arguments. Function is slow if running for all parks and
+exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
+Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
 }
 \examples{
 \dontrun{

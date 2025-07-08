@@ -5,11 +5,13 @@
 #' of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
 #' from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
 #' are row binded, so that all NPGN parks can be queried, summarized, etc. at once. After raw FFI tables are imported, they
-#' are then joined into flattened views for each protocol. The raw tables and views can both be exported via the export
-#' arguments. Function is slow if running for all parks and exporting tables or views. Once the views are created/exported,
-#' they can be imported using importViews() **Still in development** for faster importing.
+#' are then joined into flattened views for each protocol. The views currently only include plots that are part of NGPN PCM monitoring,
+#' and only include sample events from 2011 and on, but this can be revised as needed. The raw tables with all data and views of
+#' only NGPN PCM plots >= 2011 can both be  exported via the export arguments. Function is slow if running for all parks and
+#' exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
+#' Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
 #'
-#' @importFrom dplyr bind_rows collect mutate rename right_join tbl
+#' @importFrom dplyr bind_rows collect inner_join mutate rename right_join select tbl
 #' @importFrom tidyr pivot_wider
 #' @importFrom purrr flatten map set_names
 #'
@@ -489,13 +491,13 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   #---- Make Views ----
   cat(noquote("Joining tables into views."), "\n\n")
-  #env <- if(exists("NGPN_tables")){NGPN_tables} else {.GlobalEnv}
 
   pb <- txtProgressBar(min = 0, max = 11, style = 3)
 
   setTxtProgressBar(pb,1)
   #---- MacroPlot View -----
   #### Compile MacroPlot data ####
+  #env <- if(exists("NGPN_tables")){NGPN_tables} else {.GlobalEnv}
   tryCatch(
     macro_orig <- get("MacroPlot", envir = env),
     error = function(e){stop("MacroPlot table not found. Please import NGPN FFI data.")})
@@ -637,37 +639,37 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   sampev2 <- left_join(MacroPlots, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"),
                        relationship = 'many-to-many') #MM b/c plots are used for multiple projects
-  sampev3 <- left_join(sampev2, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"),
+
+  monstat_join <- inner_join(mm_monstat_se, monstat, by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID"))
+
+  sampev3 <- left_join(sampev2, monstat_join, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"),
                        relationship = 'many-to-many')
-  sampev4 <- left_join(sampev3, monstat,
-                       by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID"#,
-                              #"MM_ProjectUnit_GUID" = "MonitoringStatus_ProjectUnit_GUID"
-                              ))
-  sampev4$SampleEvent_Date <-
-    format(as.Date(sampev4$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
+
+  sampev3$SampleEvent_Date <-
+    format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
            "%Y-%m-%d")
-  sampev4$year <- format(as.Date(sampev4$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
-  sampev4$month <- format(as.Date(sampev4$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
-  sampev4$doy <- format(as.Date(sampev4$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
+  sampev3$year <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+  sampev3$month <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
+  sampev3$doy <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
 
   # drop plots with no associated sample events
   # unique(sampev4$MacroPlot_Name[is.na(sampev4$SampleEvent_GUID)]) # Plots with no sample events
-  sampev5 <- sampev4[!is.na(sampev4$SampleEvent_GUID),]
+  sampev4 <- sampev3[!is.na(sampev3$SampleEvent_GUID),]
 
-  names(sampev5)[names(sampev5) == "SampleEvent_GUID"] <- "SampleEventGUID"
-  names(sampev5)[names(sampev5) == "SampleEvent_Date"] <- "SampleEventDate"
-  names(sampev5)[names(sampev5) == "SampleEvent_UV1"] <- "SampleEventUV1"
-  names(sampev5)[names(sampev5) == "SampleEvent_Comment"] <- "SampleEventComment"
+  names(sampev4)[names(sampev4) == "SampleEvent_GUID"] <- "SampleEventGUID"
+  names(sampev4)[names(sampev4) == "SampleEvent_Date"] <- "SampleEventDate"
+  names(sampev4)[names(sampev4) == "SampleEvent_UV1"] <- "SampleEventUV1"
+  names(sampev4)[names(sampev4) == "SampleEvent_Comment"] <- "SampleEventComment"
 
   # Drop table names from most column names for easier coding
-  names(sampev5) <-
-    gsub("^SampleEvent_", "", names(sampev5))
+  names(sampev4) <-
+    gsub("^SampleEvent_", "", names(sampev4))
 
   # Add the _ back
-  names(sampev5) <- gsub("SampleEvent", "SampleEvent_", names(sampev5))
+  names(sampev4) <- gsub("SampleEvent", "SampleEvent_", names(sampev4))
 
   # Drop data before 2011
-  sampev6 <- sampev5[sampev5$year >= 2011,]
+  sampev5 <- sampev4[sampev4$year >= 2011,]
 
   keep_cols_samp <-
     c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
@@ -679,8 +681,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       "MonitoringStatus_Comment", "SampleEvent_Comment",
       "SampleEvent_GUID", "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID", "MacroPlot_GUID")
 
-  SampleEvents <- data.frame(sampev6[order(sampev6$MacroPlot_Name, sampev6$SampleEvent_Date),
-                             keep_cols_samp] )
+  SampleEvents <- data.frame(sampev5[order(sampev5$MacroPlot_Name, sampev5$SampleEvent_Date),
+                             keep_cols_samp])
+
+  sampev_unique <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> unique()
+  # Prevents some duplication of data until monitoring status is fixed in database.
 
   #---- Taxa_Table View----
   setTxtProgressBar(pb,2)
@@ -781,7 +786,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   # Drop records where Index is blank b/c causes issues in the join
   #covpts_attr <- covpts_attr2[!is.na(covpts_attr2$Index),]
 
-  samp_covs1 <- left_join(SampleEvents, covpts_samp,
+  samp_covs1 <- left_join(sampev_unique, covpts_samp,
                           by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   # drop records with blank SampleData_SampleRow_GUID
@@ -795,16 +800,21 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samp_cov_spp <- left_join(samp_cova, Taxa_Table,
                             by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_view_start <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "Elevation",
-                       "Azimuth", "Aspect", "SlopeHill", "SlopeTransect", "SampleEvent_Date", "year")
+  cols_view_start <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose",
+                       "UTM_X", "UTM_Y", "UTMzone", "Elevation",
+                       "Azimuth", "Aspect", "SlopeHill", "SlopeTransect", "SampleEvent_Date",
+                       "year", "month", "doy")
   cols_view_end <- c("UV1Desc", "UV2Desc", "UV3Desc", "SaComment",
-                     "MacroPlot_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID",
+                     "DefaultMonitoringStatus", "MonitoringStatus_Base",
+                     "MacroPlot_GUID", "SampleEvent_GUID", #"MM_MonitoringStatus_GUID",
+                     "RegistrationUnit_GUID",
                      "Spp_GUID")
   cols_taxa_start <- c("Symbol", "ITIS_TSN", "ScientificName", "CommonName")
   cols_taxa_end <- c("Nativity", "Invasive", "Cultural", "Concern", "LifeCycle", "LifeForm_Name",
                      "NotBiological", "Species_Comment")
   cols_covpt <- c("Visited", "NumTran", "TranLen", 'NumPtsTran', "Offset",
-                  "Index", "Transect", "Point", "Tape", "Order", "Height", "Status")
+                  "Index", "Transect", "Point", "Tape", "Order", "Height",
+                  "CanopyLayer", "Status", "Comment")
 
   Cover_Points_metric <- data.frame(
     samp_cov_spp[order(samp_cov_spp$MacroPlot_Name, samp_cov_spp$year,
@@ -827,7 +837,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(covcomp_samp$SampleData_SampleRow_GUID)
   covcomp_attr2 <- covcomp_attr1[covcomp_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_comps1 <- left_join(SampleEvents, covcomp_samp,
+  samp_comps1 <- left_join(sampev_unique, covcomp_samp,
                            by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   # drop records with blank SampleData_SampleRow_GUID
@@ -841,7 +851,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samp_comp_spp <- left_join(samp_compa, Taxa_Table,
                              by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover", "Height", "Comment", "UV1", "UV2", "UV3")
+  cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover", "Height",
+                    "Comment", "UV1", "UV2", "UV3")
 
   Cover_Species_Composition <- data.frame(
     samp_comp_spp[order(samp_comp_spp$MacroPlot_Name, samp_comp_spp$year,
@@ -864,7 +875,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(densbelt_samp$SampleData_SampleRow_GUID)
   densbelt_attr2 <- densbelt_attr1[densbelt_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_densbs1 <- left_join(SampleEvents, densbelt_samp,
+  samp_densbs1 <- left_join(sampev_unique, densbelt_samp,
                             by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   # drop records with blank SampleData_SampleRow_GUID
@@ -904,7 +915,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(densquad_samp$SampleData_SampleRow_GUID)
   densquad_attr2 <- densquad_attr1[densquad_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_densqs1 <- left_join(SampleEvents, densquad_samp,
+  samp_densqs1 <- left_join(sampev_unique, densquad_samp,
                             by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   # drop records with blank SampleData_SampleRow_GUID
@@ -944,7 +955,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(disthist_samp$SampleData_SampleRow_GUID)
   disthist_attr2 <- disthist_attr1[disthist_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_dists1 <- left_join(SampleEvents, disthist_samp,
+  samp_dists1 <- left_join(sampev_unique, disthist_samp,
                           by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   # drop records with blank SampleData_SampleRow_GUID
@@ -982,7 +993,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(surf1000_samp$SampleData_SampleRow_GUID)
   surf1000_attr2 <- surf1000_attr1[surf1000_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_surf1000s1 <- left_join(SampleEvents, surf1000_samp,
+  samp_surf1000s1 <- left_join(sampev_unique, surf1000_samp,
                                by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   samp_surf1000s <- samp_surf1000s1[!is.na(samp_surf1000s1$SampleData_SampleRow_GUID == TRUE),]
@@ -1014,7 +1025,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(surffine_samp$SampleData_SampleRow_GUID)
   surffine_attr2 <- surffine_attr1[surffine_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_surffines1 <- left_join(SampleEvents, surffine_samp,
+  samp_surffines1 <- left_join(sampev_unique, surffine_samp,
                                by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   samp_surffines <- samp_surffines1[!is.na(samp_surffines1$SampleData_SampleRow_GUID == TRUE),]
@@ -1049,7 +1060,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   samprow_guids <- unique(surfduff_samp$SampleData_SampleRow_GUID)
   surfduff_attr2 <- surfduff_attr1[surfduff_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
 
-  samp_surfduffs1 <- left_join(SampleEvents, surfduff_samp,
+  samp_surfduffs1 <- left_join(sampev_unique, surfduff_samp,
                                by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
 
   samp_surfduffs <- samp_surfduffs1[!is.na(samp_surfduffs1$SampleData_SampleRow_GUID == TRUE),]
@@ -1070,9 +1081,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   #---- Trees_Metric ----
   setTxtProgressBar(pb,11)
-  tree_samp1 <-   tryCatch(get("Trees_Individuals_metric_Sample", envir = env),
-                           error = function(e){
-                             stop("Trees_Individuals_metric_Sample table not found. Please import NGPN FFI data tables.")})
+  tree_samp1 <- tryCatch(get("Trees_Individuals_metric_Sample", envir = env),
+                         error = function(e){
+                           stop("Trees_Individuals_metric_Sample table not found. Please import NGPN FFI data tables.")})
   tree_attr1 <- tryCatch(get("Trees_Individuals_metric_Attribute", envir = env),
                          error = function(e){
                            stop("Trees_Individuals_metric_Attribute table not found. Please import NGPN FFI data tables.")})
@@ -1084,7 +1095,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   # Not all parks/plots have tree data associated, making the left_joins bring in a bunch of blank rows.
   # Using all plots with a tree recorded in the tree_samp1 to filter out non-tree plots
-  samp_treesrj <- right_join(SampleEvents, tree_samp,
+  samp_treesrj <- right_join(sampev_unique, tree_samp,
                              by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID"))
   samp_treearj <- right_join(samp_treesrj, tree_attr,
                              by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
@@ -1092,7 +1103,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                              relationship = 'many-to-many') # b/c multiple projects/macroplot
   tree_samp_plots <- sort(unique(samp_treearj$MacroPlot_Name))
 
-  samp_trees1 <- left_join(SampleEvents, tree_samp,
+  samp_trees1 <- left_join(sampev_unique, tree_samp,
                           by = c("SampleEvent_GUID" = "SampleData_SampleEvent_GUID")) |>
     filter(MacroPlot_Name %in% tree_samp_plots)
 

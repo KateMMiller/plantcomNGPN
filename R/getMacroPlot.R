@@ -4,13 +4,12 @@
 #' This function was primarily developed to pull out NGPN plant community monitoring plots. Using
 #' combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
 #' tested as thoroughly, and may not return intended results in every case. Note that this is more
-#' of an internal function that other data-related getter functions source to correctly link table and
-#' filter on records. Note that table names at the beginning of column names are dropped from output
-#' for easier coding/analysis.
+#' of an internal function that other data-related getter functions source to efficiently
+#' filter on records.
 #'
 #' @importFrom dplyr left_join
 #'
-#' @param park Filter on park code (aka RegistrationUnit_Name). Can select more than one. Valid inputs:
+#' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
 #' \item{"AGFO":} {Agate Fossil Beds National Monument}
@@ -165,7 +164,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   env <- if(exists("VIEWS_NGPN")){VIEWS_NGPN} else {.GlobalEnv}
   tryCatch(
     macro <- get("MacroPlots", envir = env),
-    error = function(e){stop("MacroPlot table not found. Please import NGPN FFI data.")})
+    error = function(e){stop("MacroPlots view not found. Please import NGPN FFI data.")})
 
   # Check that specified plot_name matches at least one record in the macroplot table
   plot_names <- sort(unique(macro$MacroPlot_Name))
@@ -205,8 +204,11 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   # filter on park
   macro3 <- macro2[macro2$Unit_Name %in% park,]
 
+  # filter on plot name
+  macro4 <- macro3[macro3$MacroPlot_Name %in% plot_list,]
+
   # Set project list if all or NGPN_PCM selected
-  mac_project1 <- names(macro3[grepl("ProjectUnit_", names(macro3))])
+  mac_project1 <- names(macro4[grepl("ProjectUnit_", names(macro4))])
   mac_project2 <- gsub("ProjectUnit_", "", mac_project1)
   mac_project <- gsub("_", " ", mac_project2)
 
@@ -216,7 +218,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                                    paste0(bad_project, sep = ", "))}
 
   project_col <- paste0("ProjectUnit_", gsub(" ", "_", project))
-  macro4 <- macro3[macro3[,project_col] == 1,]
+  macro5 <- macro4[macro4[,project_col] == 1,]
 
   # Compile final dataset
   keep_cols <- c("MacroPlot_Name", "Unit_Name",
@@ -229,13 +231,13 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
                  "MacroPlot_UV6", "MacroPlot_UV7", "MacroPlot_UV8", "Metadata",
                  "MacroPlot_GUID", "RegistrationUnit_GUID")
 
-  macro5 <-
-  if(output == "short"){macro4[,keep_cols]
-  } else {macro4}
+  macro6 <-
+  if(output == "short"){macro5[,keep_cols]
+  } else {macro5}
 
-  if(nrow(macro5) == 0){stop(paste0("Specified function arguments returned an empty data frame. ",
+  if(nrow(macro6) == 0){stop(paste0("Specified function arguments returned an empty data frame. ",
                                     "Check that the combination of plot_name, purpose, project, etc.
                                     arguments will return records."))}
 
-  return(macro5)
+  return(macro6)
   }

@@ -26,6 +26,7 @@ Suggests:
 RoxygenNote: 7.3.2
 Collate: 
     'getCoverPointData.R'
+    'getCoverSpeciesComp.R'
     'getMacroPlot.R'
     'getSampleEvent.R'
     'importData.R'

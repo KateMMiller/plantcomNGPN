@@ -168,11 +168,11 @@ head(covspp)
 covspp_pr <- getCoverSpeciesComp(park = "AGFO", project = "Native Prairie")
 table(covspp_pr$Unit_Name, covspp_pr$ProjectUnit_Name, useNA = 'always')
 
-# get cover point data for ForestStructure monitoring status
+# get cover species data for ForestStructure monitoring status
 covspp_for <- getCoverSpeciesComp(mon_status = "ForestStructure")
 table(covspp_for$Unit_Name, covspp_for$MonitoringStatus_Base)
 
-# get invasive graminoid cover point data for BADL
+# get invasive graminoid cover species data for BADL
 badl_inv_gram <- getCoverSpeciesComp(park = "BADL") |>
 filter(LifeForm_Name \%in\% "Graminoid") |>
 filter(Invasive == TRUE)

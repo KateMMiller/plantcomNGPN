@@ -152,11 +152,11 @@
 #' covspp_pr <- getCoverSpeciesComp(park = "AGFO", project = "Native Prairie")
 #' table(covspp_pr$Unit_Name, covspp_pr$ProjectUnit_Name, useNA = 'always')
 #'
-#' # get cover point data for ForestStructure monitoring status
+#' # get cover species data for ForestStructure monitoring status
 #' covspp_for <- getCoverSpeciesComp(mon_status = "ForestStructure")
 #' table(covspp_for$Unit_Name, covspp_for$MonitoringStatus_Base)
 #'
-#' # get invasive graminoid cover point data for BADL
+#' # get invasive graminoid cover species data for BADL
 #' badl_inv_gram <- getCoverSpeciesComp(park = "BADL") |>
 #' filter(LifeForm_Name %in% "Graminoid") |>
 #' filter(Invasive == TRUE)
@@ -193,13 +193,14 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
   mon_status <- if(any(mon_status %in% 'all')){
     sort(unique(sampev$MonitoringStatus_Base))
   } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
+    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
+      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
   } else {mon_status}
 
   # check monitoring status is in the view
   se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
   bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure", bad_monstat1)]
+  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
   if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
                                    paste0(bad_monstat))}
 
@@ -235,6 +236,8 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
   sampcov_final <- covspp_samp2[order(covspp_samp2$MacroPlot_Name, covspp_samp2$SampleEvent_Date,
                                       covspp_samp2$Index),
                                 final_names]
+
+  if(nrow(sampcov_final)){warning("Specified arguments returned an empty dataframe.")}
 
   return(sampcov_final)
   }

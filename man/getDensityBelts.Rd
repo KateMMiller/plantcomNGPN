@@ -146,10 +146,10 @@ which represents the time NGPN plant community monitoring began using latest pro
 "verbose" returns all columns in the DensityBelts database tables.}
 }
 \value{
-Returns a data frame of cover point data
+Returns a data frame of nested quadrat data
 }
 \description{
-This function filters and joins FFI nested nested quadrat data  data by park, plot name, purpose, project,
+This function filters and joins FFI nested nested quadrat data by park, plot name, purpose, project,
 sample year, and other parameters.
 }
 \examples{
@@ -158,7 +158,7 @@ sample year, and other parameters.
 library(plantcomNGPN)
 importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 
-# get all cover point data for all parks, all years, for NGPN_PCM plots
+# get all density quadrat data for all parks, all years, for NGPN_PCM plots
 densb <- getDensityBelts()
 head(densb)
 
@@ -167,11 +167,11 @@ densb_pr <- getDensityBelts(park = "AGFO", project = "Native Prairie")
 table(densb_pr$Unit_Name, densb_pr$ProjectUnit_Name, useNA = 'always')
 head(densb_pr)
 
-# get cover point data for ForestStructure monitoring status
+# get density quadrat data for ForestStructure monitoring status
 densb_for <- getDensityBelts(mon_status = "ForestStructure")
 table(densb_for$Unit_Name, densb_for$MonitoringStatus_Base, useNA = 'always')
 
-# get invasive graminoid cover point data for BADL in 2024
+# get invasive graminoid quadrat data for BADL in 2024
 badl_inv_gram <- getDensityBelts(park = "BADL", years = 2024) |>
 filter(LifeForm_Name \%in\% "Graminoid") |>
 filter(Invasive == TRUE)

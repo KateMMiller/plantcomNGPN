@@ -190,13 +190,14 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   mon_status <- if(any(mon_status %in% 'all')){
     sort(unique(sampev$MonitoringStatus_Base))
   } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
+    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
+      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
   } else {mon_status}
 
   # check monitoring status is in the view
   se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
   bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure", bad_monstat1)]
+  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
   if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
                                    paste0(bad_monstat))}
 
@@ -233,6 +234,8 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   sampcov_final <- covpts_samp2[order(covpts_samp2$MacroPlot_Name, covpts_samp2$SampleEvent_Date,
                                       covpts_samp2$Transect, covpts_samp2$Point, covpts_samp2$Order),
                                 final_names]
+
+  if(nrow(sampcov_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(sampcov_final)
   }

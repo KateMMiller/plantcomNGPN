@@ -2,7 +2,7 @@
 #'
 #' @title getDensityBelts
 #'
-#' @description This function filters and joins FFI nested nested quadrat data  data by park, plot name, purpose, project,
+#' @description This function filters and joins FFI nested nested quadrat data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
 #' @importFrom dplyr filter left_join select
@@ -142,7 +142,7 @@
 #' library(plantcomNGPN)
 #' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 #'
-#' # get all cover point data for all parks, all years, for NGPN_PCM plots
+#' # get all density quadrat data for all parks, all years, for NGPN_PCM plots
 #' densb <- getDensityBelts()
 #' head(densb)
 #'
@@ -151,11 +151,11 @@
 #' table(densb_pr$Unit_Name, densb_pr$ProjectUnit_Name, useNA = 'always')
 #' head(densb_pr)
 #'
-#' # get cover point data for ForestStructure monitoring status
+#' # get density quadrat data for ForestStructure monitoring status
 #' densb_for <- getDensityBelts(mon_status = "ForestStructure")
 #' table(densb_for$Unit_Name, densb_for$MonitoringStatus_Base, useNA = 'always')
 #'
-#' # get invasive graminoid cover point data for BADL in 2024
+#' # get invasive graminoid quadrat data for BADL in 2024
 #' badl_inv_gram <- getDensityBelts(park = "BADL", years = 2024) |>
 #' filter(LifeForm_Name %in% "Graminoid") |>
 #' filter(Invasive == TRUE)
@@ -164,7 +164,7 @@
 #'
 #' }
 #'
-#' @return Returns a data frame of cover point data
+#' @return Returns a data frame of nested quadrat data
 #'
 #' @export
 
@@ -191,13 +191,14 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
   mon_status <- if(any(mon_status %in% 'all')){
     sort(unique(sampev$MonitoringStatus_Base))
   } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
+    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
+      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
   } else {mon_status}
 
   # check monitoring status is in the view
   se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
   bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure", bad_monstat1)]
+  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
   if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
                                    paste0(bad_monstat))}
 
@@ -221,8 +222,8 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
                  "SampleEvent_Date", "year", "month", "doy", "DefaultMonitoringStatus",
                  "MonitoringStatus_Base",
                  "Visited", "NumTran", "TranLen", "TranWid", "Area",
-                 "Index", "Transect", "Subbelt", "Status", "SizeCl", "AgeCl", "Count",
-                 "SubFrac", "Comment", #"Height", #blank in NGPN
+                 "Index", "Transect", "Subbelt", "SubFrac", "Status", #"SizeCl", "AgeCl",
+                 "Count", "Comment", #"Height", #blank in NGPN
                  "UV1Desc", "UV2Desc", "SaComment",
                  "Symbol", "ITIS_TSN", "ScientificName", "CommonName", "Nativity", "Invasive",
                  "Cultural", "Concern", "LifeCycle", "LifeForm_Name", "NotBiological",
@@ -232,8 +233,11 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
   } else {c(keep_cols, sort(setdiff(names(densb_samp2), keep_cols)))}
 
   densb_final <- densb_samp2[order(densb_samp2$MacroPlot_Name, densb_samp2$SampleEvent_Date,
-                                  densb_samp2$Transect, densb_samp2$Subbelt, densb_samp2$ScientificName),
+                                  densb_samp2$Transect, densb_samp2$Subbelt, densb_samp2$SubFrac,
+                                  densb_samp2$ScientificName),
                                 final_names]
+
+  if(nrow(densb_final == 0)){warning("Specified arguments returned an empty dataframe.")}
 
   return(densb_final)
   }

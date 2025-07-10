@@ -5,8 +5,6 @@
 #' @description This function filters and joins FFI nested nested quadrat data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
-#' @importFrom dplyr filter left_join select
-#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -157,8 +155,8 @@
 #'
 #' # get invasive graminoid quadrat data for BADL in 2024
 #' badl_inv_gram <- getDensityBelts(park = "BADL", years = 2024) |>
-#' filter(LifeForm_Name %in% "Graminoid") |>
-#' filter(Invasive == TRUE)
+#'   filter(LifeForm_Name %in% "Graminoid") |>
+#'   filter(Invasive == TRUE)
 #'
 #' table(badl_inv_gram$MacroPlot_Name, badl_inv_gram$ScientificName)
 #'

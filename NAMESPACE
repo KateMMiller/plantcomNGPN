@@ -2,6 +2,7 @@
 
 export(getCoverPoints)
 export(getCoverSpeciesComp)
+export(getDensityBelts)
 export(getMacroPlot)
 export(getSampleEvent)
 export(importData)

@@ -31,5 +31,6 @@ Collate:
     'getCoverSpeciesComp.R'
     'getDensityBelts.R'
     'getDensityQuadrats.R'
+    'getDisturbanceHistory.R'
     'importData.R'
     'importViews.R'

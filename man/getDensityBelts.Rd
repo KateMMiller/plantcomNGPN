@@ -173,8 +173,8 @@ table(densb_for$Unit_Name, densb_for$MonitoringStatus_Base, useNA = 'always')
 
 # get invasive graminoid quadrat data for BADL in 2024
 badl_inv_gram <- getDensityBelts(park = "BADL", years = 2024) |>
-filter(LifeForm_Name \%in\% "Graminoid") |>
-filter(Invasive == TRUE)
+  filter(LifeForm_Name \%in\% "Graminoid") |>
+  filter(Invasive == TRUE)
 
 table(badl_inv_gram$MacroPlot_Name, badl_inv_gram$ScientificName)
 

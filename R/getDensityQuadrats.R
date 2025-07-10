@@ -199,6 +199,8 @@ getDensityQuadrats <- function(park = 'all', plot_name = "all", project = "Park"
                      error = function(e){stop(
                        "Density_Quadrats_metric view not found. Please import NGPN FFI data.")})
 
+  densq$ProjectUnit_Name <- project
+
   # Filter by monitoring status, which should drop duplicates
   densq1 <- densq[densq$MonitoringStatus_Base %in% mon_status,]
 
@@ -207,7 +209,6 @@ getDensityQuadrats <- function(park = 'all', plot_name = "all", project = "Park"
   densq_samp <- densq1[densq1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   densq_samp2 <- densq_samp[!is.na(densq_samp$Index),]
-  densq_samp2$ProjectUnit_Name <- project
 
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name",
                  "UTM_X", "UTM_Y", "UTMzone",
@@ -230,6 +231,7 @@ getDensityQuadrats <- function(park = 'all', plot_name = "all", project = "Park"
                                    densq_samp2$Transect, densq_samp2$Quadrat,
                                    densq_samp2$ScientificName),
                                 final_names]
+
   if(nrow(densq_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(densq_final)

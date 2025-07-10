@@ -205,6 +205,8 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
                      error = function(e){stop(
                        "Cover_Points_metric view not found. Please import NGPN FFI data.")})
 
+  covpts$ProjectUnit_Name <- project
+
   # Filter by monitoring status, which should drop duplicates
   covpts1 <- covpts[covpts$MonitoringStatus_Base %in% mon_status,]
 
@@ -213,7 +215,6 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   covpts_samp <- covpts1[covpts1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   covpts_samp2 <- covpts_samp[!is.na(covpts_samp$Index),]
-  covpts_samp2$ProjectUnit_Name <- project
 
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name",
                  "UTM_X", "UTM_Y", "UTMzone",

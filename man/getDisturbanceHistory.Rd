@@ -146,7 +146,7 @@ which represents the time NGPN plant community monitoring began using latest pro
 "verbose" returns all columns in the DisturbanceHistory database tables.}
 }
 \value{
-Returns a data frame of seedling and tall shrub data
+Returns a data frame of disturbance history data
 }
 \description{
 This function filters and joins FFI disturbance history data
@@ -158,19 +158,19 @@ by park, plot name, purpose, project, sample year, and other parameters.
 library(plantcomNGPN)
 importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 
-# get all seedling data for all parks, all years, for NGPN_PCM plots
-densq <- getDisturbanceHistory()
-head(densq)
+# get all disturbance history all parks, all years, for NGPN_PCM plots
+dist <- getDisturbanceHistory()
+head(dist)
+table(dist$ChAgent)
 
-# get seedling data for ForestStructure monitoring status
-densq_for <- getDisturbanceHistory(mon_status = "ForestStructure")
-table(densq_for$Unit_Name, densq_for$MonitoringStatus_Base, useNA = 'always')
+# get disturbance history for ForestStructure monitoring status
+dist_for <- getDisturbanceHistory(mon_status = "ForestStructure")
+table(dist_for$Unit_Name, dist_for$ChAgent, dist_for$MonitoringStatus_Base, useNA = 'always')
 
-# get shrub data for KNRI
-knri_shrub <- getDisturbanceHistory(park = "KNRI") |>
-  filter(LifeForm_Name == "Shrub")
+# get disturbance history for KNRI
+knri <- getDisturbanceHistory(park = "KNRI")
 
-table(knri_shrub$MacroPlot_Name, knri_shrub$ScientificName)
+table(knri$MacroPlot_Name, knri$ChAgent)
 
 }
 

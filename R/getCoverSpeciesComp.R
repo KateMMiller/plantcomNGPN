@@ -208,6 +208,8 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
                      error = function(e){stop(
                        "Cover_Species_Composition view not found. Please import NGPN FFI data.")})
 
+  covspp$ProjectUnit_Name <- project
+
   # Filter by monitoring status, which should drop duplicates
   covspp1 <- covspp[covspp$MonitoringStatus_Base %in% mon_status,]
 
@@ -216,7 +218,6 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
   covspp_samp <- covspp1[covspp1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   covspp_samp2 <- covspp_samp[!is.na(covspp_samp$Visited),]
-  covspp_samp2$ProjectUnit_Name <- project
 
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name",
                  "UTM_X", "UTM_Y", "UTMzone", "Elevation", "Aspect", "Azimuth", "SlopeHill",
@@ -237,7 +238,7 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
                                       covspp_samp2$Index),
                                 final_names]
 
-  if(nrow(sampcov_final)){warning("Specified arguments returned an empty dataframe.")}
+  if(nrow(sampcov_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(sampcov_final)
   }

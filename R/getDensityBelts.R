@@ -204,6 +204,8 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
                      error = function(e){stop(
                        "Density_Belts_metric view not found. Please import NGPN FFI data.")})
 
+  densb$ProjectUnit_Name <- project
+
   # Filter by monitoring status, which should drop duplicates
   densb1 <- densb[densb$MonitoringStatus_Base %in% mon_status,]
 
@@ -212,7 +214,6 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
   densb_samp <- densb1[densb1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   densb_samp2 <- densb_samp[!is.na(densb_samp$Index),]
-  densb_samp2$ProjectUnit_Name <- project
 
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name",
                  "UTM_X", "UTM_Y", "UTMzone",
@@ -235,7 +236,7 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
                                   densb_samp2$ScientificName),
                                 final_names]
 
-  if(nrow(densb_final == 0)){warning("Specified arguments returned an empty dataframe.")}
+  if(nrow(densb_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(densb_final)
   }

@@ -140,19 +140,19 @@
 #' library(plantcomNGPN)
 #' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 #'
-#' # get all seedling data for all parks, all years, for NGPN_PCM plots
-#' densq <- getDisturbanceHistory()
-#' head(densq)
+#' # get all disturbance history all parks, all years, for NGPN_PCM plots
+#' dist <- getDisturbanceHistory()
+#' head(dist)
+#' table(dist$ChAgent)
 #'
-#' # get seedling data for ForestStructure monitoring status
-#' densq_for <- getDisturbanceHistory(mon_status = "ForestStructure")
-#' table(densq_for$Unit_Name, densq_for$MonitoringStatus_Base, useNA = 'always')
+#' # get disturbance history for ForestStructure monitoring status
+#' dist_for <- getDisturbanceHistory(mon_status = "ForestStructure")
+#' table(dist_for$Unit_Name, dist_for$ChAgent, dist_for$MonitoringStatus_Base, useNA = 'always')
 #'
-#' # get shrub data for KNRI
-#' knri_shrub <- getDisturbanceHistory(park = "KNRI") |>
-#'   filter(LifeForm_Name == "Shrub")
+#' # get disturbance history for KNRI
+#' knri <- getDisturbanceHistory(park = "KNRI")
 #'
-#' table(knri_shrub$MacroPlot_Name, knri_shrub$ScientificName)
+#' table(knri$MacroPlot_Name, knri$ChAgent)
 #'
 #' }
 #'
@@ -199,6 +199,8 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all", project = "Pa
                       error = function(e){stop(
                       "Disturbance_History view not found. Please import NGPN FFI data.")})
 
+  disturb$ProjectUnit_Name <- project
+
   # Filter by monitoring status, which should drop duplicates
   disturb1 <- disturb[disturb$MonitoringStatus_Base %in% mon_status,]
 
@@ -207,7 +209,6 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all", project = "Pa
   dist_samp <- disturb1[disturb1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   dist_samp2 <- dist_samp[dist_samp$Visited == TRUE,]
-  dist_samp2$ProjectUnit_Name <- project
 
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "ProjectUnit_Name",
                  "UTM_X", "UTM_Y", "UTMzone",
@@ -225,7 +226,8 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all", project = "Pa
   dist_final <- dist_samp2[order(dist_samp2$MacroPlot_Name, dist_samp2$SampleEvent_Date,
                                  dist_samp2$ChAgent),
                           final_names]
-  if(nrow(dist_final) == 0){warning("Specified arguments returned an empty dataframe.")}
+
+  if(nrow(dist_final) == 0){stop("Specified arguments returned an empty dataframe.")}
 
   return(dist_final)
   }

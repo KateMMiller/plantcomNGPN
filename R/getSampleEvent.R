@@ -204,8 +204,8 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   # check monitoring status is in the view
   se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
   bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|
-                                     Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
+  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE",
+                                     bad_monstat1)]
 
   if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
                                    paste0(bad_monstat))}

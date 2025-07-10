@@ -30,5 +30,6 @@ Collate:
     'getCoverPoints.R'
     'getCoverSpeciesComp.R'
     'getDensityBelts.R'
+    'getDensityQuadrats.R'
     'importData.R'
     'importViews.R'

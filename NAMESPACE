@@ -3,6 +3,7 @@
 export(getCoverPoints)
 export(getCoverSpeciesComp)
 export(getDensityBelts)
+export(getDensityQuadrats)
 export(getMacroPlot)
 export(getSampleEvent)
 export(importData)

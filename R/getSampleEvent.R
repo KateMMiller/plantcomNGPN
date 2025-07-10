@@ -197,13 +197,15 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   mon_status <- if(any(mon_status %in% 'all')){
     sort(unique(sampev$MonitoringStatus_Base))
   } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure")
+    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
+      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
   } else {mon_status}
 
   # check monitoring status is in the view
   se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
   bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure", bad_monstat1)]
+  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|
+                                     Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
 
   if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
                                    paste0(bad_monstat))}

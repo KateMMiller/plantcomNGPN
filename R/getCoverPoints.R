@@ -1,5 +1,5 @@
 #'
-#' @title getCoverPointData
+#' @title getCoverPoints
 #'
 #' @description This function filters and joins FFI cover point data by park, plot name, purpose, project,
 #' sample year, and other parameters.
@@ -142,19 +142,19 @@
 #' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 #'
 #' # get all cover point data for all parks, all years, for NGPN_PCM plots
-#' covpts <- getCoverPointData()
+#' covpts <- getCoverPoints()
 #' head(covpts)
 #'
 #' # return Native Prairie stratum for AGFO
-#' covpts_pr <- getCoverPointData(park = "AGFO", project = "Native Prairie")
+#' covpts_pr <- getCoverPoints(park = "AGFO", project = "Native Prairie")
 #' table(covpts_pr$Unit_Name, covpts_pr$ProjectUnit_Name, useNA = 'always')
 #'
 #' # get cover point data for ForestStructure monitoring status
-#' covpts_for <- getCoverPointData(mon_status = "ForestStructure")
+#' covpts_for <- getCoverPoints(mon_status = "ForestStructure")
 #' table(covpts_for$Unit_Name, covpts_for$MonitoringStatus_Base, useNA = 'always')
 #'
 #' # get invasive graminoid cover point data for BADL in 2024
-#' badl_inv_gram <- getCoverPointData(park = "BADL", years = 2024) |>
+#' badl_inv_gram <- getCoverPoints(park = "BADL", years = 2024) |>
 #' filter(LifeForm_Name %in% "Graminoid") |>
 #' filter(Invasive == TRUE)
 #'
@@ -166,7 +166,7 @@
 #'
 #' @export
 
-getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_PCM",
+getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_PCM",
                               mon_status = "NGPN_PCM", years = 2011:format(Sys.Date(), "%Y"),
                               complete_events = TRUE, output = "short"){
   #---- Bug handling ----

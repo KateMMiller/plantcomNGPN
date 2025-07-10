@@ -854,12 +854,13 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover", "Height",
                     "Comment", "UV1", "UV2", "UV3")
 
-  Cover_Species_Composition <- data.frame(
+  Cover_Species_Composition <- unique(
+    data.frame(
     samp_comp_spp[order(samp_comp_spp$MacroPlot_Name, samp_comp_spp$year,
                         samp_comp_spp$Index, samp_comp_spp$ScientificName),
                   c(cols_view_start, cols_taxa_start,
                     cols_covcomp,
-                    cols_taxa_end, cols_view_end)])
+                    cols_taxa_end, cols_view_end)]))
 
   #---- Density_Belts_Metric View ----
   setTxtProgressBar(pb,5)

@@ -147,22 +147,18 @@
 #'
 #' # return Native Prairie stratum for AGFO
 #' covpts_pr <- getCoverPointData(park = "AGFO", project = "Native Prairie")
-#' table(covpts_pr$Unit_Name, covpts_pr$ProjectUnit_Name)
+#' table(covpts_pr$Unit_Name, covpts_pr$ProjectUnit_Name, useNA = 'always')
 #'
 #' # get cover point data for ForestStructure monitoring status
 #' covpts_for <- getCoverPointData(mon_status = "ForestStructure")
-#' table(covpts_for$Unit_Name, covpts_for$MonitoringStatus_Base)
+#' table(covpts_for$Unit_Name, covpts_for$MonitoringStatus_Base, useNA = 'always')
 #'
-#' # get invasive graminoid cover point data for BADL
-#' # Includes adding some taxa columns back
-#' covpts_badl <- getCoverPointData(park = "BADL")
-#' badl_inv_grams <- left_join(covpts_badl,
-#'   VIEWS_NGPN$Taxa_Table[,c("Spp_GUID", "LifeForm_Name")],
-#'   by = "Spp_GUID") |>
-#'   filter(LifeForm_Name %in% "Graminoid") |>
-#'   filter(Invasive == TRUE)
-#' head(badl_inv_grams)
-#' # add example where add some taxa columns back
+#' # get invasive graminoid cover point data for BADL in 2024
+#' badl_inv_gram <- getCoverPointData(park = "BADL", years = 2024) |>
+#' filter(LifeForm_Name %in% "Graminoid") |>
+#' filter(Invasive == TRUE)
+#'
+#' table(badl_inv_gram$MacroPlot_Name, badl_inv_gram$ScientificName)
 #'
 #' }
 #'
@@ -226,8 +222,8 @@ getCoverPointData <- function(park = 'all', plot_name = "all", project = "Park",
                  "Index", "Transect", "Point", "Tape", "Order", "Height",
                  #"CanopyLayer", # Blank in NGPN data
                  "Status", "Comment",
-                 "Symbol", "ITIS_TSN", "ScientificName", "CommonName",
-                 "Nativity", "Invasive", "Cultural", "Concern",
+                 "Symbol", "ITIS_TSN", "ScientificName", "CommonName", "Nativity", "Invasive",
+                 "Cultural", "Concern", "LifeCycle", "LifeForm_Name", "NotBiological",
                  "MacroPlot_GUID", "SampleEvent_GUID", "RegistrationUnit_GUID", "Spp_GUID")
 
   final_names <- if(output == "short"){keep_cols

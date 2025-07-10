@@ -474,7 +474,13 @@ sampev_include <- tab_include(sampev_check)
 
 #---- Cover Point Data ----
 # Add check that finds blank Index values (are these important? there are a lot)
+# Check for "No species" Inconsistent naming.
 
+
+
+#---- Cover Spp Comp ----
+# Check for "No species" Inconsistent naming.
+# Create early detection report using species recorded in this protocol.
 
 ###### Compile final QC Table ######
 # revise for different color combos for checks (99 vs 90)? Drop for checks vs. errors?

@@ -1,3 +1,4 @@
+#' @include getSampleEvent.R
 #'
 #' @title getDensityBelts
 #'

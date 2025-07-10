@@ -25,10 +25,10 @@ Suggests:
     zip
 RoxygenNote: 7.3.2
 Collate: 
+    'getMacroPlot.R'
+    'getSampleEvent.R'
     'getCoverPoints.R'
     'getCoverSpeciesComp.R'
     'getDensityBelts.R'
-    'getMacroPlot.R'
-    'getSampleEvent.R'
     'importData.R'
     'importViews.R'

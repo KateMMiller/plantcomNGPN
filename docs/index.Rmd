@@ -165,8 +165,7 @@ Once you have the R package installed, you can import and start working with the
 <li><b>importViews()</b>: a streamlined function that imports a zip file of flattened views for each FFI protocol.</li>
 </ul>
 
-
-Once FFI data are imported, the package has a getter function specific to each FFI protocol view. 
+Once FFI data are imported, the package has a getter function specific to each FFI protocol view that you can use to query the data by parks, years, monitoring status, or purpose. Eventually, there will be summary and plotting functions to work with each protocol.
 
 ##### Import functions {.tabset}
 <h5>importData()</h5>
@@ -179,6 +178,7 @@ Note that R is not able to connect to files on Sharepoint or MS Teams (Teams als
 ```{r echo = F, results = 'hide', include = F}
 library(plantcomNGPN)
 importViews(import_path = "C:/temp/NGPN_FFI_views_20250710.zip")
+library(tidyverse)
 ```
 
 ```{r eval = F}
@@ -269,6 +269,16 @@ importData(type = 'local',
 ##### Working with the Data
 The functions in the `plantcomNGPN` package are designed to work with the views in <i>VIEWS_NGPN</i>, and are the best way to interact with the data to query by park, site, site type, year, parameter, etc. However, if you want to look at the views without using the package functions, you can use the following code. 
 
+If you want to use the `print_head()` function that shows output in the markdown, run the code below. This makes the results print cleaner in the markdown report. For your purposes, you can just run: `head(dataframe)`.
+```{r}
+print_head <- function(df){
+  nrows <- min(6, nrow(df))
+  knitr::kable(df[1:nrows,]) |>  
+    kableExtra::kable_classic(full_width = F, font_size = 12, 
+                              bootstrap_options = c("condensed"))
+}
+```
+
 ```{r}
 # See list of the views
 names(VIEWS_NGPN)
@@ -276,7 +286,7 @@ names(VIEWS_NGPN)
 # Inspect the cover point view
 View(VIEWS_NGPN$Cover_Points_metric)
 
-#head(VIEWS_NGPN$Cover_Points_metric)
+print_head(VIEWS_NGPN$Cover_Points_metric)
 
 # Assign the coverpoint view to the object covpt, which now behaves like a data.frame.
 covpt <- VIEWS_NGPN$Cover_Points_metric
@@ -330,20 +340,287 @@ Finally, if you ever want to peak under the hood at the function, you can view i
 
 #### 3. getter Functions {.tabset}
 
+##### getMacroPlot()
+This function filters FFI macroplot data by park, plot name, project, and purpose. This function was primarily developed to pull out NGPN plant community monitoring plots. Using
+combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been
+tested as thoroughly, and may not return intended results in every case. Note that this is more of an internal function that other data-related getter functions source to efficiently
+filter on records.
+
+<p class='fxn'>Return all NGPN Plant Community Monitoring plots (ie vital signs plots),
+for the Park stratum and all purposes used by NGPN </p>
+```{r}
+macro_vs <- getMacroPlot()
+print_head(macro_vs)
+```
+
+<p class='fxn'>Return Prairie stratum for SCBL for NGPN_PCM plots</p>
+```{r}
+macro_pr_vs <- getMacroPlot(park = "SCBL", project = "Prairie")
+print_head(macro_pr_vs)
+```
+
+<p class='fxn'>Query NGPN only plots from North Dakota</p>
+```{r}
+macro_nd <- getMacroPlot(park = c("FOUS", "KNRI", "THRO"))
+print_head(macro_nd)
+```
+
+<p class='fxn'>Query and combine North and South Upland for THRO</p>
+```{r}
+thro_upn <- getMacroPlot(park = "THRO", project = "North Upland") |>   
+  select(-ProjectUnit_North_Upland)
+thro_ups <- getMacroPlot(park = "THRO", project = "South Upland") |> select(-ProjectUnit_South_Upland)
+
+thro_upn$ProjectUnit <- "North_Upland"
+thro_ups$ProjectUnit <- "South_Upland"
+
+thro_up <- rbind(thro_upn, thro_ups)
+print_head(thro_up)
+
+```
+
+##### getSampleEvent()
+This function filters FFI sample event data by park, plot name, project, purpose, and year.
+This function was primarily developed to pull out NGPN plant community monitoring plots. Using combinations of plot names, projects or purposes that are outside NGPN PCM plots hasn't been tested as thoroughly, and may not return intended results in every case. Note that this is more of an internal function that other data-related getter functions source to efficiently filter on records. Note that currently, the MonitoringStatus_Comment column is not included, as it results in duplicate returns, where one row is blank and another includes a comment f or the sample sample event.
+
+<p class='fxn'>Default return all samples of NGPN Plant Community Monitoring plots (ie vital signs plots), for the Park stratum and all purposes used by NGPN from 2011 and later.</p>
+```{r}
+samp_vs <- getSampleEvent()
+print_head(samp_vs)
+```
+
+<p class='fxn'>Return data for AGFO and SCBL for NGPN_PCM plots</p>
+```{r}
+samp_AS <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM")
+print_head(samp_AS)
+```
+<p class='fxn'>Query all NGPN_PCM sites JECA PlantCommunity only</p>
+```{r}
+samp_jeca <- getSampleEvent(park = "JECA", mon_status = "PlantCommunity")
+print_head(samp_jeca)
+```
+
+<p class='fxn'>Query NGPN only plots from North Dakota from 2020:2024</p>
+```{r}
+samp_nd <- getSampleEvent(park = c("FOUS", "KNRI", "THRO"), years = 2020:2024)
+print_head(samp_nd)
+```
+
+<p class='fxn'>Query and combine North and South Upland for THRO</p>
+```{r}
+thro_upn <- getSampleEvent(park = "THRO", project = "North Upland")
+thro_upn$ProjectUnit <- "North_Upland"
+
+thro_ups <- getSampleEvent(park = "THRO", project = "South Upland")
+thro_ups$ProjectUnit <- "South_Upland"
+
+thro_up <- rbind(thro_upn, thro_ups)
+
+print_head(thro_up)
+```
+
+<p class='fxn'>Return results for three plots in KNRI for PlantCommunity monitoring status only</p>
+```{r}
+KNRI_123 <- getSampleEvent(plot_name = c("KNRI_PCM_001", "KNRI_PCM_002", "KNRI_PCM_003"),
+  mon_stat = "PlantCommunity")
+print_head(KNRI_123)
+```
+
 ##### getCoverPoints()
+This function filters and joins FFI cover point data by park, plot name, purpose, project,
+sample year, and other parameters.
+
+<p class='fxn'>Get all cover point data for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+covpts <- getCoverPoints()
+print_head(covpts)
+```
+
+<p class='fxn'>Return Native Prairie stratum for AGFO</p>
+```{r}
+covpts_pr <- getCoverPoints(park = "AGFO", project = "Native Prairie")
+print_head(covpts_pr)
+```
+
+<p class='fxn'>Get cover point data for ForestStructure monitoring status</p>
+```{r}
+covpts_for <- getCoverPoints(mon_status = "ForestStructure")
+print_head(covpts_for)
+```
+<p class='fxn'>Get invasive graminoid covre point data for BADL in 2024</p>
+```{r}
+badl_inv_gram <- getCoverPoints(park = "BADL", years = 2024) |>
+  filter(LifeForm_Name %in% "Graminoid") |>
+  filter(Invasive == TRUE)
+
+print_head(badl_inv_gram)
+```
 
 ##### getCoverSpeciesComp()
+This function filters and joins FFI species cover data by park, plot name, purpose, project,
+sample year, and other parameters. The data returned are part of the target species protocol to aid early detection efforts in parks. When no target species were detected during monitoring, "no species" is recorded in the CommonName column, "NOSP" is the Symbol, and ScientificName is blank.
+
+<p class='fxn'>Get all cover point data for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+covspp <- getCoverSpeciesComp()
+print_head(covspp)
+```
+
+<p class='fxn'>Return Native Prairie stratum for AGFO</p>
+```{r}
+covspp_pr <- getCoverSpeciesComp(park = "AGFO", project = "Native Prairie")
+print_head(covspp_pr)
+```
+
+<p class='fxn'>Get cover point data for ForestStructure monitoring status</p>
+```{r}
+covspp_for <- getCoverSpeciesComp(mon_status = "ForestStructure")
+print_head(covspp_for)
+```
+
+<p class='fxn'>Get invasive graminoid covre point data for BADL in 2024</p>
+```{r}
+badl_inv_gram <- getCoverSpeciesComp(park = "BADL") |>
+  filter(LifeForm_Name %in% "Graminoid") |>
+  filter(Invasive == TRUE)
+
+print_head(badl_inv_gram)
+```
 
 ##### getDensityBelts()
+This function filters and joins FFI nested nested quadrat data by park, plot name, purpose, project, sample year, and other parameters.
+
+<p class='fxn'>Get all density quadrat data for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+densb <- getDensityBelts()
+print_head(densb)
+```
+
+<p class='fxn'>Return Native Prairie stratum for AGFO</p>
+```{r}
+densb_pr <- getDensityBelts(park = "AGFO", project = "Native Prairie")
+print_head(densb_pr)
+```
+
+<p class='fxn'>Get density quadrat data for ForestStructure monitoring status</p>
+```{r}
+densb_for <- getDensityBelts(mon_status = "ForestStructure")
+print_head(densb_for)
+```
+
+<p class='fxn'>Get invasive graminoid quadrat data for BADL in 2024</p>
+```{r}
+badl_inv_gram <- getDensityBelts(park = "BADL", years = 2024) |>
+   filter(LifeForm_Name %in% "Graminoid") |>
+   filter(Invasive == TRUE)
+print_head(badl_inv_gram)
+```
 
 ##### getDensityQuadrats()
+This function filters and joins FFI density quadrat data used for seedlings and tall shrubs in NGPN by park, plot name, purpose, project, sample year, and other parameters.
+
+<p class='fxn'>Get all seedling data for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+densq <- getDensityQuadrats()
+print_head(densq)
+```
+
+<p class='fxn'>Get seedling data for ForestStructure monitoring status</p>
+```{r}
+densq_for <- getDensityQuadrats(mon_status = "ForestStructure")
+print_head(densq_for)
+```
+
+<p class='fxn'>Get shrub data for KNRI</p>
+```{r}
+knri_shrub <- getDensityQuadrats(park = "KNRI") |>
+  filter(LifeForm_Name == "Shrub")
+print_head(knri_shrub)
+```
 
 ##### getFuels1000()
+This function filters and joins FFI Surface Fuels 1000Hr data by park, plot name, purpose, project, sample year, and other parameters.
+
+<p class='fxn'>Get all surface fuels 1000hr for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+sf1000 <- getFuels1000()
+print_head(sf1000)
+```
+
+<p class='fxn'>Return THRO North Upland data</p>
+```{r}
+sf1000_thro <- getFuels1000(park = "THRO", project = "North Upland")
+print_head(sf1000_thro)
+```
+
+<p class='fxn'>Get surface fuels ForestStructure monitoring status</p>
+```{r}
+sf1000_for <- getFuels1000(mon_status = "ForestStructure")
+print_head(sf1000_for)
+```
 
 ##### getFuelsFine
+This function filters and joins FFI Surface Fuels Fine data by park, plot name, purpose, project, sample year, and other parameters.
+
+<p class='fxn'>Get all surface fuels fine for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+sffine <- getFuelsFine()
+print_head(sffine)
+```
+
+<p class='fxn'>Return THRO North Upland data</p>
+```{r}
+sffine_thro <- getFuelsFine(park = "THRO", project = "North Upland")
+print_head(sffine_thro)
+```
+
+<p class='fxn'>Get surface fuels ForestStructure monitoring status</p>
+```{r}
+sffine_for <- getFuelsFine(mon_status = "ForestStructure")
+print_head(sffine_for)
+```
 
 ##### getFuelsDuff()
+This function filters and joins FFI Surface Fuels Duff data by park, plot name, purpose, project, sample year, and other parameters.
 
-##### getMacroPlot()
+<p class='fxn'>Get all surface fuels duff for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+sfduff <- getFuelsDuff()
+print_head(sfduff)
+```
+
+<p class='fxn'>Return THRO North Upland data</p>
+```{r}
+sfduff_thro <- getFuelsDuff(park = "THRO", project = "North Upland")
+print_head(sfduff_thro)
+```
+
+<p class='fxn'>Get surface fuels ForestStructure monitoring status</p>
+```{r}
+sfduff_for <- getFuelsDuff(mon_status = "ForestStructure")
+print_head(sfduff_for)
+```
 
 ##### getTrees()
+This function filters and joins FFI tree data by park, plot name, purpose, project, sample year, and other parameters.
+
+<p class='fxn'>Get all tree data for all parks, all years, for NGPN_PCM plots</p>
+```{r}
+trees <- getTrees()
+print_head(trees)
+```
+<p class='fxn'>Return DETO plots</p>
+```{r}
+trees_deto <- getTrees(park = "DETO")
+print_head(trees_deto)
+```
+
+<p class='fxn'>Get tree data for ForestStructure monitoring status</p>
+```{r}
+trees_for <- getTrees(mon_status = "ForestStructure")
+print_head(trees_for)
+```
+
+
+
+

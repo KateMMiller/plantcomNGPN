@@ -142,7 +142,7 @@
 #' library(plantcomNGPN)
 #' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
 #'
-#' # get all surface fuels 1000hr for all parks, all years, for NGPN_PCM plots
+#' # get all tree data for all parks, all years, for NGPN_PCM plots
 #' trees <- getTrees()
 #' head(trees)
 #'

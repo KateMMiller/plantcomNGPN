@@ -1,0 +1,326 @@
+---
+output: 
+  html_document:
+    css: www/styles.css
+title: "Using plantcomNGPN R pkg." 
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(width = 10)
+```
+
+```{css echo = FALSE}
+.drop{
+  font-family: "Arial",Arial,sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  padding:0px 0px 0px 0px;
+  margin:0px 0px 0px 0px;
+}
+
+.title{
+ display:none;
+}
+
+```
+
+### Using the `plantcomNGPN` R package {.tabset .tabset-pills}
+
+#### 1. Setup {.tabset}
+##### Overview {.tabset}
+The `plantcomNGPN` package was designed to help compile, query and summarize plant community monitoring data collected by the Northern Great Plains Inventory and Monitoring Network (NGPN) data and stored in the FFI (FEAT/FIREMON Integrated) database.
+
+There are a couple of ways to import NGPN FFI data into R, and which will be demonstrated in code below: 
+
+<ol>
+<li><h5>Import FFI tables from a local database installation in SQL Server Management Studio (SSMS).</h5> This approach requires having SQL Server Express installed, which is not available in Software Center and requires elevated privileges from IT to install. SQL Server Express may prohibited in the near future. This approach involves restoring the .bak files, which are exports of the FFI database for each park from the SQL Server database, as a local database copy on a given computer. See <b>SSMS > Local SSMS</b> tab for setup instructions. Once that's completed, continue to R package setup.</li>
+
+<li><h5>Import FFI tables from SQL Server.</h5> Ideally this will be the main way that NGPN staff import FFI data into R, as it will be importing live data, allowing for real-time QAQC, fixing any errors found, then rerunning the import. Likely each user will need permissions set on the server with their Active Directory account (so NPS or NPS-partners only). SSMS will need to be installed, which is available in Software Center, but SQL Server Express isn't needed. We will continue to request this access through MB and/or FFI developers until we have it. See <b>SSMS > Server SSMS</b> tab for setup instructions. Once that's completed, continue to R package setup.</b></li>
+
+<li><h5>Import csvs of FFI database tables.</h5> The `importData()` function in this package can export a zip file containing csvs of all of the raw FFI database tables. Once that zip file is created, it can be used to import FFI data without the need of SSMS or SQL Server Express. This option allows non-NPS users to work with NPGN data. If this is the option you're using, go to <b>R package setup</b> tab for details on R package installation and setup.</li>
+
+<li><h5>Import csvs of the FFI views.</h5> In addition to importing and exporting FFI tables, the `importData()` function compiles the FFI raw tables into flattened stand-alone views of each FFI protocol (e.g. Cover Points, Density Belts, Trees, etc.), which are used by package functions to further query, summarize, and visualize the data. The views can be exported as a zip file in the `importData()` function. The zip file of views can be imported via `importViews()` function. This option is the fastest way to import NPGN data into R, and allows non-NPS users to more easily work with NPGN data. These views are intended to be analysis-ready. Any feedback on how to improve their usability is welcome. If this is the option you're using, go to <b>R package setup</b> tab for details on R package installation and setup.</li>
+</ol>
+
+Currently, only import and getter functions exist in the R package. In time, more features will be added, such as functions that perform common summaries and visualize data, and this tutorial will be updated accordingly. Feedback is always welcome on how to improve this tutorial and the R package in general. 
+
+Additionally, an automated QC report that checks NPGN FFI data for potential missing data and errors is being developed separately. 
+<br>
+
+##### SSMS {.tabset}
+###### Local SSMS {.tabset}
+Once this step is complete, users can import FFI database tables into R using the `importData()` function and the name of the database in SSMS (see ImportData tab).
+
+<h5>Step 1. Install SQL Server Management Studio</h5>
+Instructions for installing SQL Server Management Studio (SSMS) are currently being developed. Once those are ready, they will be linked here. The best directions currently (though a few years out of date) can be found here: <a href="https://doimspp-my.sharepoint.com/:w:/g/personal/kmmiller_nps_gov/ET6yKk-t50pPqDGm4m15hdkB11Pimv8AvKEC54dEo8PjPA?e=nCCm8u">SOP_SQLServer_Setup.docx</a>, and are only available to DOI users. 
+<br>
+<h5>Step 2. Restore database from .bak file in SSMS</h5>
+To restore a database from a .bak file in SSMS, you can either restore through the file menu following the screencast or run the SQL code in SSMS below. 
+
+<b>File Menu option:</b>
+<video width="1000" height="514" controls>
+  <source src="www/restore_bak.mp4" type="video/mp4">
+</video>
+
+<b>SQL Code option:</b>
+The SQL code below will restore a .bak file to a database named "FFI_RA_AGFO". To use the code below, you only need to change "FFI_RA_AGFO" to match the name of your database (i.e., whatever precedes the .bak in the file name), and change the C:\\temp\\path to the path where your .bak file lives. Note that files on OneDrive often cause issues. It's best to restore from locations directly on your C:\\ drive or a server. 
+
+```{SQL, eval = F, results = 'asis'}
+-- Variables to declare and modify for different database name and file locations
+DECLARE @DBNAME NVARCHAR(MAX) = 'FFI_RA_AGFO'
+DECLARE @FilePathOrig NVARCHAR(MAX) = 'C:\\temp\\'
+DECLARE @FilePathNew NVARCHAR(MAX) = 'C:\\Program Files\\Microsoft SQL Server\\MSSQL15.SQLEXPRESS\\MSSQL\\DATA\\';
+DECLARE @SQL NVARCHAR(MAX);
+
+-- Run remaining query to restore database
+--USE [master]
+
+DECLARE @DATA NVARCHAR(MAX) = @FilePathNew + @DBNAME + '.mdf';
+DECLARE @LOG NVARCHAR(MAX) = @FilePathNew + @DBNAME + '.ldf';
+DECLARE @DBFULLPATH NVARCHAR(MAX) = @FilePathOrig + @DBNAME + '.bak';
+DECLARE @DBLOG NVARCHAR(MAX) = @DBNAME + '_log';
+
+USE[master]
+
+SET @SQL =
+  ' RESTORE DATABASE ['+@DBNAME+'] FROM DISK = '''+@DBFULLPATH+''' WITH FILE = 1, MOVE '''+@DBNAME+''' TO '''+@DATA+''',
+    MOVE '''+@DBLOG+''' TO '''+@LOG+''',
+    NOUNLOAD, STATS = 5'
+EXEC(@SQL)
+GO
+
+```
+<br>
+
+###### Server SSMS
+```{r echo = F}
+knitr::include_graphics("./www/under-construction.png")
+```
+...hopefully
+
+##### R package setup
+If you've never installed an R package from GitHub, you'll need to complete the following steps to install the plantcomNGPN R package. Once completed, move on to the ImportData and other function tabs for instructions on using the R package.
+
+<h5>Step 1. Install R, RStudio, and RTools44 in Software Center</h5>
+RTools is needed to install R packages from GitHub via devtools, and it only works with R versions 4.4.x. While R 4.5 is available on Software Center, the matching RTools45 isn't available yet. Until that changes, link RStudio to the latest version of R 4.4 (I'm currently using R 4.4.3).
+
+<h5>Step 2. Set RTools44 path</h5>
+Unfortunately Software Center installs RTools44 in C:/Program Files/, not C:/, which is where RStudio looks for it by default. The following code helps RStudio find RTools. You may occasionally have to rerun this code (except for the `usethis` line), so keep it handy. You know when you have to rerun the code when you try to rebuild a package, and a window pops up to ask if you want to install missing build files.
+<ul>
+<li>
+<b>Install usethis and open .Renviron:</b> If you don't have the `usethis` package, install it first (first line below). Once installed, open the .Renviron using the second line below.
+```{r eval = F}
+install.packages('usethis')
+usethis::edit_r_environ()
+```
+</li>
+<li>
+<b>Set RTools path: </b> Next you're going to tell .Renviron where to find RTools upon RStudio opening by pasting the code below into that file, and saving it. Now close/reopen RStudio, and you should be all set.
+```{r eval = FALSE}
+Sys.setenv(PATH = paste("C:\\PROGRA~1\\Rtools44\\bin", Sys.getenv("PATH"), sep=";"))
+Sys.setenv(BINPREF = "C:\\PROGRA~1\\Rtools44\\mingw_$(WIN)\\bin\\")
+```
+</li></ul><br>
+<h5><b>Step 3.</b> Install devtools package in R:</h5>
+```{r, eval = F}
+install.packages('devtools')
+```
+
+<h5>Step 4. Set up GitHub account if a new user</h5>
+To install R packages using `devtools`, you need to have a GitHub user account and active token. Instructions for setting up a GitHub account and connecting it to RStudio are on the <a href="https://katemmiller.github.io/IMD_R_Training_Advanced/">IMD Advanced R training website</a> from 2022. Go to Day 4: Version Control > Git and RStudio and complete the steps described. There's a lot of other good info on using GitHub in other tabs too.   
+
+<h5>Step 5. Install plantcomNGPN from GitHub</h5>
+Note that whenever the `plantcomNGPN` package is updated, you can rerun this code to install the latest version.
+```{r, eval = F}
+library(devtools)
+install_github("KateMMiller/plantcomNGPN")
+```
+
+If you don't want to have a GitHub account, you can also install packages from GitHub by downloading a .zip file of the code (often called forking a repo), then running the code below. 
+```{r, eval = F}
+install.packages("plantcomNGPN.zip")
+```
+
+<ul><li>
+<h5>Troubleshooting GitHub package installation</h5>
+If you’re unable to install the R package via GitHub (often an error about permission being denied, or cannot open URL, download the following script from my OneDrive and open it in R: <a href = "https://doimspp-my.sharepoint.com/:u:/g/personal/kmmiller_nps_gov/ETaknusoEfVOs9tbIbx6QYEBre0WI-_xxi-C0M3JCX_xfw?e=n00UCO">fix_TLS_inspection.R</a>. Download by left clicking on the link, then click in the download arrow in the top left of the screen. Save it to your machine, then open it in RStudio.
+
+Once this script is open in R Studio, press Control + A to select all of the code. Then Control + Enter to run all of the code. Assuming you don’t return any errors, you should be able to install from GitHub. Now try to reinstall `plantcomNGPN`. If you're still running into issues, it could be that `devtools` is missing some package dependencies, which the error message will often mention. Install any missing packages and then try installing plantcomNGPN again. If you're still not successful, send Kate Miller (kathryn_miller@nps.gov) a screenshot of the error and she'll help you troubleshoot. 
+</li></ul>
+<br>
+<h5>Step 6. Load plantcomNGPN R package</h5>
+```{r}
+library(plantcomNGPN)
+```
+<br>
+
+#### 2. R package Intro {.tabset}
+##### Import functions {.tabset}
+<h5>Overview</h5>
+Once you have the R package installed, you can import and start working with the data. There are 2 import functions in the plantcomNGPN package: 
+<ul>
+<li><b>importData()</b>: imports raw FFI tables as individual data frames, either from SSMS or as a zip file of csvs. If multiple databases are specified in the import, the tables will be rowbinded across parks. This function also includes features to export data as a zip file of csvs, which can then be used in the following function.</li>
+<li><b>importViews()</b>: a streamlined function that imports a zip file of flattened views for each FFI protocol.</li>
+</ul>
+
+<h5>importData()</h5>
+By default, the `importData()` function imports FFI tables and only returns the flattened views as data frames in an environment called <i>VIEWS_NGPN</i>. This minimizes memory usage and keeps a tidy R workspace. R package functions are then designed to work seamlessly with the views, regardless of whether they're in the VIEWS_NGPN environment or global environment. See <b>Working with the data</b> tab for how to work with data.frames housed within the VIEWS_NGPN environment.
+<ul>
+<li>
+<p class = 'fxn'>Import data for 1 database using local install in SSMS</p>
+Note that R is not able to connect to files on Sharepoint or MS Teams (Teams also stores all files on Sharepoint). That means you need to store data package files on your local machine or on a server. The default option for importing data will add the data package views (i.e., flatfiles) to an environment called FFI_tables to your Environment work space (i.e. Environment tab in top right panel).
+
+```{r echo = F, results = 'hide', include = F}
+library(plantcomNGPN)
+importViews(import_path = "C:/temp/NGPN_FFI_views_20250710.zip")
+```
+
+```{r eval = F}
+library(plantcomNGPN)
+importData(dbname = "FFI_RA_AGFO")
+```
+</li>
+<li>
+<p class = 'fxn'>Import data for multiple databases using local installs in SSMS</p>
+The code below will bind like data/tables across parks together to have 1 large view
+```{r eval = F}
+importData(type = 'local',
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"))
+```
+</li>
+<li>
+<p class = 'fxn'>Import FFI tables as zip</p>
+The code below will import a zip file of THRO data exported by the `importData()` function (see options below). This approach does not require SSMS to be installed.
+```{r eval = F}
+importData(type = 'csv', import_path = "C:/temp/FFI_RA_THRO.zip")
+```
+</li>
+</ul>
+
+<h5>importViews()</h5>
+<ul><li>
+<p class = 'fxn'>Import FFI views as a zip</p> 
+The `importViews()` function is the fastest and least memory hungry way to import FFI data. Someone will have to have generated the views by first importing raw FFI tables, and then exporting the views. Once that's completed, this import function is recommended. 
+```{r eval = F}
+importViews(import_path = "C:/temp/NGPN_FFI_views_20250710.zip")
+```
+</li></ul>
+
+<h5>importData() Options</h5>
+Export tables or views to zip files.
+<ul>
+<li>
+<p class = 'fxn'>Export FFI tables to zip</p>
+If you want to export the raw tables into a zip file of csvs, simply add `export_tables = T`. If no export_path is specified, the zip file will be saved in your working directory. The file name and path of the zip file will be printed in your console. Note that exporting can be slow, especially if you loaded multiple databases. 
+
+```{r eval = F}
+importData(type = 'local', 
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"), 
+           export_tables = T, export_path = "C:/temp/")
+```
+</li>
+<li>
+<p class = 'fxn'>Export views to zip</p>
+Even better, is exporting the views into a zip file of csvs. To do that, add `export_views = T`. If no export_path is specified, the zip file will be saved in your working directory. The file name and path of the zip file will be printed in your console. This zip file is then the fastest way to import FFI data into R using the `importViews()` function instead. 
+
+```{r eval = F}
+importData(type = 'local', 
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"), 
+           export_views = T, export_path = "C:/temp")
+```
+</li>
+
+<li>
+<p class = 'fxn'>Return raw tables too</p>
+There are times when it helps to view the raw FFI data tables, such as for troubleshooting an issue in the R package, or in figuring out where an error in the data was introduced and need to be fixed. To return the raw FFI tables in addition to the views, specify `keep_tables = TRUE`.
+
+```{r eval = F}
+importData(type = 'local', 
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"), 
+           keep_tables = T)
+```
+</li>
+<li>
+<p class = 'fxn'>Return views to global environment</p>
+```{r eval = F}
+importData(type = 'local', 
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"), 
+           new_env = F)
+```
+</li></ul>
+
+##### Working with the Data
+The functions in the `plantcomNGPN` package are designed to work with the views in <i>VIEWS_NGPN</i>, and are the best way to interact with the data to query by park, site, site type, year, parameter, etc. However, if you want to look at the views without using the package functions, you can use the following code. 
+
+```{r}
+# See list of the views
+names(VIEWS_NGPN)
+
+# Inspect the cover point view
+View(VIEWS_NGPN$Cover_Points_metric)
+
+#head(VIEWS_NGPN$Cover_Points_metric)
+
+# Assign the coverpoint view to the object covpt, which now behaves like a data.frame.
+covpt <- VIEWS_NGPN$Cover_Points_metric
+
+```
+
+Additionally, if you want to view the raw FFI data tables, and you imported the data into the NPGN_tables environment, you can access them with the code below:
+```{r eval = F}
+importData(type = 'local', 
+           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"), 
+           keep_tables = T)
+
+# See list of FFI tables
+sort(names(NGPN_tables))
+
+# Inspect the MacroPlot table
+View(NGPN_tables$MacroPlot)
+
+# Assign the MacroPlot table to the object macro
+macro <- NGPN_tables$MacroPlot
+
+```
+
+##### Getting help
+<h4><b>Getting (and improving) help</b></h4>
+The functions in `plantcomNGPN` have help documentation like any R package. To view the help, you can go to the Packages tab and click on plantcomNGPN (see below). That will show you all the functions in the package. Clicking on individual functions will take you to the help documentation for that function. 
+```{r echo = F, out.width = 500, fig.align = 'center'}
+knitr::include_graphics("C:/NETN/R_Dev/plantcomNGPN/docs/www/finding_R_package.jpg")
+```
+
+<p class = 'fxn'>You can also see the help of a function by running, for example: </p>
+```{r, eval = F}
+?importData
+```
+
+<p class = 'fxn'>If `plantcomNGPN` isn't loaded yet, you'd run: </p>
+```{r, eval = F}
+?plantcomNGPN::importData
+```
+
+Each function's help includes a Description, Usage (i.e. function arguments and their defaults), Argument options/definitions, and several examples showing how the function can be used. 
+
+<b><span style='color:red;'>This is where you come in! If you notice typos or can think of better descriptions, examples, error messages, etc., please send them my way!</b></span> After we're more comfortable with R packages and get versed on GitHub, you'll be able to make those changes directly in the package. For now, you can just send me your suggestions and I'll make the changes.
+
+Finally, if you ever want to peak under the hood at the function, you can view it several ways. 
+<ol>
+<li>Keep F2 key pressed and click on the function name in R. This trick works for many but not all functions in R.</li>
+<li>View code in the <a href="https://github.com/KateMMiller/plantcomNGPN/tree/main">GitHub katemmiller/plantcomNGPN repo</a>. The functions are in the R folder. 
+
+#### 3. getter Functions

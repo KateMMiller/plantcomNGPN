@@ -157,7 +157,7 @@ library(plantcomNGPN)
 <br>
 
 #### 2. R package Intro {.tabset}
-##### Import functions {.tabset}
+##### Overview {.tabset}
 <h5>Overview</h5>
 Once you have the R package installed, you can import and start working with the data. There are 2 import functions in the plantcomNGPN package: 
 <ul>
@@ -165,6 +165,10 @@ Once you have the R package installed, you can import and start working with the
 <li><b>importViews()</b>: a streamlined function that imports a zip file of flattened views for each FFI protocol.</li>
 </ul>
 
+
+Once FFI data are imported, the package has a getter function specific to each FFI protocol view. 
+
+##### Import functions {.tabset}
 <h5>importData()</h5>
 By default, the `importData()` function imports FFI tables and only returns the flattened views as data frames in an environment called <i>VIEWS_NGPN</i>. This minimizes memory usage and keeps a tidy R workspace. R package functions are then designed to work seamlessly with the views, regardless of whether they're in the VIEWS_NGPN environment or global environment. See <b>Working with the data</b> tab for how to work with data.frames housed within the VIEWS_NGPN environment.
 <ul>
@@ -214,6 +218,7 @@ importViews(import_path = "C:/temp/NGPN_FFI_views_20250710.zip")
 Export tables or views to zip files.
 <ul>
 <li>
+
 <p class = 'fxn'>Export FFI tables to zip</p>
 If you want to export the raw tables into a zip file of csvs, simply add `export_tables = T`. If no export_path is specified, the zip file will be saved in your working directory. The file name and path of the zip file will be printed in your console. Note that exporting can be slow, especially if you loaded multiple databases. 
 
@@ -323,4 +328,22 @@ Finally, if you ever want to peak under the hood at the function, you can view i
 <li>Keep F2 key pressed and click on the function name in R. This trick works for many but not all functions in R.</li>
 <li>View code in the <a href="https://github.com/KateMMiller/plantcomNGPN/tree/main">GitHub katemmiller/plantcomNGPN repo</a>. The functions are in the R folder. 
 
-#### 3. getter Functions
+#### 3. getter Functions {.tabset}
+
+##### getCoverPoints()
+
+##### getCoverSpeciesComp()
+
+##### getDensityBelts()
+
+##### getDensityQuadrats()
+
+##### getFuels1000()
+
+##### getFuelsFine
+
+##### getFuelsDuff()
+
+##### getMacroPlot()
+
+##### getTrees()

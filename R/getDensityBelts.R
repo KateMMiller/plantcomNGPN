@@ -201,8 +201,8 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
                                    paste0(bad_monstat))}
 
   densb <- tryCatch(get("Density_Belts_metric", envir = env),
-                     error = function(e){stop(
-                       "Density_Belts_metric view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Density Belts metric data."))})
 
   densb$ProjectUnit_Name <- project
 

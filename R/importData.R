@@ -403,7 +403,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
         # I'll update csv_list1 above and use the same tables for each park.
 
         # Check for missing views
-        if(length(miss_tbls) > 0){stop("Missing the following tables from the specified import_path: ",
+        if(length(miss_tbls) > 0){warning("Missing the following tables from the specified import_path: ",
                                        import_path[ip], "\n",
                                        paste0(miss_tbls, collapse = ", "))}
 
@@ -605,7 +605,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   # order projectunit columns
   macro_names <- names(macro5[!grepl("ProjectUnit_", names(macro5))])
   proj_names1 <- names(macro5[grepl("ProjectUnit_", names(macro5))])
-  proj_names <- c("ProjectUnit_Park", sort(proj_names1[!proj_names1 %in% "ProjectUnit_Park"]))
+  proj_names <-
+    if(any(names(macro5) %in% "ProjectUnit_Park")){
+    c("ProjectUnit_Park", sort(proj_names1[!proj_names1 %in% "ProjectUnit_Park"]))
+      } else {sort(proj_names1)}
 
   MacroPlots <- data.frame(macro5[order(macro5$MacroPlot_Name),
                            c(macro_names, proj_names)])
@@ -686,6 +689,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   sampev_unique <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> unique()
   # Prevents some duplication of data until monitoring status is fixed in database.
+  sampev_guids <- unique(sampev_unique$SampleEvent_GUID)
 
   #---- Taxa_Table View----
   setTxtProgressBar(pb,2)
@@ -772,14 +776,14 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   #---- Cover_Points_Metric View ----
   setTxtProgressBar(pb,3)
   covpts_samp1 <-   tryCatch(get("Cover_Points_metric_Sample", envir = env),
-                             error = function(e){
-                               stop("Cover_Points_metric_Sample table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
+
   covpts_attr1 <- tryCatch(get("Cover_Points_metric_Attribute", envir = env),
-                           error = function(e){
-                             stop("Cover_Points_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+                           error = function(e){NULL})
+
+  if(class(covpts_samp1) == "data.frame"){
 
   # Making tables smaller before joins
-  sampev_guids <- unique(SampleEvents$SampleEvent_GUID)
   covpts_samp <- covpts_samp1[covpts_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(covpts_samp$SampleData_SampleRow_GUID)
   covpts_attr2 <- covpts_attr1[covpts_attr1$AttributeData_SampleRow_GUID %in% samprow_guids,]
@@ -822,16 +826,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                  c(cols_view_start, cols_taxa_start,
                    cols_covpt,
                    cols_taxa_end, cols_view_end)])
-
+  }
   #---- Cover_Species_Composition View ----
   setTxtProgressBar(pb,4)
   covcomp_samp1 <-   tryCatch(get("Cover_SpeciesComposition_metric_Sample", envir = env),
-                              error = function(e){
-                                stop("Cover_SpeciesComposition_metric_Sample table not found. Please import NGPN FFI data tables.")})
+                              error = function(e){NULL})
   covcomp_attr1 <- tryCatch(get("Cover_SpeciesComposition_metric_Attribute", envir = env),
-                            error = function(e){
-                              stop("Cover_Points_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+                            error = function(e){NULL})
 
+  if(class(covcomp_samp1) == "data.frame"){
   # Making tables smaller before joins
   covcomp_samp <- covcomp_samp1[covcomp_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(covcomp_samp$SampleData_SampleRow_GUID)
@@ -861,16 +864,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                   c(cols_view_start, cols_taxa_start,
                     cols_covcomp,
                     cols_taxa_end, cols_view_end)]))
-
+  }
   #---- Density_Belts_Metric View ----
   setTxtProgressBar(pb,5)
   densbelt_samp1 <-   tryCatch(get("Density_Belts_metric_Sample", envir = env),
-                               error = function(e){
-                                 stop("Density_Belts_metric_Sample table not found. Please import NGPN FFI data tables.")})
+                               error = function(e){NULL})
   densbelt_attr1 <- tryCatch(get("Density_Belts_metric_Attribute", envir = env),
-                             error = function(e){
-                               stop("Density_Belts_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
 
+  if(class(densbelt_samp1) == "data.frame"){
   # Making tables smaller before joins
   densbelt_samp <- densbelt_samp1[densbelt_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(densbelt_samp$SampleData_SampleRow_GUID)
@@ -901,16 +903,16 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                    c(cols_view_start, cols_taxa_start,
                      cols_densbelt,
                      cols_taxa_end, cols_view_end)])
-
+  }
   #---- Density_Quadrats_Metric View ----
   setTxtProgressBar(pb,6)
-  densquad_samp1 <-   tryCatch(get("Density_Quadrats_metric_Sample", envir = env),
-                               error = function(e){
-                                 stop("Density_Quadrats_metric_Sample table not found. Please import NGPN FFI data tables.")})
-  densquad_attr1 <- tryCatch(get("Density_Quadrats_metric_Attribute", envir = env),
-                             error = function(e){
-                               stop("Density_Quadrats_metric_Attribute table not found. Please import NGPN FFI data tables.")})
 
+  densquad_samp1 <- tryCatch(get("Density_Quadrats_metric_Sample", envir = env),
+                             error = function(e){NULL})
+  densquad_attr1 <- tryCatch(get("Density_Quadrats_metric_Attribute", envir = env),
+                             error = function(e){NULL})
+
+  if(class(densquad_samp1) == "data.frame"){
   # Making tables smaller before joins
   densquad_samp <- densquad_samp1[densquad_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(densquad_samp$SampleData_SampleRow_GUID)
@@ -941,16 +943,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                    c(cols_view_start, cols_taxa_start,
                      cols_densquad,
                      cols_taxa_end, cols_view_end)])
-
+  }
   #---- Disturbance_History View ----
   setTxtProgressBar(pb,7)
   disthist_samp1 <-   tryCatch(get("DisturbanceHistory_Sample", envir = env),
-                               error = function(e){
-                                 stop("DisturbanceHistory_Sample table not found. Please import NGPN FFI data tables.")})
+                               error = function(e){NULL})
   disthist_attr1 <- tryCatch(get("DisturbanceHistory_Attribute", envir = env),
-                             error = function(e){
-                               stop("DisturbanceHistory_Attribute table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
 
+  if(class(disthist_samp1) == "data.frame"){
   # Making tables smaller before joins
   disthist_samp <- disthist_samp1[disthist_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(disthist_samp$SampleData_SampleRow_GUID)
@@ -979,16 +980,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                      samp_dista$Index),
                c(cols_view_start, cols_dist, cols_view_end_nospp)]
   )
-
+  }
   #---- Surface_Fuels_1000Hr View ----
   setTxtProgressBar(pb,8)
   surf1000_samp1 <- tryCatch(get("SurfaceFuels_1000Hr_Sample", envir = env),
-                             error = function(e){
-                               stop("SurfaceFuels_1000Hr_Sample table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
   surf1000_attr1 <- tryCatch(get("SurfaceFuels_1000Hr_Attribute", envir = env),
-                             error = function(e){
-                               stop("SurfaceFuels_1000Hr_Attribute table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
 
+  if(class(surf1000_samp1) == "data.frame"){
   # Making tables smaller before joins
   surf1000_samp <- surf1000_samp1[surf1000_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(surf1000_samp$SampleData_SampleRow_GUID)
@@ -1011,15 +1011,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     samp_surf1000a[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
                          samp_surf1000a$Index),
                    c(cols_view_start, cols_surf1000, cols_view_end_nospp)])
-
+  }
   #---- Surface_Fuels_Fine View ----
   setTxtProgressBar(pb,9)
   surffine_samp1 <-   tryCatch(get("SurfaceFuels_Fine_Sample", envir = env),
-                               error = function(e){
-                                 stop("SurfaceFuels_Fine_Sample table not found. Please import NGPN FFI data tables.")})
+                               error = function(e){NULL})
   surffine_attr1 <- tryCatch(get("SurfaceFuels_Fine_Attribute", envir = env),
-                             error = function(e){
-                               stop("SurfaceFuels_Fine_Attribute table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
+
+  if(class(surffine_samp1) == "data.frame"){
 
   # Making tables smaller before joins
   surffine_samp <- surffine_samp1[surffine_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
@@ -1047,15 +1047,16 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                          samp_surffinea$Index),
                    c(cols_view_start, cols_surffine, cols_view_end_nospp)])
 
+  }
+
   #---- Surface_Fuels_Duff View ----
   setTxtProgressBar(pb,10)
   surfduff_samp1 <-   tryCatch(get("SurfaceFuels_Duff_Litter_Sample", envir = env),
-                               error = function(e){
-                                 stop("SurfaceFuels_Duff_Litter_Sample table not found. Please import NGPN FFI data tables.")})
+                               error = function(e){NULL})
   surfduff_attr1 <- tryCatch(get("SurfaceFuels_Duff_Litter_Attribute", envir = env),
-                             error = function(e){
-                               stop("SurfaceFuels_Duff_Litter_Attribute table not found. Please import NGPN FFI data tables.")})
+                             error = function(e){NULL})
 
+  if(class(surfduff_samp1) == "data.frame"){
   # Making tables smaller before joins
   surfduff_samp <- surfduff_samp1[surfduff_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(surfduff_samp$SampleData_SampleRow_GUID)
@@ -1079,16 +1080,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     samp_surfduffa[order(samp_surfduffa$MacroPlot_Name, samp_surfduffa$year,
                          samp_surfduffa$Index),
                    c(cols_view_start, cols_surfduff, cols_view_end_nospp)])
-
+  }
   #---- Trees_Metric ----
   setTxtProgressBar(pb,11)
   tree_samp1 <- tryCatch(get("Trees_Individuals_metric_Sample", envir = env),
-                         error = function(e){
-                           stop("Trees_Individuals_metric_Sample table not found. Please import NGPN FFI data tables.")})
+                         error = function(e){NULL})
   tree_attr1 <- tryCatch(get("Trees_Individuals_metric_Attribute", envir = env),
-                         error = function(e){
-                           stop("Trees_Individuals_metric_Attribute table not found. Please import NGPN FFI data tables.")})
+                         error = function(e){NULL})
 
+  if(class(tree_attr1) == "data.frame"){
   # Making tables smaller before joins
   tree_samp <- tree_samp1[tree_samp1$SampleData_SampleEvent_GUID %in% sampev_guids,]
   samprow_guids <- unique(tree_samp$SampleData_SampleRow_GUID)
@@ -1135,7 +1135,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                     cols_tree,
                     cols_taxa_end, cols_view_end)])
 
-  #CBI is Composite_Burn_Index
+  }
 
   #---- Add views to VIEWS_NGPN ----
   view_names <- c("Cover_Points_metric", "Cover_Species_Composition", "Density_Belts_metric",
@@ -1145,28 +1145,43 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   if(new_env == TRUE){VIEWS_NGPN <<- new.env()}
   env_views <- if(new_env == TRUE){VIEWS_NGPN} else {.GlobalEnv}
-
-  assign("Cover_Points_metric", Cover_Points_metric, envir = env_views)
-  assign("Cover_Species_Composition", Cover_Species_Composition, envir = env_views)
-  assign("Density_Belts_metric", Density_Belts_metric, envir = env_views)
-  assign("Density_Quadrats_metric", Density_Quadrats_metric, envir = env_views)
-  assign("Disturbance_History", Disturbance_History, envir = env_views)
+  if(exists("Cover_Points_metric")){
+     assign("Cover_Points_metric", Cover_Points_metric, envir = env_views)}
+  if(exists("Cover_Species_Composition")){
+     assign("Cover_Species_Composition", Cover_Species_Composition, envir = env_views)}
+  if(exists("Density_Belts_metric")){
+     assign("Density_Belts_metric", Density_Belts_metric, envir = env_views)}
+  if(exists("Density_Quadrats_metric")){
+     assign("Density_Quadrats_metric", Density_Quadrats_metric, envir = env_views)}
+  if(exists("Disturbance_History")){
+     assign("Disturbance_History", Disturbance_History, envir = env_views)}
   assign("MacroPlots", MacroPlots, envir = env_views)
   assign("SampleEvents", SampleEvents, envir = env_views)
-  assign("Surface_Fuels_1000Hr", Surface_Fuels_1000Hr, envir = env_views)
-  assign("Surface_Fuels_Fine", Surface_Fuels_Fine, envir = env_views)
-  assign("Surface_Fuels_Duff", Surface_Fuels_Duff, envir = env_views)
+  if(exists("Surface_Fuels_1000Hr")){
+    assign("Surface_Fuels_1000Hr", Surface_Fuels_1000Hr, envir = env_views)}
+  if(exists("Surface_Fuels_Fine")){
+    assign("Surface_Fuels_Fine", Surface_Fuels_Fine, envir = env_views)}
+  if(exists("Surface_Fuels_Duff")){
+    assign("Surface_Fuels_Duff", Surface_Fuels_Duff, envir = env_views)}
   assign("Taxa_Table", Taxa_Table, envir = env_views)
-  assign("Trees_metric", Trees_metric, envir = env_views)
+  if(exists("Trees_metric")){
+    assign("Trees_metric", Trees_metric, envir = env_views)}
+
+  views_final <- view_names[view_names %in% names(env_views)]
+
+  if(length(views_final) != length(view_names)){
+    warning(paste0("The following views were not created because specified database did not include relevant tables: ",
+                   paste0(view_names[!view_names %in% names(env_views)], collapse = ", ")))
+  }
 
   close(pb)
 
   if(export_views == TRUE){
     dir.create(tmp <- tempfile())
-    invisible(lapply(seq_along(view_names), function(x){
-      temp_tbl = get(view_names[x], envir = env_views)
+    invisible(lapply(seq_along(views_final), function(x){
+      temp_tbl = get(views_final[x], envir = env_views)
       write.csv(temp_tbl,
-                paste0(tmp, "\\", view_names[x], ".csv"),
+                paste0(tmp, "\\", views_final[x], ".csv"),
                 row.names = FALSE)
     }))
 

@@ -196,8 +196,8 @@ getDensityQuadrats <- function(park = 'all', plot_name = "all", project = "Park"
                                    paste0(bad_monstat))}
 
   densq <- tryCatch(get("Density_Quadrats_metric", envir = env),
-                     error = function(e){stop(
-                       "Density_Quadrats_metric view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Density Quadrats metric data."))})
 
   densq$ProjectUnit_Name <- project
 

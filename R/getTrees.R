@@ -196,8 +196,8 @@ getTrees <- function(park = 'all', plot_name = "all", project = "Park", purpose 
                                    paste0(bad_monstat))}
 
   trees <- tryCatch(get("Trees_metric", envir = env),
-                     error = function(e){stop(
-                       "Trees_metric view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Tree metric data."))})
 
   trees$ProjectUnit_Name <- project
 

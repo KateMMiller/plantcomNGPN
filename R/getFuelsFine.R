@@ -194,8 +194,8 @@ getFuelsFine <- function(park = 'all', plot_name = "all", project = "Park", purp
                                    paste0(bad_monstat))}
 
   sffine <- tryCatch(get("Surface_Fuels_Fine", envir = env),
-                     error = function(e){stop(
-                       "Surface_Fuels_Fine view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Surface Fuels Fine data."))})
 
   sffine$ProjectUnit_Name <- project
 

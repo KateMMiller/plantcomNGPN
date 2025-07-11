@@ -205,8 +205,8 @@ getCoverSpeciesComp <- function(park = 'all', plot_name = "all", project = "Park
                                    paste0(bad_monstat))}
 
   covspp <- tryCatch(get("Cover_Species_Composition", envir = env),
-                     error = function(e){stop(
-                       "Cover_Species_Composition view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Cover Species Composition data."))})
 
   covspp$ProjectUnit_Name <- project
 

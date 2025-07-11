@@ -196,8 +196,8 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all", project = "Pa
                                    paste0(bad_monstat))}
 
   disturb <- tryCatch(get("Disturbance_History", envir = env),
-                      error = function(e){stop(
-                      "Disturbance_History view not found. Please import NGPN FFI data.")})
+                      error = function(e){stop(paste0(
+                        "Specified database does not contain Disturbance History data."))})
 
   disturb$ProjectUnit_Name <- project
 

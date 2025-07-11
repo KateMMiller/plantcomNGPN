@@ -202,8 +202,8 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
                                    paste0(bad_monstat))}
 
   covpts <- tryCatch(get("Cover_Points_metric", envir = env),
-                     error = function(e){stop(
-                       "Cover_Points_metric view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Cover Points metric data."))})
 
   covpts$ProjectUnit_Name <- project
 

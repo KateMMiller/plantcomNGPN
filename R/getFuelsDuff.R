@@ -194,8 +194,8 @@ getFuelsDuff <- function(park = 'all', plot_name = "all", project = "Park", purp
                                    paste0(bad_monstat))}
 
   sfduff <- tryCatch(get("Surface_Fuels_Duff", envir = env),
-                     error = function(e){stop(
-                       "Surface_Fuels_Duff view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Surface Fuels Duff data."))})
 
   sfduff$ProjectUnit_Name <- project
 

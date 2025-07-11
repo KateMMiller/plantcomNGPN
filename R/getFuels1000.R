@@ -194,8 +194,8 @@ getFuels1000 <- function(park = 'all', plot_name = "all", project = "Park", purp
                                    paste0(bad_monstat))}
 
   sf1000 <- tryCatch(get("Surface_Fuels_1000Hr", envir = env),
-                     error = function(e){stop(
-                       "Surface_Fuels_1000Hr view not found. Please import NGPN FFI data.")})
+                     error = function(e){stop(paste0(
+                       "Specified database does not contain Surface Fuels 1000Hr data."))})
 
   sf1000$ProjectUnit_Name <- project
 

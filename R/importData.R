@@ -11,7 +11,7 @@
 #' exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
 #' Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
 #'
-#' @importFrom dplyr bind_rows collect inner_join mutate rename right_join select tbl
+#' @importFrom dplyr bind_rows collect inner_join left_join mutate rename right_join select tbl
 #' @importFrom tidyr pivot_wider
 #' @importFrom purrr flatten map set_names
 #'

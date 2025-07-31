@@ -54,7 +54,7 @@ Additionally, an automated QC report that checks NPGN FFI data for potential mis
 Once this step is complete, users can import FFI database tables into R using the `importData()` function and the name of the database in SSMS (see ImportData tab).
 
 <h5>Step 1. Install SQL Server Management Studio</h5>
-Instructions for installing SQL Server Management Studio (SSMS) are currently being developed. Once those are ready, they will be linked here. The best directions currently (though a few years out of date) can be found here: <a href="https://doimspp-my.sharepoint.com/:w:/g/personal/kmmiller_nps_gov/ET6yKk-t50pPqDGm4m15hdkB11Pimv8AvKEC54dEo8PjPA?e=nCCm8u">SOP_SQLServer_Setup.docx</a>, and are only available to DOI users. 
+Instructions for installing SQL Server Management Studio (SSMS) are currently being developed. Once those are ready, they will be linked here. The best directions currently (though a few years out of date and only accessible by DOI users) can be found here: <a href="https://doimspp-my.sharepoint.com/:w:/g/personal/kmmiller_nps_gov/ET6yKk-t50pPqDGm4m15hdkB11Pimv8AvKEC54dEo8PjPA?e=nCCm8u">SOP_SQLServer_Setup.docx</a>. 
 <br>
 <h5>Step 2. Restore database from .bak file in SSMS</h5>
 To restore a database from a .bak file in SSMS, you can either restore through the file menu following the screencast or run the SQL code in SSMS below. 

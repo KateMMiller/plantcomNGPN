@@ -51,7 +51,7 @@
 #' library(plantcomNGPN)
 #' #--- From Local install of FFI SQL databases
 #' # Import data for AGFO and export tables to zip file
-#' importData(type = 'local', dbname = c("FFI_RA_AGFO"), export_tables = T, export_views = T)
+#' importData(type = 'local', dbname = "FFI_RA_AGFO", export_tables = T, export_views = T)
 #'
 #' # Import data for all NGPN parks (takes a few seconds) from local copy on SSMS
 #' # and export both the analysis-ready views and the raw tables.
@@ -687,7 +687,13 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   SampleEvents <- data.frame(sampev5[order(sampev5$MacroPlot_Name, sampev5$SampleEvent_Date),
                              keep_cols_samp])
 
-  sampev_unique <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> unique()
+  sampev_unique1 <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> unique()
+  # Convert "" to NA so unique actually works
+  mon_cols <- c("DefaultMonitoringStatus", "MonitoringStatus_Prefix", "MonitoringStatus_Base",
+                "MonitoringStatus_Suffix", "MonitoringStatus_Name")
+  sampev_unique1[,mon_cols][sampev_unique1[,mon_cols] == ""] <- NA_character_
+  sampev_unique <- unique(sampev_unique1)
+
   # Prevents some duplication of data until monitoring status is fixed in database.
   sampev_guids <- unique(sampev_unique$SampleEvent_GUID)
 

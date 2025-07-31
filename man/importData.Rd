@@ -68,7 +68,7 @@ Note that view column names dropped the original table name (eg 'MacroPlot_', 'S
 library(plantcomNGPN)
 #--- From Local install of FFI SQL databases
 # Import data for AGFO and export tables to zip file
-importData(type = 'local', dbname = c("FFI_RA_AGFO"), export_tables = T, export_views = T)
+importData(type = 'local', dbname = "FFI_RA_AGFO", export_tables = T, export_views = T)
 
 # Import data for all NGPN parks (takes a few seconds) from local copy on SSMS
 # and export both the analysis-ready views and the raw tables.

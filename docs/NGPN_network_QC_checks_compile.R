@@ -472,6 +472,100 @@ sampev_ms_include <- tab_include(sampev_ms_check)
 sampev_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
 sampev_include <- tab_include(sampev_check)
 
+#---- Taxa ----
+#------ Missing Values ------
+# Check for species with inconsistent scientific names (eg genus only, genus spp.) but the same symbol
+taxa <- unique(VIEWS_NGPN$Taxa_Table[,c("Symbol", "ITIS_TSN", "ScientificName", "Unit_Name", "NotBiological")])
+taxa_wide <- taxa |> mutate(present = 1) |> arrange(Unit_Name) |>
+  pivot_wider(names_from = Unit_Name, values_from = present, values_fill = 0)
+
+# Check for symbols with blanks in ScientificName
+taxa_miss_sci <- taxa_wide |> filter(is.na(ScientificName)) |> arrange(Symbol)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_miss_sci, meas_type = "Taxa", tab = "Missing values",
+                           check = "Records that have a blank ScientificName column.",
+                           chk_type = 'error'))
+
+kbl_taxa_miss_sci <- make_kable(df = taxa_miss_sci, cap = "Records that have a blank ScientificName column")
+
+# Check for scientific name with blank symbols
+taxa_miss_sym <- taxa_wide |> filter(is.na(Symbol)) |> arrange(Symbol)
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_miss_sym, meas_type = "Taxa", tab = "Missing values",
+                           check = "Records that have a blank Symbol column.",
+                           chk_type = 'error'))
+
+kbl_taxa_miss_sym <- make_kable(df = taxa_miss_sym, cap = "Records that have a blank Symbol column")
+
+# Check for scientific name with blank TSN
+taxa_miss_tsn <- taxa_wide |> filter(is.na(ITIS_TSN)) |> arrange(Symbol)
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_miss_tsn, meas_type = "Taxa", tab = "Missing values",
+                           check = "Records that have a blank TSN column.",
+                           chk_type = 'error'))
+
+kbl_taxa_miss_tsn <- make_kable(df = taxa_miss_tsn, cap = "Records that have a blank TSN column")
+
+# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
+taxa_miss_check <- QC_table |> filter(Type %in% "Taxa" & Data %in% "Missing values" & Num_Records > 0)
+taxa_miss_include <- tab_include(taxa_miss_check)
+
+#------ Inconsistent names ------
+# Check for Symbols with different scientific names, common names or TSNs
+taxa2 <- unique(VIEWS_NGPN$Taxa_Table[,c("Symbol", "ITIS_TSN", "ScientificName", "CommonName", "Unit_Name", "NotBiological")])
+taxa_dups <- taxa2 |> mutate(present = 1) |> arrange(Unit_Name) |>
+  pivot_wider(names_from = Unit_Name, values_from = present, values_fill = 0) |>
+  group_by(Symbol) |> mutate(num_tsn = sum(!is.na(ITIS_TSN)),
+                             num_sci = sum(!is.na(ScientificName)),
+                             num_com = sum(!is.na(CommonName)),
+                             num_dup = num_tsn + num_sci + num_com) |>
+  filter(num_dup > 3) |>
+  arrange(Symbol, ScientificName) |>
+  data.frame()
+
+taxa_dup_notbio <- taxa_dups |> filter(NotBiological == TRUE) |> select(Symbol:CommonName, AGFO:WICA) |>
+  arrange(Symbol)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_dup_notbio, meas_type = "Taxa", tab = "Inconsistent Names",
+                           check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T",
+                           chk_type = 'error'))
+
+kbl_taxa_dup_notbio <-
+  kable(taxa_dup_notbio, format = 'html', align = 'c',
+        caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T")  |>
+  kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
+                full_width = TRUE, position = 'left', font_size = 12) |>
+  row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
+  row_spec(nrow(taxa_dup_notbio), extra_css = 'border-bottom: 1px solid #000000;') |>
+  collapse_rows(1:4, valign = 'top')
+
+taxa_dup_bio <- taxa_dups |> filter(NotBiological == FALSE) |> select(Symbol:CommonName, AGFO:WICA) |>
+  arrange(Symbol)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_dup_bio, meas_type = "Taxa", tab = "Inconsistent Names",
+                           check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F",
+                           chk_type = 'error'))
+
+kbl_taxa_dup_bio <-
+  kable(taxa_dup_bio, format = 'html', align = 'c',
+        caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F")  |>
+  kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
+                full_width = TRUE, position = 'left', font_size = 12) |>
+  row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
+  row_spec(nrow(taxa_dup_bio), extra_css = 'border-bottom: 1px solid #000000;') |>
+  collapse_rows(1:4, valign = 'top')
+
+# check if Taxa - inconsistent checks returned at least 1 record to determine whether to include that tab in report
+taxa_incon_check <- QC_table |> filter(Type %in% "Taxa" & Data %in% "Inconsistent Names" & Num_Records > 0)
+taxa_incon_include <- tab_include(taxa_incon_check)
+
+# check if Taxa - missing checks returned at least 1 record to determine whether to include thatWICA# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
+taxa_check <- QC_table |> filter(Type %in% "Taxa" & Num_Records > 0)
+taxa_include <- tab_include(taxa_check)
+
 #---- Cover Point Data ----
 # Add check that finds blank Index values (are these important? there are a lot)
 # Check for "No species" Inconsistent naming.

@@ -320,3 +320,31 @@ cat("\n\n")
 ```
 
 
+```{r eval = taxa_include, results = 'asis'}
+cat("### Taxa Table {.tabset}", "\n\n")
+```
+
+```{r eval = taxa_miss_include, results = 'asis'}
+cat("#### Missing Values {.tabset}", "\n\n")
+
+check_null_print(kbl_taxa_miss_sci, 5, "Blank SciName")
+
+check_null_print(kbl_taxa_miss_sym, 5, "Blank Symbol")
+
+check_null_print(kbl_taxa_miss_tsn, 5, "Blank ITIS_TSN")
+
+cat("\n\n")
+```
+
+
+```{r eval = taxa_incon_include, results = 'asis'}
+cat("#### Inconsistent Naming {.tabset}", "\n\n")
+
+check_null_print(kbl_taxa_dup_notbio, 5, "Not Biological")
+
+check_null_print(kbl_taxa_dup_bio, 5, "Biological")
+
+cat("\n\n")
+```
+
+

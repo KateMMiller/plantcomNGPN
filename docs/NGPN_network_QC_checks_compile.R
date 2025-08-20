@@ -1,3 +1,4 @@
+#-- Params for troubleshooting --
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
@@ -8,6 +9,12 @@
 #                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
 #                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #            keep_tables = T)
+#
+# all_years <- TRUE
+# year_curr <- 2024
+# year_range <- 2011:year_curr
+# year_hist <- 2011:(year_curr - 1)
+#
 
 ### Functions
 # Summarize results of QC check
@@ -570,7 +577,85 @@ taxa_include <- tab_include(taxa_check)
 # Add check that finds blank Index values (are these important? there are a lot)
 # Check for "No species" Inconsistent naming.
 
+point_int <- getCoverPoints(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
+         year, month, NumPtsTran, Transect, Point, Tape, Order, Height,
+         ScientificName) #|> unique()
 
+# Check number of ground hits per transect
+num_ground <- point_int |>
+  group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year,
+           NumPtsTran, Transect) |>
+  unique() |>
+  filter(Order == 0) |>
+  summarize(num_ground = n(), .groups = 'drop') |>
+  filter(NumPtsTran != num_ground)
+
+QC_table <- rbind(QC_table,
+                  QC_check(num_ground, meas_type = "Missing Values", tab = "Point Intercept",
+                           check = "Transects where number of ground hits don't match number of points sampled.",
+                           chk_type = "error"))
+
+kbl_num_ground <- make_kable(num_ground, cap = "Transects where number of ground hits don't match number of points sampled.")
+
+# Check that all Order > 0 have heights
+ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape) |>
+  unique() |>
+  summarize(num_orders = n(),
+            Height = sum(Height, na.rm = T),
+            .groups = 'drop') |>
+  filter(num_orders > 1 & Height == 0)
+
+# used sum instead of max because much faster
+ht_check$Height[ht_check$Height == 0] <- NA_real_
+
+QC_table <- rbind(QC_table,
+                  QC_check(ht_check, meas_type = "Missing Values", tab = "Point Intercept",
+                           check = "Points with more than 1 order missing a height for the top hit.",
+                           chk_type = "error"))
+
+kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
+
+# check if Point Intercept - Missing Values checks returned at least 1 record to determine whether to include that tab in report
+pint_miss_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Missing Values" & Num_Records > 0)
+pint_miss_include <- tab_include(pint_miss_check)
+
+# Check for duplicate orders within a transect-
+head(NGPN_tables$Cover_Points_metric_Attribute)
+
+dup_order <- point_int |>
+  group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape, Order) |>
+  unique() |>
+  summarize(num_hits = sum(!is.na(ScientificName)), .groups = 'drop') |>
+  filter(num_hits > 1)
+
+QC_table <- rbind(QC_table,
+                  QC_check(dup_order, meas_type = "Duplicates", tab = "Point Intercept",
+                           check = "Points with duplicate orders on the same transect.",
+                           chk_type = "error"))
+
+kbl_dup_order <- make_kable(dup_order, cap = "Points with Order = 1 and blank Height value.")
+
+# check if Point Intercept - Duplicate checks returned at least 1 record to determine whether to include that tab in report
+pint_dup_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Duplicates" & Num_Records > 0)
+pint_dup_include <- tab_include(pint_dup_check)
+
+# Check for heights > 2m
+ht_oor <- point_int |> filter(Height > 2.0)
+QC_table <- rbind(QC_table,
+                  QC_check(ht_oor, meas_type = "Out of Range", tab = "Point Intercept",
+                           check = "Points with Height > 2.0m.",
+                           chk_type = "error"))
+
+kbl_ht_oor <- make_kable(ht_oor, cap = "Points with Height > 2.0m.")
+
+# check if Point Intercept - out of range returned at least 1 record to determine whether to include that tab in report
+pint_range_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Out of Range" & Num_Records > 0)
+pint_range_include <- tab_include(pint_dup_check)
+
+# check if Point Intercept  checks returned at least 1 record to determine whether to include thatWICA# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
+pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)
+pint_include <- tab_include(pint_check)
 
 #---- Cover Spp Comp ----
 # Check for "No species" Inconsistent naming.

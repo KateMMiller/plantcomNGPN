@@ -355,32 +355,14 @@ cat("\n\n")
 
 ```{r eval = pint_include, results = 'asis'}
 cat("### Point Intercept {.tabset}", "\n\n")
-```
 
-```{r eval = pint_miss_include, results = 'asis'}
-cat("#### Missing Values {.tabset}", "\n\n")
+check_null_print(kbl_num_ground, 4, "Num Ground Hits")
 
-check_null_print(kbl_num_ground, 5, "Num Ground Hits")
+check_null_print(kbl_ht_check, 4, "Missing Heights")
 
-check_null_print(kbl_ht_check, 5, "Missing Heights")
+check_null_print(kbl_dup_order, 4, "Duplicate Orders")
 
-cat("\n\n")
-```
-
-```{r eval = pint_dup_include, results = 'asis'}
-cat("#### Duplicates {.tabset}", "\n\n")
-
-check_null_print(kbl_dup_order, 5, "Duplicate Orders")
-
-cat("\n\n")
-
-```
-
-
-```{r eval = pint_range_include, results = 'asis'}
-cat("#### Out of range {.tabset}", "\n\n")
-
-check_null_print(kbl_ht_oor, 5, "Height over 2m")
+check_null_print(kbl_ht_oor, 4, "Height over 2m")
 
 cat("\n\n")
 

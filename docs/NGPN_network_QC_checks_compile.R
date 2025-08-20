@@ -592,7 +592,7 @@ num_ground <- point_int |>
   filter(NumPtsTran != num_ground)
 
 QC_table <- rbind(QC_table,
-                  QC_check(num_ground, tab = "Missing Values", meas_type = "Point Intercept",
+                  QC_check(num_ground, tab = "Missing Ground", meas_type = "Point Intercept",
                            check = "Transects where number of ground hits don't match number of points sampled.",
                            chk_type = "error"))
 
@@ -610,19 +610,14 @@ ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, y
 ht_check$Height[ht_check$Height == 0] <- NA_real_
 
 QC_table <- rbind(QC_table,
-                  QC_check(ht_check, tab = "Missing Values", meas_type = "Point Intercept",
+                  QC_check(ht_check, tab = "Missing Height", meas_type = "Point Intercept",
                            check = "Points with more than 1 order missing a height for the top hit.",
                            chk_type = "error"))
 
 kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
 
-# check if Point Intercept - Missing Values checks returned at least 1 record to determine whether to include that tab in report
-pint_miss_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Missing Values" & Num_Records > 0)
-pint_miss_include <- tab_include(pint_miss_check)
 
 # Check for duplicate orders within a transect-
-head(NGPN_tables$Cover_Points_metric_Attribute)
-
 dup_order <- point_int |>
   group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape, Order) |>
   unique() |>
@@ -630,28 +625,23 @@ dup_order <- point_int |>
   filter(num_hits > 1)
 
 QC_table <- rbind(QC_table,
-                  QC_check(dup_order, tab = "Duplicates", meas_type = "Point Intercept",
+                  QC_check(dup_order, tab = "Duplicate Order", meas_type = "Point Intercept",
                            check = "Points with duplicate orders on the same transect.",
                            chk_type = "error"))
 
 kbl_dup_order <- make_kable(dup_order, cap = "Points with Order = 1 and blank Height value.")
 
-# check if Point Intercept - Duplicate checks returned at least 1 record to determine whether to include that tab in report
-pint_dup_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Duplicates" & Num_Records > 0)
-pint_dup_include <- tab_include(pint_dup_check)
+
 
 # Check for heights > 2m
 ht_oor <- point_int |> filter(Height > 2.0)
 QC_table <- rbind(QC_table,
-                  QC_check(ht_oor, tab = "Out of Range", meas_type = "Point Intercept",
-                           check = "Points with Height > 2.0m.",
+                  QC_check(ht_oor, tab = "Hight over 2m", meas_type = "Point Intercept",
+                           check = "Points with a Height > 2.0m.",
                            chk_type = "error"))
 
-kbl_ht_oor <- make_kable(ht_oor, cap = "Points with Height > 2.0m.")
+kbl_ht_oor <- make_kable(ht_oor, cap = "Points with a Height > 2.0m.")
 
-# check if Point Intercept - out of range returned at least 1 record to determine whether to include that tab in report
-pint_range_check <- QC_table |> filter(Type %in% "Point Intercept" & Data %in% "Out of Range" & Num_Records > 0)
-pint_range_include <- tab_include(pint_dup_check)
 
 # check if Point Intercept  checks returned at least 1 record to determine whether to include thatWICA# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
 pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)

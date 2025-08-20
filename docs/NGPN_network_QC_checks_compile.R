@@ -592,7 +592,7 @@ num_ground <- point_int |>
   filter(NumPtsTran != num_ground)
 
 QC_table <- rbind(QC_table,
-                  QC_check(num_ground, meas_type = "Missing Values", tab = "Point Intercept",
+                  QC_check(num_ground, tab = "Missing Values", meas_type = "Point Intercept",
                            check = "Transects where number of ground hits don't match number of points sampled.",
                            chk_type = "error"))
 
@@ -610,7 +610,7 @@ ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, y
 ht_check$Height[ht_check$Height == 0] <- NA_real_
 
 QC_table <- rbind(QC_table,
-                  QC_check(ht_check, meas_type = "Missing Values", tab = "Point Intercept",
+                  QC_check(ht_check, tab = "Missing Values", meas_type = "Point Intercept",
                            check = "Points with more than 1 order missing a height for the top hit.",
                            chk_type = "error"))
 
@@ -630,7 +630,7 @@ dup_order <- point_int |>
   filter(num_hits > 1)
 
 QC_table <- rbind(QC_table,
-                  QC_check(dup_order, meas_type = "Duplicates", tab = "Point Intercept",
+                  QC_check(dup_order, tab = "Duplicates", meas_type = "Point Intercept",
                            check = "Points with duplicate orders on the same transect.",
                            chk_type = "error"))
 
@@ -643,7 +643,7 @@ pint_dup_include <- tab_include(pint_dup_check)
 # Check for heights > 2m
 ht_oor <- point_int |> filter(Height > 2.0)
 QC_table <- rbind(QC_table,
-                  QC_check(ht_oor, meas_type = "Out of Range", tab = "Point Intercept",
+                  QC_check(ht_oor, tab = "Out of Range", meas_type = "Point Intercept",
                            check = "Points with Height > 2.0m.",
                            chk_type = "error"))
 

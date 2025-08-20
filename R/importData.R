@@ -826,12 +826,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                   "Index", "Transect", "Point", "Tape", "Order", "Height",
                   "CanopyLayer", "Status", "Comment")
 
-  Cover_Points_metric <- data.frame(
+  Cover_Points_metric <- unique(data.frame(
     samp_cov_spp[order(samp_cov_spp$MacroPlot_Name, samp_cov_spp$year,
                        samp_cov_spp$Index, samp_cov_spp$ScientificName),
                  c(cols_view_start, cols_taxa_start,
                    cols_covpt,
-                   cols_taxa_end, cols_view_end)])
+                   cols_taxa_end, cols_view_end)]))
   }
   #---- Cover_Species_Composition View ----
   setTxtProgressBar(pb,4)

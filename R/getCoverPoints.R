@@ -232,9 +232,9 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(covpts_samp2), keep_cols)))}
 
-  sampcov_final <- covpts_samp2[order(covpts_samp2$MacroPlot_Name, covpts_samp2$SampleEvent_Date,
+  sampcov_final <- unique(covpts_samp2[order(covpts_samp2$MacroPlot_Name, covpts_samp2$SampleEvent_Date,
                                       covpts_samp2$Transect, covpts_samp2$Point, covpts_samp2$Order),
-                                final_names]
+                                final_names])
 
   if(nrow(sampcov_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 

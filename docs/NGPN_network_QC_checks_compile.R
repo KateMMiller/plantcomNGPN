@@ -1,4 +1,4 @@
-#-- Params for troubleshooting --
+# -- Params for troubleshooting --
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
@@ -12,9 +12,9 @@
 #
 # all_years <- TRUE
 # year_curr <- 2024
-# year_range <- 2011:year_curr
+# year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
-#
+
 
 ### Functions
 # Summarize results of QC check
@@ -73,19 +73,6 @@ macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
          MacroPlot_SlopeTransect, MacroPlot_GUID) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   unique()
-
-# Find plots with no sample events (moved later to the sample events section)
-# macro_samp_check <- left_join(macro |> filter(MacroPlot_Name %in% plots),
-#                               samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"))
-#
-# no_samps <- macro_samp_check[is.na(macro_samp_check $SampleEvent_GUID),
-#                        c("MacroPlot_Name", "MacroPlot_Purpose", "MacroPlot_GUID")]
-#
-# QC_table <- QC_check(df = no_samps, meas_type = "MacroPlot", tab = "Plot Info",
-#                      check = "NGPN PCM MacroPlots with no associated sample events.",
-#                      chk_type = 'check')
-#
-# kbl_no_samps <- make_kable(no_samps, cap = "NGPN PCM MacroPlots with no associated sample events.")
 
 # Continue compiling sample data
 macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
@@ -374,7 +361,7 @@ miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID)) |>
   select(MacroPlot_Name, MacroPlot_Purpose, ProjectUnit_Name, ProjectUnit_Agency)
 
 QC_table <- rbind(QC_table,
-                  QC_check(df = miss_samp, meas_type = "SampleEvent", tab = "General",
+                  QC_check(df = miss_samp, meas_type = "SampleEvent", tab = "No SampleEvents",
                            check = "NGPN PCM MacroPlots no accompanying SampleEvents.",
                            chk_type = 'error'))
 
@@ -430,7 +417,7 @@ mac_samp_monstat4$year_mismatch <- ifelse(
 monstat_yr_mismatch <- mac_samp_monstat4 |> filter(year_mismatch == 1) |> select(-num_samps, -year_mismatch)
 
 QC_table <- rbind(QC_table,
-            QC_check(df = monstat_yr_mismatch, meas_type = "SampleEvent", tab = "Monitoring Status",
+            QC_check(df = monstat_yr_mismatch, meas_type = "SampleEvent", tab = "Year Mismatch",
                      check = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.",
                      chk_type = 'error'))
 
@@ -456,7 +443,7 @@ monstat_incon <- monstat_typo |> filter(inconsist > 1) |> arrange(MacroPlot_Name
 monstat_incon2 <- monstat_incon[,c("MacroPlot_Name", sort(names(monstat_incon[,2:(ncol(monstat_incon)-1)])))]
 
 QC_table <- rbind(QC_table,
-             QC_check(df = monstat_incon2, meas_type = "SampleEvent", tab = "Monitoring Status",
+             QC_check(df = monstat_incon2, meas_type = "SampleEvent", tab = "Name Inconsistencies",
                      check = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.",
                      chk_type = 'error')
 )
@@ -490,7 +477,7 @@ taxa_wide <- taxa |> mutate(present = 1) |> arrange(Unit_Name) |>
 taxa_miss_sci <- taxa_wide |> filter(is.na(ScientificName)) |> arrange(Symbol)
 
 QC_table <- rbind(QC_table,
-                  QC_check(df = taxa_miss_sci, meas_type = "Taxa", tab = "Missing values",
+                  QC_check(df = taxa_miss_sci, meas_type = "Taxa", tab = "Blank SciName",
                            check = "Records that have a blank ScientificName column.",
                            chk_type = 'error'))
 
@@ -499,7 +486,7 @@ kbl_taxa_miss_sci <- make_kable(df = taxa_miss_sci, cap = "Records that have a b
 # Check for scientific name with blank symbols
 taxa_miss_sym <- taxa_wide |> filter(is.na(Symbol)) |> arrange(Symbol)
 QC_table <- rbind(QC_table,
-                  QC_check(df = taxa_miss_sym, meas_type = "Taxa", tab = "Missing values",
+                  QC_check(df = taxa_miss_sym, meas_type = "Taxa", tab = "Blank Symbol",
                            check = "Records that have a blank Symbol column.",
                            chk_type = 'error'))
 
@@ -508,15 +495,22 @@ kbl_taxa_miss_sym <- make_kable(df = taxa_miss_sym, cap = "Records that have a b
 # Check for scientific name with blank TSN
 taxa_miss_tsn <- taxa_wide |> filter(is.na(ITIS_TSN)) |> arrange(Symbol)
 QC_table <- rbind(QC_table,
-                  QC_check(df = taxa_miss_tsn, meas_type = "Taxa", tab = "Missing values",
+                  QC_check(df = taxa_miss_tsn, meas_type = "Taxa", tab = "Blank ITIS_TSN",
                            check = "Records that have a blank TSN column.",
                            chk_type = 'error'))
 
 kbl_taxa_miss_tsn <- make_kable(df = taxa_miss_tsn, cap = "Records that have a blank TSN column")
 
-# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
-taxa_miss_check <- QC_table |> filter(Type %in% "Taxa" & Data %in% "Missing values" & Num_Records > 0)
-taxa_miss_include <- tab_include(taxa_miss_check)
+# Check for NotBiological being blank
+taxa_miss_nb <- taxa_wide |> filter(is.na(NotBiological)) |> arrange(Symbol) |>
+  filter(!is.na(Symbol)) # drops record that's all NAs across species columns and picked up in other checks
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = taxa_miss_nb, meas_type = "Taxa", tab = "Blank NotBio",
+                           check = "Records that have a blank NotBiological column.",
+                           chk_type = 'error'))
+
+kbl_taxa_miss_nb <- make_kable(df = taxa_miss_nb, cap = "Records that have a blank NotBiological column")
 
 #------ Inconsistent names ------
 # Check for Symbols with different scientific names, common names or TSNs
@@ -535,7 +529,7 @@ taxa_dup_notbio <- taxa_dups |> filter(NotBiological == TRUE) |> select(Symbol:C
   arrange(Symbol)
 
 QC_table <- rbind(QC_table,
-                  QC_check(df = taxa_dup_notbio, meas_type = "Taxa", tab = "Inconsistent Names",
+                  QC_check(df = taxa_dup_notbio, meas_type = "Taxa", tab = "Inconsistent NotBio",
                            check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T",
                            chk_type = 'error'))
 
@@ -552,7 +546,7 @@ taxa_dup_bio <- taxa_dups |> filter(NotBiological == FALSE) |> select(Symbol:Com
   arrange(Symbol)
 
 QC_table <- rbind(QC_table,
-                  QC_check(df = taxa_dup_bio, meas_type = "Taxa", tab = "Inconsistent Names",
+                  QC_check(df = taxa_dup_bio, meas_type = "Taxa", tab = "Inconsistent Species",
                            check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F",
                            chk_type = 'error'))
 
@@ -565,22 +559,15 @@ kbl_taxa_dup_bio <-
   row_spec(nrow(taxa_dup_bio), extra_css = 'border-bottom: 1px solid #000000;') |>
   collapse_rows(1:4, valign = 'top')
 
-# check if Taxa - inconsistent checks returned at least 1 record to determine whether to include that tab in report
-taxa_incon_check <- QC_table |> filter(Type %in% "Taxa" & Data %in% "Inconsistent Names" & Num_Records > 0)
-taxa_incon_include <- tab_include(taxa_incon_check)
-
-# check if Taxa - missing checks returned at least 1 record to determine whether to include thatWICA# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
+# check if Taxa - missing checks returned at least 1 record to determine whether to include tab
 taxa_check <- QC_table |> filter(Type %in% "Taxa" & Num_Records > 0)
 taxa_include <- tab_include(taxa_check)
 
 #---- Cover Point Data ----
-# Add check that finds blank Index values (are these important? there are a lot)
-# Check for "No species" Inconsistent naming.
-
 point_int <- getCoverPoints(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
          year, month, NumPtsTran, Transect, Point, Tape, Order, Height,
-         ScientificName) #|> unique()
+         ScientificName, Status, NotBiological) #|> unique()
 
 # Check number of ground hits per transect
 num_ground <- point_int |>
@@ -589,14 +576,15 @@ num_ground <- point_int |>
   unique() |>
   filter(Order == 0) |>
   summarize(num_ground = n(), .groups = 'drop') |>
-  filter(NumPtsTran != num_ground)
+  filter(NumPtsTran != num_ground)|>
+  select(MacroPlot_Name, SampleEvent_Date, year, Transect, NumPtsTran, num_ground)
 
 QC_table <- rbind(QC_table,
                   QC_check(num_ground, tab = "Missing Ground", meas_type = "Point Intercept",
-                           check = "Transects where number of ground hits don't match number of points sampled.",
+                           check = "Transects where number of ground hits doesn't match number of points sampled.",
                            chk_type = "error"))
 
-kbl_num_ground <- make_kable(num_ground, cap = "Transects where number of ground hits don't match number of points sampled.")
+kbl_num_ground <- make_kable(num_ground, cap = "Transects where number of ground hits doesn't match number of points sampled.")
 
 # Check that all Order > 0 have heights
 ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape) |>
@@ -604,7 +592,8 @@ ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, y
   summarize(num_orders = n(),
             Height = sum(Height, na.rm = T),
             .groups = 'drop') |>
-  filter(num_orders > 1 & Height == 0)
+  filter(num_orders > 1 & Height == 0) |>
+  unique()
 
 # used sum instead of max because much faster
 ht_check$Height[ht_check$Height == 0] <- NA_real_
@@ -615,7 +604,6 @@ QC_table <- rbind(QC_table,
                            chk_type = "error"))
 
 kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
-
 
 # Check for duplicate orders within a transect-
 dup_order <- point_int |>
@@ -631,25 +619,95 @@ QC_table <- rbind(QC_table,
 
 kbl_dup_order <- make_kable(dup_order, cap = "Points with Order = 1 and blank Height value.")
 
-
-
 # Check for heights > 2m
-ht_oor <- point_int |> filter(Height > 2.0)
+ht_oor <- point_int |> filter(Height > 2.0) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, month, Transect, Point, Tape, Order, Height, ScientificName) |>
+  unique()
+
 QC_table <- rbind(QC_table,
-                  QC_check(ht_oor, tab = "Hight over 2m", meas_type = "Point Intercept",
+                  QC_check(ht_oor, tab = "Height over 2m", meas_type = "Point Intercept",
                            check = "Points with a Height > 2.0m.",
                            chk_type = "error"))
 
 kbl_ht_oor <- make_kable(ht_oor, cap = "Points with a Height > 2.0m.")
 
+# Find inconsistent Status Codes
+stat_code <- point_int |> filter(!Status %in% c("D", "L")) |>
+  filter(!is.na(Status)) |> filter(!Status == "") |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect, Point, Tape,
+         Order, ScientificName, Status, NotBiological)
 
-# check if Point Intercept  checks returned at least 1 record to determine whether to include thatWICA# check if Taxa - missing checks returned at least 1 record to determine whether to include that tab in report
+QC_table <- rbind(QC_table,
+                  QC_check(stat_code, tab = "Status Typos", meas_type = "Point Intercept",
+                           check = "Status codes that are not L or D",
+                           chk_type = "error"))
+kbl_stat_code <- make_kable(stat_code, cap = "Status codes that are not L or D")
+
+# Find blank status codes
+stat_blank <- point_int |> filter(Status == "") |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect, Point, Tape,
+         Order, ScientificName, Status, NotBiological)
+
+QC_table <- rbind(QC_table,
+                  QC_check(stat_blank, tab = "Status Blanks", meas_type = "Point Intercept",
+                           check = "Status codes that are blank",
+                           chk_type = "error"))
+kbl_stat_blank <- make_kable(stat_blank, cap = "Status codes that are blank")
+
+# Check for incorrect NotBiological and Status combos
+nb_l_stat <- point_int |> filter(NotBiological == TRUE & Status == "L")
+
+QC_table <- rbind(QC_table,
+                  QC_check(nb_l_stat, tab = "Live NotBiological", meas_type = "Point Intercept",
+                           check = "Status = Live and NotBiological = TRUE",
+                           chk_type = "error"))
+kbl_nb_l_stat <- make_kable(nb_l_stat, cap = "Status = Live and NotBiological = TRUE")
+
+# Check for incorrect NotBiological and Status combos
+# nb_dm_stat <- point_int |> filter((NotBiological == FALSE & Status == "D") |
+#                                    (NotBiological == FALSE & is.na(Status)))
+#
+# QC_table <- rbind(QC_table,
+#                   QC_check(nb_dm_stat, tab = "Dead NotBiological", meas_type = "Point Intercept",
+#                            check = "Status = Dead or Blank and NotBiological = FALSE",
+#                            chk_type = "error"))
+# kbl_nb_l_stat <- make_kable(nb_dm_stat, cap = "Status = Live and NotBiological = TRUE")
+
+# check if Point Intercept  checks returned at least 1 record to determine whether to include tab
 pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)
 pint_include <- tab_include(pint_check)
 
-#---- Cover Spp Comp ----
+#---- Cover Spp Comp/Target Species ----
 # Check for "No species" Inconsistent naming.
-# Create early detection report using species recorded in this protocol.
+# Target species lists by park
+covspp <- getCoverSpeciesComp(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
+         Symbol, ScientificName, CommonName, Nativity, Invasive, Cultural, Concern, LifeCycle, LifeForm_Name)
+
+inv_targ <- covspp |> filter(Invasive == TRUE)
+
+QC_table <- rbind(QC_table,
+                  QC_check(inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
+                           check = "Target invasive species detections",
+                           chk_type = "error"))
+
+kbl_inv_targ <- make_kable(inv_targ, cap = "Target invasive species detections")
+
+oth_targ <- covspp |> filter(Invasive == FALSE)
+
+QC_table <- rbind(QC_table,
+                  QC_check(oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
+                           check = "Target species detections that aren't classified as invasive",
+                           chk_type = "error"))
+
+kbl_oth_targ <- make_kable(oth_targ, cap = "Target species detections that aren't classified as invasive")
+
+# check if Cover Species Composition checks returned at least 1 record to determine whether to include tab
+targ_check <- QC_table |> filter(Type %in% "Target Species Detections" & Num_Records > 0)
+targ_include <- tab_include(targ_check)
+
+#---- Nested Quadrats ----#
+
 
 ###### Compile final QC Table ######
 # revise for different color combos for checks (99 vs 90)? Drop for checks vs. errors?

@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, vline = "|")
 options(knitr.kable.NA = '', scipen = 100)
 ```
 
-## NGPN QC checks {.tabset .tabset-pills}
+## {.tabset .tabset-pills}
 
 ```{r libs, include = F}
 library(plantcomNGPN)
@@ -27,7 +27,7 @@ library(sf) # for checking plot coords against park bounding boxes
 
 all_years <- params$all_years
 year_curr <- params$year_curr
-year_range <- ifelse(params$all_years == TRUE, 2011:year_curr, year_curr)
+year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 year_hist <- 2011:(year_curr - 1)
 ```
 
@@ -43,9 +43,10 @@ importData(type = 'local',
 ```{r include = F}
 # source code to generate most of the datasets/checks that are then printed in the rmd.
 source("NGPN_network_QC_checks_compile.R")
+#source("./docs/NGPN_network_QC_checks_compile.R")
 ```
 
-### Figuring out NGPN_PCM plots/visits {.tabset}
+### NGPN_PCM plots/visits {.tabset}
 #### Questions/Notes {.tabset}
 <span style="font-size:12px;">
 <ul><li> In Monitoring Status- SE (Table 1), are the different monitoring statuses correct/intentional? Are any of these NOT NPGN monitoring statuses, and so can be deleted from the dataset? </li>
@@ -284,18 +285,14 @@ QC_check_table
 
 ```{r eval = macro_include, results = 'asis'}
 cat("### MacroPlot Checks {.tabset}", "\n\n")
-```
 
-```{r eval = macro_pi_include, results = 'asis'}
-cat("#### Plot Info {.tabset}", "\n\n")
+check_null_print(kbl_macro_miss_utm, 4, "Missing UTM")
 
-check_null_print(kbl_macro_miss_utm, 5, "Missing UTM")
+check_null_print(kbl_out_pts_utm, 4, "Incorrect UTM")
 
-check_null_print(kbl_out_pts_utm, 5, "Incorrect UTM")
+check_null_print(kbl_datum, 4, "Datum check")
 
-check_null_print(kbl_datum, 5, "Datum check")
-
-check_null_print(kbl_out_pts_dd, 5, "Incorrect DD")
+check_null_print(kbl_out_pts_dd, 4, "Incorrect DD")
 
 cat("\n\n")
 ```
@@ -303,23 +300,12 @@ cat("\n\n")
 
 ```{r eval = sampev_include, results = 'asis'}
 cat("### Sample Event Checks {.tabset}", "\n\n")
-```
 
-```{r eval = sampev_ms_include, results = 'asis'}
-cat("#### General {.tabset}", "\n\n")
+check_null_print(kbl_miss_samp, 4, "No SampleEvents")
 
-check_null_print(kbl_miss_samp, 5, "Year Mismatch")
+check_null_print(kbl_monstat_yr_mismatch, 4, "Year Mismatch")
 
-cat("\n\n")
-```
-
-
-```{r eval = sampev_ms_include, results = 'asis'}
-cat("#### Monitoring Status {.tabset}", "\n\n")
-
-check_null_print(kbl_monstat_yr_mismatch, 5, "Year Mismatch")
-
-check_null_print(kbl_monstat_incon, 5, "Name Inconsistencies")
+check_null_print(kbl_monstat_incon, 4, "Name Inconsistencies")
 
 cat("\n\n")
 ```
@@ -327,27 +313,18 @@ cat("\n\n")
 
 ```{r eval = taxa_include, results = 'asis'}
 cat("### Taxa Table {.tabset}", "\n\n")
-```
 
-```{r eval = taxa_miss_include, results = 'asis'}
-cat("#### Missing Values {.tabset}", "\n\n")
+check_null_print(kbl_taxa_miss_sci, 4, "Blank SciName")
 
-check_null_print(kbl_taxa_miss_sci, 5, "Blank SciName")
+check_null_print(kbl_taxa_miss_sym, 4, "Blank Symbol")
 
-check_null_print(kbl_taxa_miss_sym, 5, "Blank Symbol")
+check_null_print(kbl_taxa_miss_tsn, 4, "Blank ITIS_TSN")
 
-check_null_print(kbl_taxa_miss_tsn, 5, "Blank ITIS_TSN")
+check_null_print(kbl_taxa_miss_nb, 4, "Blank NotBio")
 
-cat("\n\n")
-```
+check_null_print(kbl_taxa_dup_notbio, 4, "Inconsistent NotBio")
 
-
-```{r eval = taxa_incon_include, results = 'asis'}
-cat("#### Inconsistent Naming {.tabset}", "\n\n")
-
-check_null_print(kbl_taxa_dup_notbio, 5, "Not Biological")
-
-check_null_print(kbl_taxa_dup_bio, 5, "Biological")
+check_null_print(kbl_taxa_dup_bio, 4, "Inconsistent Species")
 
 cat("\n\n")
 ```
@@ -356,17 +333,32 @@ cat("\n\n")
 ```{r eval = pint_include, results = 'asis'}
 cat("### Point Intercept {.tabset}", "\n\n")
 
-check_null_print(kbl_num_ground, 4, "Num Ground Hits")
+check_null_print(kbl_num_ground, 4, "Missing Ground")
 
-check_null_print(kbl_ht_check, 4, "Missing Heights")
+check_null_print(kbl_ht_check, 4, "Missing Height")
 
-check_null_print(kbl_dup_order, 4, "Duplicate Orders")
+check_null_print(kbl_dup_order, 4, "Duplicate Order")
 
 check_null_print(kbl_ht_oor, 4, "Height over 2m")
 
-cat("\n\n")
+check_null_print(kbl_stat_code, 4, "Status Typos")
 
+check_null_print(kbl_stat_blank, 4, "Status Blanks")
+
+check_null_print(kbl_nb_l_stat, 4, "NotBio Live")
+
+#check_null_print(kbl_nb_dm_stat, 4, "NotBio Dead") # returns >125k records
+
+cat("\n\n")
 ```
 
 
+```{r eval = targ_include, results = 'asis'}
+cat("### Target Species Detections {.tabset}", "\n\n")
+
+check_null_print(kbl_inv_targ, 4, "Invasive Species")
+
+check_null_print(kbl_oth_targ, 4, "Other Species")
+
+```
 

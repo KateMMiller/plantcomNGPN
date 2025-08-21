@@ -104,47 +104,47 @@ knitr::include_graphics("./www/under-construction.png")
 If you've never installed an R package from GitHub, you'll need to complete the following steps to install the plantcomNGPN R package. Once completed, move on to the ImportData and other function tabs for instructions on using the R package.
 
 <h5>Step 1. Install R, RStudio, and RTools44 in Software Center</h5>
-RTools is needed to install R packages from GitHub via devtools, and it only works with R versions 4.4.x. While R 4.5 is available on Software Center, the matching RTools45 isn't available yet. Until that changes, link RStudio to the latest version of R 4.4 (I'm currently using R 4.4.3).
+RTools is needed to install R packages from GitHub via devtools, and it only works with R versions 4.4.x. While R 4.5 is available on Software Center, the matching RTools45 isn't available as of 8/20/25. Until that changes, link RStudio to the latest version of R 4.4 (I'm currently using R 4.4.3).
 
 <h5>Step 2. Set RTools44 path</h5>
 Unfortunately Software Center installs RTools44 in C:/Program Files/, not C:/, which is where RStudio looks for it by default. The following code helps RStudio find RTools. You may occasionally have to rerun this code (except for the `usethis` line), so keep it handy. You know when you have to rerun the code when you try to rebuild a package, and a window pops up to ask if you want to install missing build files.
-<ul>
-<li>
-<b>Install usethis and open .Renviron:</b> If you don't have the `usethis` package, install it first (first line below). Once installed, open the .Renviron using the second line below.
+<br>
+RTools step 1. Install the `usethis` package if you don't already have it installed. 
 ```{r eval = F}
 install.packages('usethis')
+```
+
+RTools step 2. Open the .Renviron file by running the line of code below. 
+```{r eval = F}
 usethis::edit_r_environ()
 ```
-</li>
-<li>
-<b>Set RTools path: </b> Next you're going to tell .Renviron where to find RTools upon RStudio opening by pasting the code below into that file, and saving it. Now close/reopen RStudio, and you should be all set.
-```{r eval = FALSE}
+
+RTools step 3. Copy the following text and paste it into the .Renviron file, save, then close/reopen RStudio. You don't need to run anything for this step. Copy/paste are all you need to do.
+```{r eval = F}
 Sys.setenv(PATH = paste("C:\\PROGRA~1\\Rtools44\\bin", Sys.getenv("PATH"), sep=";"))
 Sys.setenv(BINPREF = "C:\\PROGRA~1\\Rtools44\\mingw_$(WIN)\\bin\\")
 ```
-</li></ul><br>
+
 <h5><b>Step 3.</b> Install devtools package in R:</h5>
 ```{r, eval = F}
 install.packages('devtools')
 ```
 
+Once you've successfully completed Steps 1-3, you should only have to repeat them if you have a new computer or if you move to R 4.5 or higher (note: R 4.5 will require installing RTools45). 
+
 <h5>Step 4. Set up GitHub account if a new user</h5>
 To install R packages using `devtools`, you need to have a GitHub user account and active token. Instructions for setting up a GitHub account and connecting it to RStudio are on the <a href="https://katemmiller.github.io/IMD_R_Training_Advanced/">IMD Advanced R training website</a> from 2022. Go to Day 4: Version Control > Git and RStudio and complete the steps described. There's a lot of other good info on using GitHub in other tabs too.   
 
-<h5>Step 5. Install plantcomNGPN from GitHub</h5>
-Note that whenever the `plantcomNGPN` package is updated, you can rerun this code to install the latest version.
+<h5>Step 5. Install `plantcomNGPN` from GitHub</h5>
+<b style="color:#1942B5;">You must have a GitHub login and be logged into GitHub to install packages from GitHub and for this step to work</b>
+
+Whenever the `plantcomNGPN` package is updated, you can rerun this code to install the latest version.
 ```{r, eval = F}
 library(devtools)
 install_github("KateMMiller/plantcomNGPN")
 ```
 
-If you don't want to have a GitHub account, you can also install packages from GitHub by downloading a .zip file of the code (often called forking a repo), then running the code below. 
-```{r, eval = F}
-install.packages("plantcomNGPN.zip")
-```
-
-<ul><li>
-<h5>Troubleshooting GitHub package installation</h5>
+<h5 style="color:#1942B5">Troubleshooting GitHub package installation</h5>
 If you’re unable to install the R package via GitHub (often an error about permission being denied, or cannot open URL, download the following script from my OneDrive and open it in R: <a href = "https://doimspp-my.sharepoint.com/:u:/g/personal/kmmiller_nps_gov/ETaknusoEfVOs9tbIbx6QYEBre0WI-_xxi-C0M3JCX_xfw?e=n00UCO">fix_TLS_inspection.R</a>. Download by left clicking on the link, then click in the download arrow in the top left of the screen. Save it to your machine, then open it in RStudio.
 
 Once this script is open in R Studio, press Control + A to select all of the code. Then Control + Enter to run all of the code. Assuming you don’t return any errors, you should be able to install from GitHub. Now try to reinstall `plantcomNGPN`. If you're still running into issues, it could be that `devtools` is missing some package dependencies, which the error message will often mention. Install any missing packages and then try installing plantcomNGPN again. If you're still not successful, send Kate Miller (kathryn_miller@nps.gov) a screenshot of the error and she'll help you troubleshoot. 

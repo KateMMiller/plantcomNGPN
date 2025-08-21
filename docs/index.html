@@ -742,40 +742,36 @@ Step 1. Install R, RStudio, and RTools44 in Software Center
 </h5>
 <p>RTools is needed to install R packages from GitHub via devtools, and
 it only works with R versions 4.4.x. While R 4.5 is available on
-Software Center, the matching RTools45 isn’t available yet. Until that
-changes, link RStudio to the latest version of R 4.4 (I’m currently
-using R 4.4.3).</p>
+Software Center, the matching RTools45 isn’t available as of 8/20/25.
+Until that changes, link RStudio to the latest version of R 4.4 (I’m
+currently using R 4.4.3).</p>
 <h5>
 Step 2. Set RTools44 path
 </h5>
-Unfortunately Software Center installs RTools44 in C:/Program Files/,
+<p>Unfortunately Software Center installs RTools44 in C:/Program Files/,
 not C:/, which is where RStudio looks for it by default. The following
 code helps RStudio find RTools. You may occasionally have to rerun this
 code (except for the <code>usethis</code> line), so keep it handy. You
 know when you have to rerun the code when you try to rebuild a package,
 and a window pops up to ask if you want to install missing build files.
-<ul>
-<li>
-<p><b>Install usethis and open .Renviron:</b> If you don’t have the
-<code>usethis</code> package, install it first (first line below). Once
-installed, open the .Renviron using the second line below.</p>
-<pre class="r"><code>install.packages(&#39;usethis&#39;)
-usethis::edit_r_environ()</code></pre>
-</li>
-<li>
-<p><b>Set RTools path: </b> Next you’re going to tell .Renviron where to
-find RTools upon RStudio opening by pasting the code below into that
-file, and saving it. Now close/reopen RStudio, and you should be all
-set.</p>
+<br> RTools step 1. Install the <code>usethis</code> package if you
+don’t already have it installed.</p>
+<pre class="r"><code>install.packages(&#39;usethis&#39;)</code></pre>
+<p>RTools step 2. Open the .Renviron file by running the line of code
+below.</p>
+<pre class="r"><code>usethis::edit_r_environ()</code></pre>
+<p>RTools step 3. Copy the following text and paste it into the
+.Renviron file, save, then close/reopen RStudio. You don’t need to run
+anything for this step. Copy/paste are all you need to do.</p>
 <pre class="r"><code>Sys.setenv(PATH = paste(&quot;C:\\PROGRA~1\\Rtools44\\bin&quot;, Sys.getenv(&quot;PATH&quot;), sep=&quot;;&quot;))
 Sys.setenv(BINPREF = &quot;C:\\PROGRA~1\\Rtools44\\mingw_$(WIN)\\bin\\&quot;)</code></pre>
-</li>
-</ul>
-<br>
 <h5>
 <b>Step 3.</b> Install devtools package in R:
 </h5>
 <pre class="r"><code>install.packages(&#39;devtools&#39;)</code></pre>
+<p>Once you’ve successfully completed Steps 1-3, you should only have to
+repeat them if you have a new computer or if you move to R 4.5 or higher
+(note: R 4.5 will require installing RTools45).</p>
 <h5>
 Step 4. Set up GitHub account if a new user
 </h5>
@@ -787,19 +783,16 @@ Advanced R training website</a> from 2022. Go to Day 4: Version Control
 &gt; Git and RStudio and complete the steps described. There’s a lot of
 other good info on using GitHub in other tabs too.</p>
 <h5>
-Step 5. Install plantcomNGPN from GitHub
+Step 5. Install <code>plantcomNGPN</code> from GitHub
 </h5>
-<p>Note that whenever the <code>plantcomNGPN</code> package is updated,
-you can rerun this code to install the latest version.</p>
+<p><b style="color:#1942B5;">You must have a GitHub login and be logged
+into GitHub to install packages from GitHub and for this step to
+work</b></p>
+<p>Whenever the <code>plantcomNGPN</code> package is updated, you can
+rerun this code to install the latest version.</p>
 <pre class="r"><code>library(devtools)
 install_github(&quot;KateMMiller/plantcomNGPN&quot;)</code></pre>
-<p>If you don’t want to have a GitHub account, you can also install
-packages from GitHub by downloading a .zip file of the code (often
-called forking a repo), then running the code below.</p>
-<pre class="r"><code>install.packages(&quot;plantcomNGPN.zip&quot;)</code></pre>
-<ul>
-<li>
-<h5>
+<h5 style="color:#1942B5">
 Troubleshooting GitHub package installation
 </h5>
 <p>If you’re unable to install the R package via GitHub (often an error
@@ -10678,7 +10671,7 @@ Get cover point data for ForestStructure monitoring status
 </p>
 <pre class="r"><code>covpts_for &lt;- getCoverPoints(mon_status = &quot;ForestStructure&quot;)
 print_head(covpts_for)</code></pre>
-<table class=" lightable-classic" style="font-size: 12px; color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class=" lightable-classic" style="font-size: 12px; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -16558,7 +16551,7 @@ plots
 </p>
 <pre class="r"><code>densb &lt;- getDensityBelts()
 print_head(densb)</code></pre>
-<table class=" lightable-classic" style="font-size: 12px; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class=" lightable-classic" style="font-size: 12px; color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -22991,7 +22984,7 @@ Get shrub data for KNRI
 <pre class="r"><code>knri_shrub &lt;- getDensityQuadrats(park = &quot;KNRI&quot;) |&gt;
   filter(LifeForm_Name == &quot;Shrub&quot;)
 print_head(knri_shrub)</code></pre>
-<table class=" lightable-classic" style="font-size: 12px; color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class=" lightable-classic" style="font-size: 12px; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -27957,7 +27950,7 @@ Get surface fuels ForestStructure monitoring status
 </p>
 <pre class="r"><code>sffine_for &lt;- getFuelsFine(mon_status = &quot;ForestStructure&quot;)
 print_head(sffine_for)</code></pre>
-<table class=" lightable-classic" style="font-size: 12px; color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class=" lightable-classic" style="font-size: 12px; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -28784,7 +28777,7 @@ Get all surface fuels duff for all parks, all years, for NGPN_PCM plots
 </p>
 <pre class="r"><code>sfduff &lt;- getFuelsDuff()
 print_head(sfduff)</code></pre>
-<table class=" lightable-classic" style="font-size: 12px; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class=" lightable-classic" style="font-size: 12px; color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">

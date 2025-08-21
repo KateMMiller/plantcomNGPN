@@ -294,6 +294,12 @@ check_null_print(kbl_datum, 4, "Datum check")
 
 check_null_print(kbl_out_pts_dd, 4, "Incorrect DD")
 
+check_null_print(kbl_macro_blanks, 4, "Blank Loc. Values")
+
+check_null_print(kbl_macro_imp, 4, "Impossible Values")
+
+check_null_print(kbl_macro_topo, 4, "Topo Positions")
+
 cat("\n\n")
 ```
 
@@ -359,6 +365,7 @@ cat("### Target Species Detections {.tabset}", "\n\n")
 check_null_print(kbl_inv_targ, 4, "Invasive Species")
 
 check_null_print(kbl_oth_targ, 4, "Other Species")
+
 
 ```
 

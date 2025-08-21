@@ -326,11 +326,71 @@ QC_table <- rbind(QC_table,
 
 kbl_out_pts_dd <- make_kable(out_pts_dd, cap = "NGPN PCM MacroPlot DD coordinates that are not within the park boundary for plots missing UTM X,Y.")
 
-# THROS_PCM_0069 Macroplot_SlopeHill and _SlopeTransect has some 9999
+# Check for blank macro data
+macro_blanks <- getMacroPlot() |> select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
+                                         Aspect, SlopeHill, SlopeTransect) |>
+  filter(is.na(Elevation) | is.na(ElevationUnits) | is.na(Azimuth) | is.na(Aspect) |
+           is.na(SlopeHill) | is.na(SlopeTransect))# |>
+  #filter(!(SlopeHill < 5 * is.na(Aspect)))
 
-# check if Macroplot-Plot Info checks returned at least 1 record to determine whether to include that tab in report
-macro_pi_check <- QC_table |> filter(Type %in% "MacroPlot" & Data %in% "Plot Info" & Num_Records > 0)
-macro_pi_include <- tab_include(macro_pi_check)
+QC_table <- rbind(QC_table,
+                  QC_check(df = macro_blanks, meas_type = "MacroPlot", tab = "Blank Loc. Values",
+                           check = "Macroplots missing location information"))
+kbl_macro_blanks <- make_kable(macro_blanks, cap = "Macroplots missing location information")
+
+# Check for impossible macro data
+macro_imp <- getMacroPlot() |> select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
+                                      Aspect, SlopeHill, SlopeTransect) |>  # slopes should be <= 100%
+             filter(Azimuth > 360 | Azimuth < 0 | Aspect > 360 | Aspect < 0 |
+                    SlopeHill > 100 | SlopeTransect > 100)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = macro_imp, meas_type = "MacroPlot", tab = "Impossible Values",
+                           check = "Macroplot location data with impossible values",
+                           chk_type = 'error'))
+
+kbl_macro_imp <- make_kable(macro_imp, cap = "Macroplot location data with impossible values")
+
+# Check on UV values
+# UV1 = Topographic position; UV2 = Surface water; UV3 = Hydrologic Regime; UV4 = Vegetation Type
+macro_uv <- getMacroPlot() |> select(MacroPlot_Name, MacroPlot_UV1, MacroPlot_UV2,
+                                     MacroPlot_UV3, MacroPlot_UV4)
+
+# check topo positions that aren't CR, DR, LV, LS, MS, RO, SB, US
+macro_topo <- macro_uv |> filter(!MacroPlot_UV1 %in%
+                                   c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US')) |>
+  select(MacroPlot_Name, MacroPlot_UV1)
+
+QC_table <- rbind(QC_table,
+                  QC_check(macro_topo, meas_type = "MacroPlot", tab = "UV1 Topo Positions",
+                           check = "Macroplot topographic positions (UV1) that don't identically match c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US')"))
+
+kbl_macro_topo <- make_kable(macro_topo, cap = "Macroplot topographic positions (UV1) that don't identically match c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US').")
+
+# check Surface water that aren't <50m or >50m or in plot
+macro_surf <- macro_uv |> filter(!MacroPlot_UV2 %in% c("<50m", ">50m", "in plot")) |>
+  select(MacroPlot_Name, MacroPlot_UV2)
+
+QC_table <- rbind(QC_table,
+                  QC_check(macro_surf, meas_type = "MacroPlot", tab = "UV2 Surface Water",
+                           check = "Macroplot surface water (UV2) that doesn't identically match '<50m', '>50m', or 'in plot'",
+                           chk_type = "error"))
+
+kbl_macro_surf <- make_kable(macro_surf, cap = "Macroplot surface water (UV2) that doesn't identically match '<50m', '>50m', or 'in plot'")
+
+# check Hydrologic Region
+macro_hydro <- macro_uv |> filter(!MacroPlot_UV3 %in% c("IF", "PF", "SF", "SP", "TF", "UP")) |>
+  select(MacroPlot_Name, MacroPlot_UV3)
+
+QC_table <- rbind(QC_table,
+                  QC_check(macro_hydro, meas_type = "MacroPlot", tab = "UV3 Hydro Regime",
+                           check = "Macroplot hydrologic regime (UV3) that doesn't identically match c('IF', 'PF', 'SF', 'SP', 'TF', 'UP')",
+                           chk_type = "error"))
+
+kbl_macro_hydro <- make_kable(macro_hydro, cap = "Macroplot hydrologic regime (UV3) that doesn't identically match c('IF', 'PF', 'SF', 'SP', 'TF', 'UP')")
+
+# check vegetation type
+macro_veg <- macro_uv |> filter(!MacroPlot_UV4 %in% c(""))
 
 # check if MacroPlot checks returned at least 1 record to determine whether to include that tab in report
 macro_check <- QC_table |> filter(Type %in% "MacroPlot" & Num_Records > 0)
@@ -678,7 +738,6 @@ pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)
 pint_include <- tab_include(pint_check)
 
 #---- Cover Spp Comp/Target Species ----
-# Check for "No species" Inconsistent naming.
 # Target species lists by park
 covspp <- getCoverSpeciesComp(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
@@ -689,7 +748,7 @@ inv_targ <- covspp |> filter(Invasive == TRUE)
 QC_table <- rbind(QC_table,
                   QC_check(inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
                            check = "Target invasive species detections",
-                           chk_type = "error"))
+                           chk_type = "check"))
 
 kbl_inv_targ <- make_kable(inv_targ, cap = "Target invasive species detections")
 
@@ -698,7 +757,7 @@ oth_targ <- covspp |> filter(Invasive == FALSE)
 QC_table <- rbind(QC_table,
                   QC_check(oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
                            check = "Target species detections that aren't classified as invasive",
-                           chk_type = "error"))
+                           chk_type = "check"))
 
 kbl_oth_targ <- make_kable(oth_targ, cap = "Target species detections that aren't classified as invasive")
 

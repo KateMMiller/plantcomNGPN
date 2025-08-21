@@ -4,6 +4,7 @@
 # library(knitr) # for kable and include_graphic()
 # library(kableExtra) # for custom kable features
 # library(sf)
+# library(data.table)
 # importData(type = 'local',
 #            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
@@ -18,7 +19,7 @@
 
 ### Functions
 # Summarize results of QC check
-QC_check <- function(df, meas_type, tab, check, chk_type){
+QC_check <- function(df, meas_type, tab, check, chk_type = "error"){
   result <- data.frame("Type" = meas_type, "Data" = tab,
                        "Description" = check, "Num_Records" = nrow(df), "check_type" = chk_type)
 }
@@ -335,7 +336,8 @@ macro_blanks <- getMacroPlot() |> select(MacroPlot_Name, Elevation, ElevationUni
 
 QC_table <- rbind(QC_table,
                   QC_check(df = macro_blanks, meas_type = "MacroPlot", tab = "Blank Loc. Values",
-                           check = "Macroplots missing location information"))
+                           check = "Macroplots missing location information",
+                           chk_type = 'error'))
 kbl_macro_blanks <- make_kable(macro_blanks, cap = "Macroplots missing location information")
 
 # Check for impossible macro data
@@ -362,7 +364,7 @@ macro_topo <- macro_uv |> filter(!MacroPlot_UV1 %in%
   select(MacroPlot_Name, MacroPlot_UV1)
 
 QC_table <- rbind(QC_table,
-                  QC_check(macro_topo, meas_type = "MacroPlot", tab = "UV1 Topo Positions",
+                  QC_check(df = macro_topo, meas_type = "MacroPlot", tab = "UV1 Topo Positions",
                            check = "Macroplot topographic positions (UV1) that don't identically match c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US')"))
 
 kbl_macro_topo <- make_kable(macro_topo, cap = "Macroplot topographic positions (UV1) that don't identically match c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US').")
@@ -372,7 +374,7 @@ macro_surf <- macro_uv |> filter(!MacroPlot_UV2 %in% c("<50m", ">50m", "in plot"
   select(MacroPlot_Name, MacroPlot_UV2)
 
 QC_table <- rbind(QC_table,
-                  QC_check(macro_surf, meas_type = "MacroPlot", tab = "UV2 Surface Water",
+                  QC_check(df = macro_surf, meas_type = "MacroPlot", tab = "UV2 Surface Water",
                            check = "Macroplot surface water (UV2) that doesn't identically match '<50m', '>50m', or 'in plot'",
                            chk_type = "error"))
 
@@ -383,14 +385,23 @@ macro_hydro <- macro_uv |> filter(!MacroPlot_UV3 %in% c("IF", "PF", "SF", "SP", 
   select(MacroPlot_Name, MacroPlot_UV3)
 
 QC_table <- rbind(QC_table,
-                  QC_check(macro_hydro, meas_type = "MacroPlot", tab = "UV3 Hydro Regime",
+                  QC_check(df = macro_hydro, meas_type = "MacroPlot", tab = "UV3 Hydro Regime",
                            check = "Macroplot hydrologic regime (UV3) that doesn't identically match c('IF', 'PF', 'SF', 'SP', 'TF', 'UP')",
                            chk_type = "error"))
 
 kbl_macro_hydro <- make_kable(macro_hydro, cap = "Macroplot hydrologic regime (UV3) that doesn't identically match c('IF', 'PF', 'SF', 'SP', 'TF', 'UP')")
 
 # check vegetation type
-macro_veg <- macro_uv |> filter(!MacroPlot_UV4 %in% c(""))
+macro_veg <- macro_uv |> filter(!MacroPlot_UV4 %in% c("BS", "HR", "PP", "RW", "SH", "UG", "WD")) |>
+  select(MacroPlot_Name, MacroPlot_UV4)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = macro_veg, meas_type = "MacroPlot", tab = "UV4 Veg. Type",
+                           check = "Macroplot Vegetation Type (UV4) that doesn't identically match c('BS', 'HR', 'PP', 'RW', 'SH', 'UG', 'WD')",
+                           chk_type = "error"))
+
+kbl_macro_veg <- make_kable(macro_veg, cap = "Macroplot Vegetation Type (UV4) that doesn't identically match c('BS', 'HR', 'PP', 'RW', 'SH', 'UG', 'WD')")
+
 
 # check if MacroPlot checks returned at least 1 record to determine whether to include that tab in report
 macro_check <- QC_table |> filter(Type %in% "MacroPlot" & Num_Records > 0)
@@ -626,7 +637,7 @@ taxa_include <- tab_include(taxa_check)
 #---- Cover Point Data ----
 point_int <- getCoverPoints(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
-         year, month, NumPtsTran, Transect, Point, Tape, Order, Height,
+         year, month, TranLen, NumPtsTran, Transect, Point, Tape, Order, Height,
          ScientificName, Status, NotBiological) #|> unique()
 
 # Check number of ground hits per transect
@@ -640,7 +651,7 @@ num_ground <- point_int |>
   select(MacroPlot_Name, SampleEvent_Date, year, Transect, NumPtsTran, num_ground)
 
 QC_table <- rbind(QC_table,
-                  QC_check(num_ground, tab = "Missing Ground", meas_type = "Point Intercept",
+                  QC_check(df = num_ground, tab = "Missing Ground", meas_type = "Point Intercept",
                            check = "Transects where number of ground hits doesn't match number of points sampled.",
                            chk_type = "error"))
 
@@ -659,11 +670,27 @@ ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, y
 ht_check$Height[ht_check$Height == 0] <- NA_real_
 
 QC_table <- rbind(QC_table,
-                  QC_check(ht_check, tab = "Missing Height", meas_type = "Point Intercept",
+                  QC_check(df = ht_check, tab = "Missing Height", meas_type = "Point Intercept",
                            check = "Points with more than 1 order missing a height for the top hit.",
                            chk_type = "error"))
 
 kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
+
+# Check that heights are only recorded for Hit = 1 (top hit)
+# hit1_ht <- point_int |>
+#   mutate(hit1 = ifelse(Order == 1, T, F),
+#          ht = ifelse(!is.na(Height), T, F),
+#          hitblank = ifelse(hit1 == F & ht == T, T, F)) |>
+#   filter(hitblank == T)
+#
+# QC_table <- rbind(QC_table,
+#                   QC_check(df = hit1_ht, tab = "Heights on Order != 1", meas_type = "Point Intercept",
+#                            check = "Heights recorded for Orders not equal to 1, the top hit.",
+#                            chk_type = "error"))
+#
+# kbl_hit1_ht <- make_kable(hit1_ht, cap = "Heights recorded for Orders not equal to 1, the top hit.")
+# returns >8k of records.
+
 
 # Check for duplicate orders within a transect-
 dup_order <- point_int |>
@@ -673,7 +700,7 @@ dup_order <- point_int |>
   filter(num_hits > 1)
 
 QC_table <- rbind(QC_table,
-                  QC_check(dup_order, tab = "Duplicate Order", meas_type = "Point Intercept",
+                  QC_check(df = dup_order, tab = "Duplicate Order", meas_type = "Point Intercept",
                            check = "Points with duplicate orders on the same transect.",
                            chk_type = "error"))
 
@@ -685,7 +712,7 @@ ht_oor <- point_int |> filter(Height > 2.0) |>
   unique()
 
 QC_table <- rbind(QC_table,
-                  QC_check(ht_oor, tab = "Height over 2m", meas_type = "Point Intercept",
+                  QC_check(df = ht_oor, tab = "Height over 2m", meas_type = "Point Intercept",
                            check = "Points with a Height > 2.0m.",
                            chk_type = "error"))
 
@@ -698,7 +725,7 @@ stat_code <- point_int |> filter(!Status %in% c("D", "L")) |>
          Order, ScientificName, Status, NotBiological)
 
 QC_table <- rbind(QC_table,
-                  QC_check(stat_code, tab = "Status Typos", meas_type = "Point Intercept",
+                  QC_check(df = stat_code, tab = "Status Typos", meas_type = "Point Intercept",
                            check = "Status codes that are not L or D",
                            chk_type = "error"))
 kbl_stat_code <- make_kable(stat_code, cap = "Status codes that are not L or D")
@@ -709,7 +736,7 @@ stat_blank <- point_int |> filter(Status == "") |>
          Order, ScientificName, Status, NotBiological)
 
 QC_table <- rbind(QC_table,
-                  QC_check(stat_blank, tab = "Status Blanks", meas_type = "Point Intercept",
+                  QC_check(df = stat_blank, tab = "Status Blanks", meas_type = "Point Intercept",
                            check = "Status codes that are blank",
                            chk_type = "error"))
 kbl_stat_blank <- make_kable(stat_blank, cap = "Status codes that are blank")
@@ -718,7 +745,7 @@ kbl_stat_blank <- make_kable(stat_blank, cap = "Status codes that are blank")
 nb_l_stat <- point_int |> filter(NotBiological == TRUE & Status == "L")
 
 QC_table <- rbind(QC_table,
-                  QC_check(nb_l_stat, tab = "Live NotBiological", meas_type = "Point Intercept",
+                  QC_check(df = nb_l_stat, tab = "Live NotBiological", meas_type = "Point Intercept",
                            check = "Status = Live and NotBiological = TRUE",
                            chk_type = "error"))
 kbl_nb_l_stat <- make_kable(nb_l_stat, cap = "Status = Live and NotBiological = TRUE")
@@ -733,6 +760,28 @@ kbl_nb_l_stat <- make_kable(nb_l_stat, cap = "Status = Live and NotBiological = 
 #                            chk_type = "error"))
 # kbl_nb_l_stat <- make_kable(nb_dm_stat, cap = "Status = Live and NotBiological = TRUE")
 
+# Transect numbers that aren't 1 or 2
+trans12 <- point_int |> filter(!Transect %in% c(1, 2)) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = trans12, tab = "Odd Transects", meas_type = "Point Intercept",
+                           check = "Transects not numbered 1 or 2",
+                           chk_type = 'error'))
+
+kbl_trans12 <- make_kable(trans12, cap = "Transects not numbered 1 or 2")
+
+# transects != 50m
+trans50 <- point_int |> filter(TranLen != 50) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, TranLen, NumPtsTran, Transect)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = trans50, tab = "Transects not 50m", meas_type = "Point Intercept",
+                           check = "Transects that are more or less than 50m",
+                           chk_type = 'error'))
+
+kbl_trans50 <- make_kable(trans50, cap = "Transects that are more or less than 50m")
+
 # check if Point Intercept  checks returned at least 1 record to determine whether to include tab
 pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)
 pint_include <- tab_include(pint_check)
@@ -746,7 +795,7 @@ covspp <- getCoverSpeciesComp(years = year_range) |>
 inv_targ <- covspp |> filter(Invasive == TRUE)
 
 QC_table <- rbind(QC_table,
-                  QC_check(inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
+                  QC_check(df = inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
                            check = "Target invasive species detections",
                            chk_type = "check"))
 
@@ -755,7 +804,7 @@ kbl_inv_targ <- make_kable(inv_targ, cap = "Target invasive species detections")
 oth_targ <- covspp |> filter(Invasive == FALSE)
 
 QC_table <- rbind(QC_table,
-                  QC_check(oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
+                  QC_check(df = oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
                            check = "Target species detections that aren't classified as invasive",
                            chk_type = "check"))
 
@@ -765,7 +814,141 @@ kbl_oth_targ <- make_kable(oth_targ, cap = "Target species detections that aren'
 targ_check <- QC_table |> filter(Type %in% "Target Species Detections" & Num_Records > 0)
 targ_include <- tab_include(targ_check)
 
-#---- Nested Quadrats ----#
+#---- Nested Quadrats/ Density Belts ----#
+densb <- getDensityBelts(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, NumTran, TranLen, TranWid, Area, Transect,
+         Subbelt, SubFrac, Status, Count, Symbol, ITIS_TSN, ScientificName)
+
+# Transect numbers that aren't 1 or 2
+dtrans12 <- densb |> filter(!Transect %in% c(1, 2)) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = dtrans12, tab = "Odd Transects", meas_type = "Nested Quadrats",
+                           check = "Transects not numbered 1 or 2",
+                           chk_type = 'error'))
+
+kbl_dtrans12 <- make_kable(dtrans12, cap = "Transects not numbered 1 or 2")
+
+# Transect areas not 1 or 10
+# trans1_10 <- densb |> filter(!Area %in% c(1, 10)) |>
+#   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect, Area)
+#
+# QC_table <- rbind(QC_table,
+#                   QC_check(df = trans1_10, tab = "Odd Areas", meas_type = "Nested Quadrats",
+#                            check = "Areas that are either blank or not 1 or 10",
+#                            chk_type = 'error'))
+# kbl_trans1_10 <- make_kable(trans1_10, cap = "Areas that are either blank or not 1 or 10")
+# Returns ~ 500 records
+
+# transects != 1m
+dtrans1 <- densb |> filter(TranLen != 1) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, TranLen, Transect)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = dtrans1, tab = "Transect Lengths not = 1", meas_type = "Nested Quadrats",
+                           check = "Transects that are not = 1",
+                           chk_type = 'error'))
+
+kbl_dtrans1 <- make_kable(dtrans1, cap = "Transect lengths that are not = 1")
+
+# Transect width != 1
+transwid <- densb |> filter(TranWid != 1) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, TranWid, Transect)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = transwid, tab = "Transect width != 1m", meas_type = "Nested Quadrats",
+                           check = "Transect widths that are different from 1m",
+                           chk_type = "error"))
+
+kbl_transwid <- make_kable(transwid, cap = "Transect widths that are different from 1m")
+
+# Subfractions that don't match
+subfracs <- c(0.01, 0.1, 1, 10)
+
+subfrac_imp <- densb |> filter(!SubFrac %in% subfracs) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect, SubFrac)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = subfrac_imp, tab = "SubFrac Typo", meas_type = "Nested Quadrats",
+                           check = "Subfractions that are outside acceptible values",
+                           chk_type = 'error'))
+
+kbl_subfrac_imp <- make_kable(subfrac_imp, "Subfractions that are outside acceptible values")
+
+# Check that Subbelts are 1-5
+subbelt <- densb |> filter(!Subbelt %in% c(1, 2, 3, 4, 5)) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, Transect, Subbelt)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = subbelt, tab = "Subbelt Typo", meas_type = "Nested Quadrats",
+                           check = "Subbelts that are outside acceptible values",
+                           chk_type = 'error'))
+
+kbl_subbelt <- make_kable(subbelt, "Subbelts that are outside acceptible values")
+
+# Species Counts != 1
+spp_count <- densb |> filter(Count != 1) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt, SubFrac,
+         Symbol, ScientificName, Count)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = spp_count, tab = "Count != 1", meas_type = "Nested Quadrats"),
+                           check = "Recorded count value != 1", chk_type = "error")
+
+kbl_spp_count <- make_kable(spp_count, cap = "Recorded count value != 1")
+
+# Species count > 1
+spp_dup <- densb |> #filter(Count == 1) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt, SubFrac,
+         Symbol, ScientificName, Count) |> unique()
+
+spp_dup_dt <- data.table(spp_dup)
+
+spp_dup_dt2 <- spp_dup_dt[,.(count_sum = sum(Count)), by =
+                             .(MacroPlot_Name, SampleEvent_Date, year, Transect,
+                               Subbelt, Symbol, ScientificName)] |>
+  filter(count_sum > 1)
+
+spp_dup2 <- densb |> filter(Count == 1) |>
+  group_by(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt,
+           Symbol, ScientificName) |>
+  summarize(count_sum = sum(Count), .group = drop) |>
+  filter(count_sum > 1)
+
+microbenchmark::microbenchmark(
+  spp_dup_dt2 <- spp_dup_dt[,.(count_sum = sum(Count)), by =
+                              .(MacroPlot_Name, SampleEvent_Date, year, Transect,
+                                Subbelt, Symbol, ScientificName)] |>
+    filter(count_sum > 1),
+
+  spp_dup2 <- densb |> filter(Count == 1) |>
+    group_by(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt,
+             Symbol, ScientificName) |>
+    summarize(count_sum = sum(Count), .group = drop) |>
+    filter(count_sum > 1),
+
+  times = 1
+)
+
+nrow(spp_dup_dt2)
+nrow(spp_dup2)
+
+# Transect Area checks
+# Transect Area = 10; UV1 = 0; and SubFrac = 1;
+# Transect Area = 10; UV1 = 1; and SubFrac = 0.1;
+# Transect Area = 10; UV1 = 2; and SubFrac = 0.01;
+# Transect Area = 10; UV1 = 3; and SubFrac = 0.001;
+
+# Transect Area = 1; UV1 = 1; and SubFrac = 1;
+# Transect Area = 1; UV1 = 2; and SubFrac = 0.1;
+# Transect Area = 1; UV1 = 3; and SubFrac = 0.01;
+
+# check if Nested Quadrats checks returned at least 1 record to determine whether to include tab
+densb_check <- QC_table |> filter(Type %in% "Nested Quadrats" & Num_Records > 0)
+densb_include <- tab_include(densb_check)
+
+#++++ ENDED HERE +++++
 
 
 ###### Compile final QC Table ######

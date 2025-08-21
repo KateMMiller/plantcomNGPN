@@ -24,6 +24,7 @@ library(tidyverse) # dplyr, purrr, tidyr
 library(knitr) # for kable and include_graphic()
 library(kableExtra) # for custom kable features
 library(sf) # for checking plot coords against park bounding boxes
+library(data.table) # faster summarizing than dplyr for big datasets
 
 all_years <- params$all_years
 year_curr <- params$year_curr
@@ -298,7 +299,13 @@ check_null_print(kbl_macro_blanks, 4, "Blank Loc. Values")
 
 check_null_print(kbl_macro_imp, 4, "Impossible Values")
 
-check_null_print(kbl_macro_topo, 4, "Topo Positions")
+check_null_print(kbl_macro_topo, 4, "UV1 Topo Positions")
+
+check_null_print(kbl_macro_surf, 4, "UV2 Surface Water")
+
+check_null_print(kbl_macro_hydro, 4, "UV3 Hydro Regime")
+
+check_null_print(kbl_macro_veg, 4, "UV4 Veg. Type")
 
 cat("\n\n")
 ```
@@ -353,9 +360,36 @@ check_null_print(kbl_stat_blank, 4, "Status Blanks")
 
 check_null_print(kbl_nb_l_stat, 4, "NotBio Live")
 
+check_null_print(kbl_trans12, 4, "Odd Transects")
+
+check_null_print(kbl_trans50, 4, "Transects not 50m")
+
+#check_null_print(kbl_hit1_ht, 4, "Heights on Order != 1") # returns >8k of records
+
 #check_null_print(kbl_nb_dm_stat, 4, "NotBio Dead") # returns >125k records
 
 cat("\n\n")
+```
+
+
+```{r eval = densb_include, results = 'asis'}
+cat("### Nested Quadrats {.tabset}", "\n\n")
+
+check_null_print(kbl_dtrans12, 4, "Odd Transects")
+
+# check_null_print(kbl_trans1_10, 4, "Odd Areas") # Returns ~500 records
+
+check_null_print(kbl_dtrans1, 4, "Transects not = 1")
+
+check_null_print(kbl_transwid, 4, "Transect width != 1m")
+
+check_null_print(kbl_subfrac_imp, 4, "Subfrac Typo")
+
+check_null_print(kbl_subbelt, 4, "Subbelt Typo")
+
+check_null_print(kbl_spp_count, 4, "Count != 1")
+
+
 ```
 
 

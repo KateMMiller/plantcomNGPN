@@ -725,10 +725,13 @@ densb_check <- QC_table |> filter(Type %in% "Nested Quadrats" & Num_Records > 0)
 densb_include <- tab_include(densb_check)
 
 #---- Trees and Poles ----
-trees <- getTrees(years = year_range) |>
+trees1 <- getTrees(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, MacroPlotSize, SnagPlotSize,
-         BrkPntDia, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, CrwnCl, LiCrBHt, CrwnRad, DRC)
+         BrkPntDia, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, CrwnCl, LiCrBHt, CrwnRad, DRC,
+         UV1, UV2)
 
+trees <- left_join(trees1, tab4_spp, by = c("ScientificName", "Symbol")) |>
+ mutate(diam = pmax(DBH, DRC, na.rm = T))
 
 # Check that species that are DRC are correctly sampled as DRC (taken from Table 4 of NGPN PCM SOPs (p94))
 drc_spp <- tab4_spp$Symbol[tab4_spp$Diam_Loc == "Root Collar"]
@@ -756,8 +759,9 @@ dt_trees_wrong_dbh <- make_dt(trees_wrong_dbh,
                                   cap = "Trees that should have had DBH instead of DRC measured, based on Table 4 in SOPs.")
 
 # Check trees > 60 cm for possible errors
-bigt <- trees |> mutate(diam = pmax(DBH, DRC, na.rm = T)) |> filter(diam > 60) |>
-  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol, ScientificName, DBH, DRC, diam)
+bigt <- trees |> filter(diam > 60) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, DBH, DRC, diam)
 
 QC_table <- rbind(QC_table,
                   QC_check(bigt, tab = "Big Trees", meas_type = "Trees and Poles",
@@ -765,13 +769,173 @@ QC_table <- rbind(QC_table,
                            chk_type = "check"))
 
 #hist(bigt$diam, main = "Distribution of DBH/DRC > 60cm", xlab = "DBH/DRC class")
-
 dt_bigt <- make_dt(bigt |> select(-diam), cap = "Trees greater than 60cm DBH or DRC to check for possible errors")
 
-# check if Nested Quadrats checks returned at least 1 record to determine whether to include tab
+# Check trees > 30 cm DRC for possible errors
+bigdrc <- trees |> filter(DRC > 30) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, DRC)
+
+QC_table <- rbind(QC_table,
+                  QC_check(bigdrc, tab = "Big DRCs", meas_type = "Trees and Poles",
+                           check = "Trees greater than 30cm DRC to check for possible errors.",
+                           chk_type = "check"))
+
+dt_bigdrc <- make_dt(bigdrc |> select(-diam), cap = "Trees greater than 30cm DRC to check for possible errors.")
+
+# Check for missing tree data
+# Trees >15cm DBH should have UV1 In/Out and UV2 Condition Code column and that are Trees (not shrubs)
+tree_miss_uv <- trees |> filter(diam > 15) |> filter(GrowthForm == "Tree") |>
+  filter(is.na(UV1) | is.na(UV2)) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC, UV1, UV2)
+
+QC_table <- rbind(QC_table,
+                  QC_check(tree_miss_uv, tab = "Trees missing UV", meas_type = "Trees and Poles",
+                           check = "Trees > 15cm DBH or DRC missing UV1 and or UV2 values.",
+                           chk_type = "check"))
+
+dt_tree_miss_uv <- make_dt(tree_miss_uv, cap = "Trees > 15cm DBH or DRC missing UV1 and or UV2 values.")
+
+# Inconsistent IN/OUT in UV1
+tree_incon_UV1 <- trees |> filter(diam > 15) |> filter(GrowthForm == "Tree") |>
+  filter(!UV1 %in% c("IN", "OUT") & !is.na(UV1)) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC, UV1)
+
+QC_table <- rbind(QC_table,
+                  QC_check(tree_incon_UV1, tab = "Trees incon. UV1", meas_type = "Trees and Poles",
+                           check = "Trees > 15cm DBH or DRC with UV1 values that don't perfectly match 'IN' or 'OUT'.",
+                           chk_type = "check"))
+
+dt_tree_incon_UV1 <- make_dt(tree_incon_UV1, cap = "Trees > 15cm DBH or DRC with UV1 values that don't perfectly match 'IN' or 'OUT'.")
+
+# Check that UV2 tree conditions match SOP conditions (page 85/103 of SOP)
+tree_cond_list <- c( "BKN", "CAMB", "DBK", "DEC", "DIS", "INS", "MPBB", "MPBG", "ROOT",
+                     "SCAR", "SCORCH1", "SCORCH2", "SCORCH3", "SCORCH4", "SND")
+
+tree_conds_UV2 <- trees |> filter(diam > 15) |> filter(GrowthForm == "Tree") |>
+  filter(Status == "L") |>
+  filter(!UV2 %in% tree_cond_list & !is.na(UV2)) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC, UV2)
+
+QC_table <- rbind(QC_table,
+                  QC_check(tree_conds_UV2, tab = "Trees incon. UV2", meas_type = "Trees and Poles",
+                           check =
+                           paste0(
+                           "Live trees > 15cm DBH or DRC with UV2 values that don't match codes in SOP: ",
+                           paste0(tree_cond_list, collapse = ", "),
+                           "."),
+                           chk_type = "check"))
+
+dt_tree_conds_UV2 <- make_dt(tree_conds, cap = "Live trees > 15cm DBH or DRC with UV1 values that don't perfectly match 'IN' or 'OUT'.")
+
+# Check if poles have UV1 or UV2 entered
+pole_uv <- trees |> filter(diam <= 15) |> filter(!is.na(UV1) | !is.na(UV2))|>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC, UV1, UV2)
+
+QC_table <- rbind(QC_table,
+                  QC_check(pole_uv, tab = "Poles with UV", meas_type = "Trees and Poles",
+                           check = "Poles <= 15cm DBH or DRC with UV1 or UV2 values.",
+                           chk_type = "check"))
+
+dt_pole_uv <- make_dt(pole_uv, cap = "Poles <= 15cm DBH or DRC with UV1 or UV2 values.")
+
+# Check for Trees < 2.54 DBH
+small_dbh <- trees |> filter(diam <= 2.54) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC)
+
+QC_table <- rbind(QC_table,
+                  QC_check(small_dbh, tab = "DBH under 2.54", meas_type = "Trees and Poles",
+                           check = "Stems with DBH or DRC <= 2.54cm", chk_type = 'error'))
+
+kbl_small_dbh <- make_kable(small_dbh, cap = "Stems with DBH or DRC <= 2.54cm")
+
+# Check if MacroPlot purpose and subfrac match
+# mac_trees <- inner_join(mac_samp |> select(MacroPlot_Name, MacroPlot_Purpose) |> distinct(),
+#                         trees,
+#                         by = "MacroPlot_Name")
+# table(mac_trees$MacroPlot_Purpose, mac_trees$SubFrac)
+# Not sure how to make this check, given that the Purposes don't match what the check suggests (intensive vs extensive).
+
+# Inconsistent tree status codes
+tree_statcodes <- trees |> filter(!Status %in% c("L", "D") & !is.na(Status)) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
+         ScientificName, GrowthForm, DBH, DRC)
+
+QC_table <- rbind(QC_table,
+                  QC_check(tree_statcodes, tab = "Incons. Status Codes", meas_type = "Trees and Poles",
+                           check = "Status codes that don't exactly match L or D", chk_type = 'error'))
+
+kbl_tree_statcodes <- make_kable(tree_statcodes, cap = "Status codes that don't exactly match L or D")
+
+# Check UV2 for dead trees
+dead_tree_codes <- c("CS", "LS", "RS")
+
+dead_con <- trees |> filter(diam > 15) |> filter(GrowthForm == "Tree") |>
+  filter(Status == "D") |> filter(!UV2 %in% dead_tree_codes & !is.na(UV2))
+
+QC_table <- rbind(QC_table,
+                  QC_check(dead_con, tab = "Incons. Dead UV2", meas_type = "Trees and Poles",
+                           check = "Status codes that don't exactly match dead condition codes : 'CS', 'LS', 'RS'",
+                           chk_type = 'error'))
+
+dt_dead_con <- make_dt(dead_con,
+                       cap = "Status codes that don't exactly match dead condition codes : 'CS', 'LS', 'RS'")
+
+# Check for missing UV2 for dead trees
+dead_miss_uv2 <- trees |> filter(diam > 15) |> filter(GrowthForm == "Tree") |>
+  filter(Status == "D") |> filter(is.na(UV2))
+
+QC_table <- rbind(QC_table,
+                  QC_check(dead_miss_uv2, tab = "Dead missing UV2", meas_type = "Trees and Poles",
+                           check = "Dead trees > 15cm DBH or DRC missing UV2 values.",
+                           chk_type = 'error'))
+
+kbl_dead_miss_uv2 <- make_kable(dead_miss_uv2,
+                           cap = "Dead trees > 15cm DBH or DRC missing UV2 values.")
+
+# check if tree checks returned at least 1 record to determine whether to include tab
 tree_check <- QC_table |> filter(Type %in% "Trees and Poles" & Num_Records > 0)
 tree_include <- tab_include(tree_check)
 
+#---- Density Quadrats (seedlings) ----
+seeds <- getDensityQuadrats(years = year_range) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, month, NumTran, NumQuadTran, QuadLen, QuadWid, Area,
+         Transect, Quadrat, Status, SizeCl, AgeCl, Count, SubFrac, Symbol, ScientificName)
+
+# Check that if counts are < 100, SubFrac == 1 (page 86/105 in SOP)
+subfrac100 <- seeds |> group_by(MacroPlot_Name, SampleEvent_Date, year, month, Area,
+                                Transect, SizeCl, Symbol, SubFrac, ScientificName) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  filter(Count < 100) |> filter(SubFrac != 1)
+
+QC_table <- rbind(QC_table,
+                  QC_check(subfrac100, tab = "Under 100 Count", meas_type = "Seedlings",
+                           check = "Counts < 100 for a species on a plot with a SubFrac < 1.",
+                           chk_type = 'error'))
+dt_subfrac100 <- make_dt(subfrac100, "Counts < 100 for a species on a plot with a SubFrac < 1.")
+
+
+# Check that if counts are > 100, SubFrac != 1 (page 86/105 in SOP)
+subfrac100b <- seeds |> group_by(MacroPlot_Name, SampleEvent_Date, year, month, Area,
+                                Transect, SizeCl, Symbol, SubFrac, ScientificName) |>
+  summarize(Count = sum(Count), .groups = "drop") |>
+  filter(Count > 100) |> filter(SubFrac == 1)
+
+QC_table <- rbind(QC_table,
+                  QC_check(subfrac100b, tab = "Over 100 Count", meas_type = "Seedlings",
+                           check = "Counts > 100 for a species on a plot with a SubFrac = 1.",
+                           chk_type = 'error'))
+
+dt_subfrac100 <- make_dt(subfrac100b, "Counts > 100 for a species on a plot with a SubFrac = 1.")
+
+# check if seedlings checks returned at least 1 record to determine whether to include tab
+seed_check <- QC_table |> filter(Type %in% "Seedlings" & Num_Records > 0)
+seed_include <- tab_include(seed_check)
 
 #---- Cover Spp Comp/Target Species ----
 #+++ KEEP THIS SECTION LAST +++
@@ -809,7 +973,7 @@ that are stored in the FFI database. This report primarily checks data that are 
 the 'MacroPlot and SampleEvent checks' report, which checks data that once fixed, are unlikely to produce errors again.
 If records are returned for a given check, the row is highlighted yellow for errors and blue for records that aren't
 necessarily errors, but need further review (e.g., large DBH measurements). A separate tab corresponding to each check
-that returned results by protocol module (e.g. Point Intercept, Nested Quadrats, etc.)."
+that returned results by protocol module (e.g. Point Intercept, Nested Quadrats, etc.) is printed to the right of this tab."
 
 QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap,
                         col.names = c("Type", "Data Tab", "Check Description", "Number of Records", "Check Type")) |>
@@ -822,20 +986,6 @@ QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap
                        ifelse(QC_table$Num_Records > 0 & QC_table$check_type == "check", "#b7d8ef", "#ffffff"))) |>
   collapse_rows(1, valign = 'top') |>
   row_spec(nrow(QC_table), extra_css = 'border-bottom: 1px solid #000000;')
-# ++++ OTHER CHECKS ++++
-# Check the different module outputs in the package against the WICA data Dan sent.
 
-# Check covpts_attr$Index has a bunch of blanks in it.
-
-# the join to cover point attributes to cover point sample then sample events, causes many-to-many join in the sample events table. Need to figure out why.
-
-# JECA_PCM_134 in 2016; 2016-07-05; 2016-09-13; 2016_FirePlantCommunity; 2016_ForestStructure; 01yr02; 2016_ForestStructure; Based on other results from 2016 in JECA, 2016_ForestStructure appears to be the VS sample.
-# The FFI Data Depot returns 2 sets of CoverPoint data, and they're identical.
-
-# JECA_PCM_038 in 2016; 2016-07-05; 2016-09-13; 2016_FirePlantCommunity; 2016_ForestStructure; 01yr02; 2016_ForestStructure;
-# Also looks like sometimes MonitoringStatus_Name isn't consistent between ForestStructure or PlantCommunity across years, but usually within for the same plots. Then there's FirePlantCommunity, which appears to be different.
-
-#+++++ Species Checks +++++++
-# Find any inconsistencies between master species, local species, and aux species
 
 

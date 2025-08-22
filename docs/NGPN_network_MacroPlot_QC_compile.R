@@ -212,7 +212,6 @@ other_cols <- sort(setdiff(names(macro_purp1), start_cols))
 
 macro_purp <- macro_purp1[,c(start_cols, other_cols)]
 
-
 ### Sample Event Checks {.tabset}
 macro_guids <- unique(macro_plots$MacroPlot_GUID) # NGPN macroplot_guids for filter
 mm_projunit <- NGPN_tables$MM_ProjectUnit_MacroPlot

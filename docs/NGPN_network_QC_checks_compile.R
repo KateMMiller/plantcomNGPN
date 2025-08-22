@@ -829,7 +829,7 @@ QC_table <- rbind(QC_table,
                            "."),
                            chk_type = "check"))
 
-dt_tree_conds_UV2 <- make_dt(tree_conds, cap = "Live trees > 15cm DBH or DRC with UV1 values that don't perfectly match 'IN' or 'OUT'.")
+dt_tree_conds_UV2 <- make_dt(tree_conds_UV2, cap = "Live trees > 15cm DBH or DRC with UV1 values that don't perfectly match 'IN' or 'OUT'.")
 
 # Check if poles have UV1 or UV2 entered
 pole_uv <- trees |> filter(diam <= 15) |> filter(!is.na(UV1) | !is.na(UV2))|>

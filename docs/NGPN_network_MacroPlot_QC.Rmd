@@ -292,3 +292,9 @@ check_null_print(dt_monstat_incon, 4, "Name Inconsistencies")
 
 cat("\n\n")
 ```
+
+#### QC Check Table {.tabset}
+```{r qccheck}
+QC_check_table
+```
+

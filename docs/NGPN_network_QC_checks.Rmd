@@ -159,6 +159,8 @@ check_null_print(kbl_spp_count, 4, "Count != 1")
 check_null_print(kbl_spp_dup2, 4, "Duplicate Spp.")
 
 check_null_print(kbl_UV1_text, 4, "UV1 non-numeric")
+
+cat("\n\n")
 ```
 
 ```{r trees, eval = tree_include, results = 'asis'}
@@ -170,10 +172,13 @@ check_null_print(dt_trees_wrong_dbh, 4, "Wrong Diam - DBH")
 
 check_null_print(dt_bigt, 4, "Big Trees")
 
+cat("\n\n")
+
+cat("#### Big Trees Diam. Distr", "\n\n")
+
 hist(bigt$diam, main = "Distribution of DBH/DRC > 60cm", xlab = "DBH/DRC class")
 
-
-
+cat("\n\n")
 ```
 
 ```{r targspp, eval = targ_include, results = 'asis'}
@@ -183,6 +188,6 @@ check_null_print(dt_inv_targ, 4, "Invasive Species")
 
 check_null_print(dt_oth_targ, 4, "Other Species")
 
-
+cat("\n\n")
 ```
 

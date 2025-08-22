@@ -592,33 +592,6 @@ kbl_trans50 <- make_kable(trans50, cap = "Transects that are more or less than 5
 pint_check <- QC_table |> filter(Type %in% "Point Intercept" & Num_Records > 0)
 pint_include <- tab_include(pint_check)
 
-#---- Cover Spp Comp/Target Species ----
-# Target species lists by park
-covspp <- getCoverSpeciesComp(years = year_range) |>
-  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
-         Symbol, ScientificName, CommonName, Nativity, Invasive, Cultural, Concern, LifeCycle, LifeForm_Name)
-
-inv_targ <- covspp |> filter(Invasive == TRUE)
-
-QC_table <- rbind(QC_table,
-                  QC_check(df = inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
-                           check = "Target invasive species detections",
-                           chk_type = "check"))
-
-dt_inv_targ <- make_dt(inv_targ, cap = "Target invasive species detections")
-
-oth_targ <- covspp |> filter(Invasive == FALSE)
-
-QC_table <- rbind(QC_table,
-                  QC_check(df = oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
-                           check = "Target species detections that aren't classified as invasive",
-                           chk_type = "check"))
-
-dt_oth_targ <- make_dt(oth_targ, cap = "Target species detections that aren't classified as invasive")
-
-# check if Cover Species Composition checks returned at least 1 record to determine whether to include tab
-targ_check <- QC_table |> filter(Type %in% "Target Species Detections" & Num_Records > 0)
-targ_include <- tab_include(targ_check)
 
 #---- Nested Quadrats/ Density Belts ----#
 densb <- getDensityBelts(years = year_range) |>
@@ -755,12 +728,13 @@ densb_include <- tab_include(densb_check)
 trees <- getTrees(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, MacroPlotSize, SnagPlotSize,
          BrkPntDia, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, CrwnCl, LiCrBHt, CrwnRad, DRC)
-head(trees)
+
 
 # Check that species that are DRC are correctly sampled as DRC (taken from Table 4 of NGPN PCM SOPs (p94))
 drc_spp <- tab4_spp$Symbol[tab4_spp$Diam_Loc == "Root Collar"]
 
-trees_wrong_drc <- trees |> filter(Symbol %in% drc_spp & !is.na(DBH))
+trees_wrong_drc <- trees |> filter(Symbol %in% drc_spp & !is.na(DBH)) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, DRC)
 
 QC_table <- rbind(QC_table,
                   QC_check(trees_wrong_drc, tab = "Wrong Diam - DRC", meas_type = "Trees and Poles",
@@ -770,7 +744,8 @@ QC_table <- rbind(QC_table,
 dt_trees_wrong_drc <- make_dt(trees_wrong_drc,
                               cap = "Trees that should have had DRC instead of DBH measured, based on Table 4 in SOPs.")
 
-trees_wrong_dbh <- trees |> filter((!Symbol %in% drc_spp) & !is.na(DRC))
+trees_wrong_dbh <- trees |> filter((!Symbol %in% drc_spp) & !is.na(DRC))|>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, DRC)
 
 QC_table <- rbind(QC_table,
                   QC_check(trees_wrong_dbh, tab = "Wrong Diam - DBH", meas_type = "Trees and Poles",
@@ -798,9 +773,45 @@ tree_check <- QC_table |> filter(Type %in% "Trees and Poles" & Num_Records > 0)
 tree_include <- tab_include(tree_check)
 
 
+#---- Cover Spp Comp/Target Species ----
+#+++ KEEP THIS SECTION LAST +++
+# Target species lists by park
+covspp <- getCoverSpeciesComp(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
+         Symbol, ScientificName, CommonName, Nativity, Invasive, Cultural, Concern, LifeCycle, LifeForm_Name)
+
+inv_targ <- covspp |> filter(Invasive == TRUE)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = inv_targ, tab = "Invasive Species", meas_type = "Target Species Detections",
+                           check = "Target invasive species detections",
+                           chk_type = "check"))
+
+dt_inv_targ <- make_dt(inv_targ, cap = "Target invasive species detections")
+
+oth_targ <- covspp |> filter(Invasive == FALSE)
+
+QC_table <- rbind(QC_table,
+                  QC_check(df = oth_targ, tab = "Other Species", meas_type = "Target Species Detections",
+                           check = "Target species detections that aren't classified as invasive",
+                           chk_type = "check"))
+
+dt_oth_targ <- make_dt(oth_targ, cap = "Target species detections that aren't classified as invasive")
+
+# check if Cover Species Composition checks returned at least 1 record to determine whether to include tab
+targ_check <- QC_table |> filter(Type %in% "Target Species Detections" & Num_Records > 0)
+targ_include <- tab_include(targ_check)
+
 ###### Compile final QC Table ######
 # revise for different color combos for checks (99 vs 90)? Drop for checks vs. errors?
-QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = "QC checking results",
+QC_cap <- "The table below documents Quality Control checks performed on NGPN Plant Community Monitoring data
+that are stored in the FFI database. This report primarily checks data that are entered annually, compared with
+the 'MacroPlot and SampleEvent checks' report, which checks data that once fixed, are unlikely to produce errors again.
+If records are returned for a given check, the row is highlighted yellow for errors and blue for records that aren't
+necessarily errors, but need further review (e.g., large DBH measurements). A separate tab corresponding to each check
+that returned results by protocol module (e.g. Point Intercept, Nested Quadrats, etc.)."
+
+QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap,
                         col.names = c("Type", "Data Tab", "Check Description", "Number of Records", "Check Type")) |>
   kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
                 full_width = TRUE, position = 'left', font_size = 12) |>

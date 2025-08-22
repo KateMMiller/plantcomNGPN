@@ -346,3 +346,24 @@ sampev_ms_include <- tab_include(sampev_ms_check)
 # check if Sample Event checks returned at least 1 record to determine whether to include that tab in report
 sampev_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
 sampev_include <- tab_include(sampev_check)
+
+###### Compile final QC Table ######
+# revise for different color combos for checks (99 vs 90)? Drop for checks vs. errors?
+QC_cap <- "The table below documents Quality Control checks performed on NGPN Plant Community Monitoring data
+that are stored in the FFI database. This report primarily checks data that are entered previously, and that
+once fixed are less likely to introduce errors again, compared with the 'Data Entry QC' report, which is designed
+to check data that are collected annually. If records are returned for a given check, the row is highlighted yellow
+for errors and blue for records that aren't necessarily errors, but need further review (e.g., large DBH measurements).
+A separate tab corresponding to each check that returned results by protocol module."
+
+QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap,
+                        col.names = c("Type", "Data Tab", "Check Description", "Number of Records", "Check Type")) |>
+  kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
+                full_width = TRUE, position = 'left', font_size = 12) |>
+  row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
+  column_spec(3, width = "300px") |>
+  column_spec(2:ncol(QC_table), background =
+                ifelse(QC_table$Num_Records > 0 & QC_table$check_type == "error", "#F2F2A0",
+                       ifelse(QC_table$Num_Records > 0 & QC_table$check_type == "check", "#b7d8ef", "#ffffff"))) |>
+  collapse_rows(1, valign = 'top') |>
+  row_spec(nrow(QC_table), extra_css = 'border-bottom: 1px solid #000000;')

@@ -25,11 +25,16 @@ library(knitr) # for kable and include_graphic()
 library(kableExtra) # for custom kable features
 library(sf) # for checking plot coords against park bounding boxes
 library(data.table) # faster summarizing than dplyr for big datasets
+library(DT) # much faster at making tables for large dfs than kable
 
 all_years <- params$all_years
 year_curr <- params$year_curr
 year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 year_hist <- 2011:(year_curr - 1)
+
+# Read in NGPN SOP Table 4 tree DBH vs DRC species list:
+tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+
 ```
 
 ```{r imports, include = F}
@@ -41,7 +46,7 @@ importData(type = 'local',
            #keep_tables = T, export_views = T, export_path = "C:/temp")
 ```
 
-```{r include = F}
+```{r source, include = F}
 # source code to generate most of the datasets/checks that are then printed in the rmd.
 source("NGPN_network_QC_checks_compile.R")
 #source("./docs/NGPN_network_QC_checks_compile.R")
@@ -136,7 +141,7 @@ kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
 print(plot_mat)
 ```
 
-```{r, results = 'asis'}
+```{r, parktabs, results = 'asis'}
 for(i in seq_along(park_list)){
   parkcode = park_list[[i]]
   cat("##### ", parkcode, "{.tabset}", "\n\n")
@@ -197,7 +202,7 @@ kable(dfms |> select(-dup, -dup_ms), format = 'html', align = 'c',
 print(plot_mat_ms)
 ```
 
-```{r, results = 'asis'}
+```{r, parktab2, results = 'asis'}
 for(i in seq_along(park_list)){
   parkcode = park_list[[i]]
   cat("##### ", parkcode, "{.tabset}", "\n\n")
@@ -240,7 +245,7 @@ print(kbl_purpose)
 ```
 
 
-```{r, results = 'asis'}
+```{r, parktab3, results = 'asis'}
 for(i in seq_along(park_list)){
   parkcode = park_list[[i]]
   cat("##### ", parkcode, "{.tabset}", "\n\n")
@@ -269,7 +274,7 @@ print(kbl_proj)
 
 ```
 
-```{r, results = 'asis'}
+```{r, parktab4, results = 'asis'}
 for(i in seq_along(park_list)){
   parkcode = park_list[[i]]
   cat("##### ", parkcode, "{.tabset}", "\n\n")
@@ -280,11 +285,11 @@ for(i in seq_along(park_list)){
 ```
 
 ### QC Check Table {.tabset}
-```{r}
+```{r qccheck}
 QC_check_table
 ```
 
-```{r eval = macro_include, results = 'asis'}
+```{r macro, eval = macro_include, results = 'asis'}
 cat("### MacroPlot Checks {.tabset}", "\n\n")
 
 check_null_print(kbl_macro_miss_utm, 4, "Missing UTM")
@@ -310,45 +315,42 @@ check_null_print(kbl_macro_veg, 4, "UV4 Veg. Type")
 cat("\n\n")
 ```
 
-
-```{r eval = sampev_include, results = 'asis'}
+```{r sampev, eval = sampev_include, results = 'asis'}
 cat("### Sample Event Checks {.tabset}", "\n\n")
 
 check_null_print(kbl_miss_samp, 4, "No SampleEvents")
 
 check_null_print(kbl_monstat_yr_mismatch, 4, "Year Mismatch")
 
-check_null_print(kbl_monstat_incon, 4, "Name Inconsistencies")
+check_null_print(dt_monstat_incon, 4, "Name Inconsistencies")
 
 cat("\n\n")
 ```
 
-
-```{r eval = taxa_include, results = 'asis'}
+```{r taxa, eval = taxa_include, results = 'asis'}
 cat("### Taxa Table {.tabset}", "\n\n")
 
-check_null_print(kbl_taxa_miss_sci, 4, "Blank SciName")
+check_null_print(dt_taxa_miss_sci, 4, "Blank SciName")
 
 check_null_print(kbl_taxa_miss_sym, 4, "Blank Symbol")
 
-check_null_print(kbl_taxa_miss_tsn, 4, "Blank ITIS_TSN")
+check_null_print(dt_taxa_miss_tsn, 4, "Blank ITIS_TSN")
 
 check_null_print(kbl_taxa_miss_nb, 4, "Blank NotBio")
 
-check_null_print(kbl_taxa_dup_notbio, 4, "Inconsistent NotBio")
+check_null_print(dt_taxa_dup_notbio, 4, "Inconsistent NotBio")
 
-check_null_print(kbl_taxa_dup_bio, 4, "Inconsistent Species")
+check_null_print(dt_taxa_dup_bio, 4, "Inconsistent Species")
 
 cat("\n\n")
 ```
 
-
-```{r eval = pint_include, results = 'asis'}
+```{r pointint, eval = pint_include, results = 'asis'}
 cat("### Point Intercept {.tabset}", "\n\n")
 
-check_null_print(kbl_num_ground, 4, "Missing Ground")
+check_null_print(dt_num_ground, 4, "Missing Ground")
 
-check_null_print(kbl_ht_check, 4, "Missing Height")
+check_null_print(dt_ht_check, 4, "Missing Height")
 
 check_null_print(kbl_dup_order, 4, "Duplicate Order")
 
@@ -356,9 +358,9 @@ check_null_print(kbl_ht_oor, 4, "Height over 2m")
 
 check_null_print(kbl_stat_code, 4, "Status Typos")
 
-check_null_print(kbl_stat_blank, 4, "Status Blanks")
+check_null_print(dt_stat_blank, 4, "Status Blanks")
 
-check_null_print(kbl_nb_l_stat, 4, "NotBio Live")
+check_null_print(dt_nb_l_stat, 4, "NotBio Live")
 
 check_null_print(kbl_trans12, 4, "Odd Transects")
 
@@ -371,8 +373,7 @@ check_null_print(kbl_trans50, 4, "Transects not 50m")
 cat("\n\n")
 ```
 
-
-```{r eval = densb_include, results = 'asis'}
+```{r densb, eval = densb_include, results = 'asis'}
 cat("### Nested Quadrats {.tabset}", "\n\n")
 
 check_null_print(kbl_dtrans12, 4, "Odd Transects")
@@ -389,16 +390,32 @@ check_null_print(kbl_subbelt, 4, "Subbelt Typo")
 
 check_null_print(kbl_spp_count, 4, "Count != 1")
 
+check_null_print(kbl_spp_dup2, 4, "Duplicate Spp.")
+
+check_null_print(kbl_UV1_text, 4, "UV1 non-numeric")
+```
+
+```{r trees, eval = tree_include, results = 'asis'}
+cat("### Trees and Poles {.tabset}", "\n\n")
+
+check_null_print(dt_trees_wrong_drc, 4, "Wrong Diam - DRC")
+
+check_null_print(dt_trees_wrong_dbh, 4, "Wrong Diam - DBH")
+
+check_null_print(dt_bigt, 4, "Big Trees")
+
+hist(bigt$diam, main = "Distribution of DBH/DRC > 60cm", xlab = "DBH/DRC class")
+
+
 
 ```
 
-
-```{r eval = targ_include, results = 'asis'}
+```{r targspp, eval = targ_include, results = 'asis'}
 cat("### Target Species Detections {.tabset}", "\n\n")
 
-check_null_print(kbl_inv_targ, 4, "Invasive Species")
+check_null_print(dt_inv_targ, 4, "Invasive Species")
 
-check_null_print(kbl_oth_targ, 4, "Other Species")
+check_null_print(dt_oth_targ, 4, "Other Species")
 
 
 ```

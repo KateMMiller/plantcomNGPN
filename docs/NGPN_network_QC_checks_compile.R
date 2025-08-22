@@ -1,10 +1,12 @@
-# -- Params for troubleshooting --
+# # -- Params for troubleshooting --
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
 # library(kableExtra) # for custom kable features
 # library(sf)
 # library(data.table)
+# library(DT)
+#
 # importData(type = 'local',
 #            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
@@ -15,7 +17,10 @@
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
+#
+# tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 
+options(scipen = 100)
 
 ### Functions
 # Summarize results of QC check
@@ -42,6 +47,28 @@ make_kable <- function(df, cap){
         row_spec(nrow(df), extra_css = 'border-bottom: 1px solid #000000;')
     }
   } else NULL
+}
+
+make_dt <- function(df, cap){
+  datatable(df,
+            class = 'cell-border stripe', rownames = FALSE,
+            caption = cap,
+            extensions = c("FixedColumns", "Buttons"),
+            options = list(
+              initComplete = htmlwidgets::JS(
+                "function(settings, json) {",
+                "$('body').css({'font-size': '11px'});",
+                "$('body').css({'font-family': 'Arial'});",
+                "$(this.api().table().header()).css({'font-size': '11px'});",
+                "$(this.api().table().header()).css({'font-family': 'Arial'});",
+                "}"),
+              pageLength = nrow(df),
+              autoWidth = FALSE, scrollX = '850px',
+              scrollY = '600px', scrollCollapse = TRUE,
+              fixedColumns = list(leftColumns = 1),
+              dom = "Blfrtip", buttons = c('copy', 'csv', 'print')
+            ),
+            filter = list(position = c('top'), clear = FALSE))
 }
 
 # Determine whether to include/drop tab in rmd output
@@ -519,15 +546,21 @@ QC_table <- rbind(QC_table,
                      chk_type = 'error')
 )
 
-kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
-                           caption = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
+# kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
+#                            caption = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
+#                            Plots may be used for different monitoring purposes, but also seems some are incorrect.
+#                            The years in the cell are years that a given monitoring status was recored (eg 2013 in
+#                            PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity').
+#                            Note that the first Plant Community column has a space between the words.") |>
+#   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
+#                 full_width = T, position = 'left', font_size = 10) |>
+#   column_spec(1:ncol(monstat_incon2), border_left = "1px solid grey", border_right = "1px solid grey")
+
+dt_monstat_incon <- make_dt(monstat_incon2, "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
                            Plots may be used for different monitoring purposes, but also seems some are incorrect.
                            The years in the cell are years that a given monitoring status was recored (eg 2013 in
                            PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity').
-                           Note that the first Plant Community column has a space between the words.") |>
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
-                full_width = T, position = 'left', font_size = 10) |>
-  column_spec(1:ncol(monstat_incon2), border_left = "1px solid grey", border_right = "1px solid grey")
+                           Note that the first Plant Community column has a space between the words.")
 
 # check if Sample Event - Monitoring Status checks returned at least 1 record to determine whether to include that tab in report
 sampev_ms_check <- QC_table |> filter(Type %in% "SampleEvent" & Data %in% "Monitoring Status" & Num_Records > 0)
@@ -552,7 +585,7 @@ QC_table <- rbind(QC_table,
                            check = "Records that have a blank ScientificName column.",
                            chk_type = 'error'))
 
-kbl_taxa_miss_sci <- make_kable(df = taxa_miss_sci, cap = "Records that have a blank ScientificName column")
+dt_taxa_miss_sci <- make_dt(df = taxa_miss_sci, cap = "Records that have a blank ScientificName column")
 
 # Check for scientific name with blank symbols
 taxa_miss_sym <- taxa_wide |> filter(is.na(Symbol)) |> arrange(Symbol)
@@ -570,7 +603,7 @@ QC_table <- rbind(QC_table,
                            check = "Records that have a blank TSN column.",
                            chk_type = 'error'))
 
-kbl_taxa_miss_tsn <- make_kable(df = taxa_miss_tsn, cap = "Records that have a blank TSN column")
+dt_taxa_miss_tsn <- make_dt(df = taxa_miss_tsn, cap = "Records that have a blank TSN column")
 
 # Check for NotBiological being blank
 taxa_miss_nb <- taxa_wide |> filter(is.na(NotBiological)) |> arrange(Symbol) |>
@@ -604,14 +637,16 @@ QC_table <- rbind(QC_table,
                            check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T",
                            chk_type = 'error'))
 
-kbl_taxa_dup_notbio <-
-  kable(taxa_dup_notbio, format = 'html', align = 'c',
-        caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T")  |>
-  kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
-                full_width = TRUE, position = 'left', font_size = 12) |>
-  row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
-  row_spec(nrow(taxa_dup_notbio), extra_css = 'border-bottom: 1px solid #000000;') |>
-  collapse_rows(1:4, valign = 'top')
+dt_taxa_dup_notbio <- make_dt(taxa_dup_notbio, cap = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T")
+
+# kbl_taxa_dup_notbio <-
+#   kable(taxa_dup_notbio, format = 'html', align = 'c',
+#         caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = T")  |>
+#   kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
+#                 full_width = TRUE, position = 'left', font_size = 12) |>
+#   row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
+#   row_spec(nrow(taxa_dup_notbio), extra_css = 'border-bottom: 1px solid #000000;') |>
+#   collapse_rows(1:4, valign = 'top')
 
 taxa_dup_bio <- taxa_dups |> filter(NotBiological == FALSE) |> select(Symbol:CommonName, AGFO:WICA) |>
   arrange(Symbol)
@@ -620,15 +655,16 @@ QC_table <- rbind(QC_table,
                   QC_check(df = taxa_dup_bio, meas_type = "Taxa", tab = "Inconsistent Species",
                            check = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F",
                            chk_type = 'error'))
+dt_taxa_dup_bio <- make_dt(taxa_dup_bio, cap = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F")
 
-kbl_taxa_dup_bio <-
-  kable(taxa_dup_bio, format = 'html', align = 'c',
-        caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F")  |>
-  kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
-                full_width = TRUE, position = 'left', font_size = 12) |>
-  row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
-  row_spec(nrow(taxa_dup_bio), extra_css = 'border-bottom: 1px solid #000000;') |>
-  collapse_rows(1:4, valign = 'top')
+# kbl_taxa_dup_bio <-
+#   kable(taxa_dup_bio, format = 'html', align = 'c',
+#         caption = "Symbols with inconsistent TSN, ScientificName, or CommonName values across parks where NotBiological = F")  |>
+#   kable_styling(fixed_thead = TRUE, bootstrap_options = c('condensed'),
+#                 full_width = TRUE, position = 'left', font_size = 12) |>
+#   row_spec(0, extra_css = "border-top: 1px solid #000000; border-bottom: 1px solid #000000;") |>
+#   row_spec(nrow(taxa_dup_bio), extra_css = 'border-bottom: 1px solid #000000;') |>
+#   collapse_rows(1:4, valign = 'top')
 
 # check if Taxa - missing checks returned at least 1 record to determine whether to include tab
 taxa_check <- QC_table |> filter(Type %in% "Taxa" & Num_Records > 0)
@@ -642,10 +678,10 @@ point_int <- getCoverPoints(years = year_range) |>
 
 # Check number of ground hits per transect
 num_ground <- point_int |>
+  filter(Order == 0) |>
   group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year,
            NumPtsTran, Transect) |>
-  unique() |>
-  filter(Order == 0) |>
+  distinct() |>
   summarize(num_ground = n(), .groups = 'drop') |>
   filter(NumPtsTran != num_ground)|>
   select(MacroPlot_Name, SampleEvent_Date, year, Transect, NumPtsTran, num_ground)
@@ -655,16 +691,16 @@ QC_table <- rbind(QC_table,
                            check = "Transects where number of ground hits doesn't match number of points sampled.",
                            chk_type = "error"))
 
-kbl_num_ground <- make_kable(num_ground, cap = "Transects where number of ground hits doesn't match number of points sampled.")
+dt_num_ground <- make_dt(num_ground, cap = "Transects where number of ground hits doesn't match number of points sampled.")
 
 # Check that all Order > 0 have heights
-ht_check <- point_int |> group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape) |>
-  unique() |>
+ht_check <- point_int |>
+  group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape) |>
+  distinct() |>
   summarize(num_orders = n(),
             Height = sum(Height, na.rm = T),
             .groups = 'drop') |>
-  filter(num_orders > 1 & Height == 0) |>
-  unique()
+  filter(num_orders > 1 & Height == 0)
 
 # used sum instead of max because much faster
 ht_check$Height[ht_check$Height == 0] <- NA_real_
@@ -674,7 +710,7 @@ QC_table <- rbind(QC_table,
                            check = "Points with more than 1 order missing a height for the top hit.",
                            chk_type = "error"))
 
-kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
+dt_ht_check <- make_dt(ht_check, cap = "Points with more than 1 order missing a height for the top hit.")
 
 # Check that heights are only recorded for Hit = 1 (top hit)
 # hit1_ht <- point_int |>
@@ -695,7 +731,7 @@ kbl_ht_check <- make_kable(ht_check, cap = "Points with more than 1 order missin
 # Check for duplicate orders within a transect-
 dup_order <- point_int |>
   group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, Point, Tape, Order) |>
-  unique() |>
+  distinct() |>
   summarize(num_hits = sum(!is.na(ScientificName)), .groups = 'drop') |>
   filter(num_hits > 1)
 
@@ -709,7 +745,7 @@ kbl_dup_order <- make_kable(dup_order, cap = "Points with Order = 1 and blank He
 # Check for heights > 2m
 ht_oor <- point_int |> filter(Height > 2.0) |>
   select(MacroPlot_Name, SampleEvent_Date, year, month, Transect, Point, Tape, Order, Height, ScientificName) |>
-  unique()
+  distinct()
 
 QC_table <- rbind(QC_table,
                   QC_check(df = ht_oor, tab = "Height over 2m", meas_type = "Point Intercept",
@@ -739,7 +775,8 @@ QC_table <- rbind(QC_table,
                   QC_check(df = stat_blank, tab = "Status Blanks", meas_type = "Point Intercept",
                            check = "Status codes that are blank",
                            chk_type = "error"))
-kbl_stat_blank <- make_kable(stat_blank, cap = "Status codes that are blank")
+
+dt_stat_blank <- make_dt(stat_blank, cap = "Status codes that are blank")
 
 # Check for incorrect NotBiological and Status combos
 nb_l_stat <- point_int |> filter(NotBiological == TRUE & Status == "L")
@@ -748,7 +785,7 @@ QC_table <- rbind(QC_table,
                   QC_check(df = nb_l_stat, tab = "Live NotBiological", meas_type = "Point Intercept",
                            check = "Status = Live and NotBiological = TRUE",
                            chk_type = "error"))
-kbl_nb_l_stat <- make_kable(nb_l_stat, cap = "Status = Live and NotBiological = TRUE")
+dt_nb_l_stat <- make_dt(nb_l_stat, cap = "Status = Live and NotBiological = TRUE")
 
 # Check for incorrect NotBiological and Status combos
 # nb_dm_stat <- point_int |> filter((NotBiological == FALSE & Status == "D") |
@@ -799,7 +836,7 @@ QC_table <- rbind(QC_table,
                            check = "Target invasive species detections",
                            chk_type = "check"))
 
-kbl_inv_targ <- make_kable(inv_targ, cap = "Target invasive species detections")
+dt_inv_targ <- make_dt(inv_targ, cap = "Target invasive species detections")
 
 oth_targ <- covspp |> filter(Invasive == FALSE)
 
@@ -808,7 +845,7 @@ QC_table <- rbind(QC_table,
                            check = "Target species detections that aren't classified as invasive",
                            chk_type = "check"))
 
-kbl_oth_targ <- make_kable(oth_targ, cap = "Target species detections that aren't classified as invasive")
+dt_oth_targ <- make_dt(oth_targ, cap = "Target species detections that aren't classified as invasive")
 
 # check if Cover Species Composition checks returned at least 1 record to determine whether to include tab
 targ_check <- QC_table |> filter(Type %in% "Target Species Detections" & Num_Records > 0)
@@ -817,7 +854,7 @@ targ_include <- tab_include(targ_check)
 #---- Nested Quadrats/ Density Belts ----#
 densb <- getDensityBelts(years = year_range) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, NumTran, TranLen, TranWid, Area, Transect,
-         Subbelt, SubFrac, Status, Count, Symbol, ITIS_TSN, ScientificName)
+         Subbelt, SubFrac, Status, Count, Symbol, ITIS_TSN, ScientificName, UV1, UV2, UV3)
 
 # Transect numbers that aren't 1 or 2
 dtrans12 <- densb |> filter(!Transect %in% c(1, 2)) |>
@@ -893,62 +930,103 @@ spp_count <- densb |> filter(Count != 1) |>
          Symbol, ScientificName, Count)
 
 QC_table <- rbind(QC_table,
-                  QC_check(df = spp_count, tab = "Count != 1", meas_type = "Nested Quadrats"),
-                           check = "Recorded count value != 1", chk_type = "error")
+                  QC_check(df = spp_count, tab = "Count != 1", meas_type = "Nested Quadrats",
+                           check = "Recorded count value != 1", chk_type = "error"))
 
 kbl_spp_count <- make_kable(spp_count, cap = "Recorded count value != 1")
 
 # Species count > 1
-spp_dup <- densb |> #filter(Count == 1) |>
+spp_dup <- densb |> filter(Count == 1) |>
   select(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt, SubFrac,
-         Symbol, ScientificName, Count) |> unique()
+         Symbol, ScientificName, Count) |> unique() |>
+  pivot_wider(names_from = SubFrac, values_from = Count, names_prefix = "SubFrac_", values_fill = 0)
 
-spp_dup_dt <- data.table(spp_dup)
+subfrac_cols <- c("SubFrac_0.01", "SubFrac_0.1", "SubFrac_1", "SubFrac_10")
+missing <- setdiff(subfrac_cols, names(spp_dup))
+spp_dup[missing] <- 0
 
-spp_dup_dt2 <- spp_dup_dt[,.(count_sum = sum(Count)), by =
-                             .(MacroPlot_Name, SampleEvent_Date, year, Transect,
-                               Subbelt, Symbol, ScientificName)] |>
-  filter(count_sum > 1)
+spp_dup$Count <- spp_dup$SubFrac_0.01 + spp_dup$SubFrac_0.1 + spp_dup$SubFrac_1 + spp_dup$SubFrac_10
 
-spp_dup2 <- densb |> filter(Count == 1) |>
-  group_by(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt,
-           Symbol, ScientificName) |>
-  summarize(count_sum = sum(Count), .group = drop) |>
-  filter(count_sum > 1)
+spp_dup2 <- spp_dup |> filter(Count > 1)
 
-microbenchmark::microbenchmark(
-  spp_dup_dt2 <- spp_dup_dt[,.(count_sum = sum(Count)), by =
-                              .(MacroPlot_Name, SampleEvent_Date, year, Transect,
-                                Subbelt, Symbol, ScientificName)] |>
-    filter(count_sum > 1),
+QC_table <- rbind(QC_table,
+                  QC_check(spp_dup2, tab = "Duplicate Spp.", meas_type = "Nested Quadrats",
+                           check = "Species with more than one count per subbelt",
+                           chk_type = "error"))
 
-  spp_dup2 <- densb |> filter(Count == 1) |>
-    group_by(MacroPlot_Name, SampleEvent_Date, year, Transect, Subbelt,
-             Symbol, ScientificName) |>
-    summarize(count_sum = sum(Count), .group = drop) |>
-    filter(count_sum > 1),
-
-  times = 1
-)
-
-nrow(spp_dup_dt2)
-nrow(spp_dup2)
+kbl_spp_dup2 <- make_kable(spp_dup2, cap = "Species with more than one count per subbelt.")
 
 # Transect Area checks
-# Transect Area = 10; UV1 = 0; and SubFrac = 1;
-# Transect Area = 10; UV1 = 1; and SubFrac = 0.1;
-# Transect Area = 10; UV1 = 2; and SubFrac = 0.01;
-# Transect Area = 10; UV1 = 3; and SubFrac = 0.001;
+UV1_text <- densb |> filter(!UV1 %in% c(0, 1, 2, 3)) |> filter(!is.na(UV1))
 
-# Transect Area = 1; UV1 = 1; and SubFrac = 1;
-# Transect Area = 1; UV1 = 2; and SubFrac = 0.1;
-# Transect Area = 1; UV1 = 3; and SubFrac = 0.01;
+QC_table <- rbind(QC_table,
+                  QC_check(UV1_text, tab = "UV1 non-numeric", meas_type = "Nested Quadrats",
+                           check = "Values in UV1 that are not 0, 1, 2, or 3 to indicate SubPlot fraction."))
+
+kbl_UV1_text <- make_kable(UV1_text, cap = "Values in UV1 that are not 0, 1, 2, or 3 to indicate SubPlot fraction.
+                           Note that there's little consistency in the UV1 column being used to indicate the
+                           SubPlot fraction. Instead of fixing >100,000 records that are either NA or have text in them,
+                           use the SubFrac column to distinguish among the sizes of the nested quadrats.")
+
+# The queries below return A LOT of records. It doesn't appear the UV1 column has consistently
+# been used the way the USGS QC check suggests.
+# trans10_sub1 <- densb |> filter(Area == 10) |> filter(SubFrac == 1) |> filter(!UV1 %in% 0 | is.na(UV1))
+# trans10_sub01 <- densb |> filter(Area == 10) |> filter(SubFrac == 0.1) |> filter(!UV1 %in% 1 | is.na(UV1))
+# trans10_sub001 <- densb |> filter(Area == 10) |> filter(SubFrac == 0.01) |> filter(!UV1 %in% 2 | is.na(UV1))
+
+# trans1_sub1 <- densb |> filter(Area == 1) |> filter(SubFrac == 1) |> filter(!UV1 %in% 1 | is.na(UV1))
+# trans1_sub01 <- densb |> filter(Area == 1) |> filter(SubFrac == 0.1) |> filter(!UV1 %in% 2 | is.na(UV1))
+# trans1_sub001 <- densb |> filter(Area == 1) |> filter(SubFrac == 0.01) |> filter(!UV1 %in% 3 | is.na(UV1))
 
 # check if Nested Quadrats checks returned at least 1 record to determine whether to include tab
 densb_check <- QC_table |> filter(Type %in% "Nested Quadrats" & Num_Records > 0)
 densb_include <- tab_include(densb_check)
 
-#++++ ENDED HERE +++++
+#---- Trees and Poles ----
+trees <- getTrees(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, MacroPlotSize, SnagPlotSize,
+         BrkPntDia, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, CrwnCl, LiCrBHt, CrwnRad, DRC)
+head(trees)
+
+# Check that species that are DRC are correctly sampled as DRC (taken from Table 4 of NGPN PCM SOPs (p94))
+drc_spp <- tab4_spp$Symbol[tab4_spp$Diam_Loc == "Root Collar"]
+
+trees_wrong_drc <- trees |> filter(Symbol %in% drc_spp & !is.na(DBH))
+
+QC_table <- rbind(QC_table,
+                  QC_check(trees_wrong_drc, tab = "Wrong Diam - DRC", meas_type = "Trees and Poles",
+                           check = "Trees that should have had DRC instead of DBH measured.",
+                           chk_type = 'error'))
+
+dt_trees_wrong_drc <- make_dt(trees_wrong_drc,
+                              cap = "Trees that should have had DRC instead of DBH measured, based on Table 4 in SOPs.")
+
+trees_wrong_dbh <- trees |> filter((!Symbol %in% drc_spp) & !is.na(DRC))
+
+QC_table <- rbind(QC_table,
+                  QC_check(trees_wrong_dbh, tab = "Wrong Diam - DBH", meas_type = "Trees and Poles",
+                           check = "Trees that should have had DBH instead of DRC measured.",
+                           chk_type = 'error'))
+
+dt_trees_wrong_dbh <- make_dt(trees_wrong_dbh,
+                                  cap = "Trees that should have had DBH instead of DRC measured, based on Table 4 in SOPs.")
+
+# Check trees > 60 cm for possible errors
+bigt <- trees |> mutate(diam = pmax(DBH, DRC, na.rm = T)) |> filter(diam > 60) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol, ScientificName, DBH, DRC, diam)
+
+QC_table <- rbind(QC_table,
+                  QC_check(bigt, tab = "Big Trees", meas_type = "Trees and Poles",
+                           check = "Trees greater than 60cm DBH or DRC to check for possible errors.",
+                           chk_type = "check"))
+
+#hist(bigt$diam, main = "Distribution of DBH/DRC > 60cm", xlab = "DBH/DRC class")
+
+dt_bigt <- make_dt(bigt |> select(-diam), cap = "Trees greater than 60cm DBH or DRC to check for possible errors")
+
+# check if Nested Quadrats checks returned at least 1 record to determine whether to include tab
+tree_check <- QC_table |> filter(Type %in% "Trees and Poles" & Num_Records > 0)
+tree_include <- tab_include(tree_check)
 
 
 ###### Compile final QC Table ######

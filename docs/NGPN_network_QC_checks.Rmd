@@ -198,7 +198,6 @@ check_null_print(dt_dead_con, 4, "Incons. Dead UV2")
 
 check_null_print(kbl_dead_miss_uv2, 4, "Dead missing UV2")
 
-
 cat("\n\n")
 
 ```
@@ -208,9 +207,18 @@ cat("### Seedlings {.tabset}", "\n\n")
 
 check_null_print(dt_subfrac100, 4, "Under 100 Count")
 
-
 check_null_print(dt_subfrac100c, 4, "Over 100 Count")
 
+cat("\n\n")
+```
+
+
+```{r fuel, eval = fuel_include, results = 'asis'}
+cat("### Fuels {.tabset}", "\n\n")
+
+cat("Work in progress...")
+
+cat("\n\n")
 ```
 
 

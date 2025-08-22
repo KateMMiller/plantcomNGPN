@@ -781,7 +781,7 @@ QC_table <- rbind(QC_table,
                            check = "Trees greater than 30cm DRC to check for possible errors.",
                            chk_type = "check"))
 
-dt_bigdrc <- make_dt(bigdrc |> select(-diam), cap = "Trees greater than 30cm DRC to check for possible errors.")
+dt_bigdrc <- make_dt(bigdrc, cap = "Trees greater than 30cm DRC to check for possible errors.")
 
 # Check for missing tree data
 # Trees >15cm DBH should have UV1 In/Out and UV2 Condition Code column and that are Trees (not shrubs)
@@ -936,6 +936,13 @@ dt_subfrac100 <- make_dt(subfrac100b, "Counts > 100 for a species on a plot with
 # check if seedlings checks returned at least 1 record to determine whether to include tab
 seed_check <- QC_table |> filter(Type %in% "Seedlings" & Num_Records > 0)
 seed_include <- tab_include(seed_check)
+
+#---- Fuels Checks ----
+
+
+# check if fuels checks returned at least 1 record to determine whether to include tab
+fuel_check <- QC_table |> filter(Type %in% "Fuels" & Num_Records > 0)
+fuel_include <- tab_include(fuel_check)
 
 #---- Cover Spp Comp/Target Species ----
 #+++ KEEP THIS SECTION LAST +++

@@ -207,7 +207,7 @@ cat("### Seedlings {.tabset}", "\n\n")
 
 check_null_print(dt_subfrac100, 4, "Under 100 Count")
 
-check_null_print(dt_subfrac100c, 4, "Over 100 Count")
+check_null_print(dt_subfrac100b, 4, "Over 100 Count")
 
 cat("\n\n")
 ```

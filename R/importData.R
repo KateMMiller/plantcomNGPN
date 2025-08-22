@@ -11,7 +11,7 @@
 #' exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
 #' Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
 #'
-#' @importFrom dplyr bind_rows collect inner_join left_join mutate rename right_join select tbl
+#' @importFrom dplyr bind_rows collect distinct inner_join left_join mutate rename right_join select tbl
 #' @importFrom tidyr pivot_wider
 #' @importFrom purrr flatten map set_names
 #'
@@ -57,7 +57,7 @@
 #' # and export both the analysis-ready views and the raw tables.
 #' importData(type = 'local',
 #'            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
-#'                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", "FFI_RA_MNRR",
+#'                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
 #'                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #'            export_views = T, export_tables = T,
 #'            export_path = "C:/temp")
@@ -656,7 +656,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   sampev3$doy <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
 
   # drop plots with no associated sample events
-  # unique(sampev4$MacroPlot_Name[is.na(sampev4$SampleEvent_GUID)]) # Plots with no sample events
+  # distinct(sampev4$MacroPlot_Name[is.na(sampev4$SampleEvent_GUID)]) # Plots with no sample events
   sampev4 <- sampev3[!is.na(sampev3$SampleEvent_GUID),]
 
   names(sampev4)[names(sampev4) == "SampleEvent_GUID"] <- "SampleEventGUID"
@@ -687,12 +687,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   SampleEvents <- data.frame(sampev5[order(sampev5$MacroPlot_Name, sampev5$SampleEvent_Date),
                              keep_cols_samp])
 
-  sampev_unique1 <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> unique()
+  sampev_unique1 <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> distinct()
   # Convert "" to NA so unique actually works
   mon_cols <- c("DefaultMonitoringStatus", "MonitoringStatus_Prefix", "MonitoringStatus_Base",
                 "MonitoringStatus_Suffix", "MonitoringStatus_Name")
   sampev_unique1[,mon_cols][sampev_unique1[,mon_cols] == ""] <- NA_character_
-  sampev_unique <- unique(sampev_unique1)
+  sampev_unique <- distinct(sampev_unique1)
 
   # Prevents some duplication of data until monitoring status is fixed in database.
   sampev_guids <- unique(sampev_unique$SampleEvent_GUID)
@@ -826,7 +826,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                   "Index", "Transect", "Point", "Tape", "Order", "Height",
                   "CanopyLayer", "Status", "Comment")
 
-  Cover_Points_metric <- unique(data.frame(
+  Cover_Points_metric <- distinct(data.frame(
     samp_cov_spp[order(samp_cov_spp$MacroPlot_Name, samp_cov_spp$year,
                        samp_cov_spp$Index, samp_cov_spp$ScientificName),
                  c(cols_view_start, cols_taxa_start,
@@ -863,7 +863,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover", "Height",
                     "Comment", "UV1", "UV2", "UV3")
 
-  Cover_Species_Composition <- unique(
+  Cover_Species_Composition <- distinct(
     data.frame(
     samp_comp_spp[order(samp_comp_spp$MacroPlot_Name, samp_comp_spp$year,
                         samp_comp_spp$Index, samp_comp_spp$ScientificName),
@@ -903,12 +903,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                      "Index", "Transect", "Subbelt", "Status", "SizeCl", "AgeCl",
                      "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
 
-  Density_Belts_metric <- data.frame(
+  Density_Belts_metric <- distinct(data.frame(
     samp_densb_spp[order(samp_densb_spp$MacroPlot_Name, samp_densb_spp$year,
                          samp_densb_spp$Index, samp_densb_spp$ScientificName),
                    c(cols_view_start, cols_taxa_start,
                      cols_densbelt,
-                     cols_taxa_end, cols_view_end)])
+                     cols_taxa_end, cols_view_end)]))
   }
   #---- Density_Quadrats_Metric View ----
   setTxtProgressBar(pb,6)
@@ -943,12 +943,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                      "Index", "Transect", "Quadrat", "Status", "SizeCl", "AgeCl",
                      "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
 
-  Density_Quadrats_metric <- data.frame(
+  Density_Quadrats_metric <- distinct(data.frame(
     samp_densq_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
                          samp_densq_spp$Index, samp_densq_spp$ScientificName),
                    c(cols_view_start, cols_taxa_start,
                      cols_densquad,
-                     cols_taxa_end, cols_view_end)])
+                     cols_taxa_end, cols_view_end)]))
   }
   #---- Disturbance_History View ----
   setTxtProgressBar(pb,7)
@@ -981,11 +981,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   cols_view_end_nospp <- cols_view_end[!cols_view_end %in% "Spp_GUID"]
 
-  Disturbance_History <- data.frame(
+  Disturbance_History <- distinct(data.frame(
     samp_dista[order(samp_dista$MacroPlot_Name, samp_dista$year,
                      samp_dista$Index),
                c(cols_view_start, cols_dist, cols_view_end_nospp)]
-  )
+  ))
   }
   #---- Surface_Fuels_1000Hr View ----
   setTxtProgressBar(pb,8)
@@ -1013,10 +1013,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   cols_surf1000 <- c("Visited", "NumTran", "TranLen", "Index", "Transect", "Slope", "LogNum", "Dia",
                      "DecayCl", "CWDFuConSt", "Comment", "UV1", "UV2", "UV3")
 
-  Surface_Fuels_1000Hr <- data.frame(
+  Surface_Fuels_1000Hr <- distinct(data.frame(
     samp_surf1000a[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
                          samp_surf1000a$Index),
-                   c(cols_view_start, cols_surf1000, cols_view_end_nospp)])
+                   c(cols_view_start, cols_surf1000, cols_view_end_nospp)]))
   }
   #---- Surface_Fuels_Fine View ----
   setTxtProgressBar(pb,9)
@@ -1048,10 +1048,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                      "Index", "Transect", "Azimuth_Fuels", "Slope", "OneHr", "TenHr", "HunHr", "FWDFuConSt",
                      "Comment", "UV1", "UV2", "UV3")
 
-  Surface_Fuels_Fine <- data.frame(
+  Surface_Fuels_Fine <- distinct(data.frame(
     samp_surffinea[order(samp_surffinea$MacroPlot_Name, samp_surffinea$year,
                          samp_surffinea$Index),
-                   c(cols_view_start, cols_surffine, cols_view_end_nospp)])
+                   c(cols_view_start, cols_surffine, cols_view_end_nospp)]))
 
   }
 
@@ -1082,10 +1082,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   cols_surfduff <- c("Visited", "NumTran", "Index", "Transect", "SampLoc", "OffSet", "LittDep",
                      "DuffDep", "FuelbedDep", "DLFuConSt", "Comment", "UV1", "UV2", "UV3")
 
-  Surface_Fuels_Duff <- data.frame(
+  Surface_Fuels_Duff <- distinct(data.frame(
     samp_surfduffa[order(samp_surfduffa$MacroPlot_Name, samp_surfduffa$year,
                          samp_surfduffa$Index),
-                   c(cols_view_start, cols_surfduff, cols_view_end_nospp)])
+                   c(cols_view_start, cols_surfduff, cols_view_end_nospp)]))
   }
   #---- Trees_Metric ----
   setTxtProgressBar(pb,11)
@@ -1134,12 +1134,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   # "ScorchHt", "CrScPct", "DamCd1", "DamSev1", "DamCd2", "DamSev2", "DamCd3",
   # "DamSev3", "DamCd4", "DamSev4", "DamCd5", "DamSev5")
 
-  Trees_metric <- data.frame(
+  Trees_metric <- distinct(data.frame(
     samp_tree_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
                         samp_densq_spp$Index, samp_densq_spp$ScientificName),
                   c(cols_view_start, cols_taxa_start,
                     cols_tree,
-                    cols_taxa_end, cols_view_end)])
+                    cols_taxa_end, cols_view_end)]))
 
   }
 

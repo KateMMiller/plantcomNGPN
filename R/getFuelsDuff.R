@@ -5,6 +5,8 @@
 #' @description This function filters and joins FFI Surface Fuels Duff data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -203,7 +205,7 @@ getFuelsDuff <- function(park = 'all', plot_name = "all", project = "Park", purp
   sfduff1 <- sfduff[sfduff$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- unique(sampev$SampleEvent_GUID)
+  sampev_guids <- distinct(sampev$SampleEvent_GUID)
   sfduff_samp <- sfduff1[sfduff1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Visited is NA or F
   sfduff_samp2 <- sfduff_samp[sfduff_samp$Visited == TRUE,]

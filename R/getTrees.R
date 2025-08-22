@@ -5,7 +5,7 @@
 #' @description This function filters and joins FFI tree data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
-#' @importFrom dplyr filter left_join select
+#' @importFrom dplyr distinct filter left_join select
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
@@ -228,9 +228,9 @@ getTrees <- function(park = 'all', plot_name = "all", project = "Park", purpose 
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(trees_samp2), keep_cols)))}
 
-  trees_final <- trees_samp2[order(trees_samp2$MacroPlot_Name, trees_samp2$SampleEvent_Date,
+  trees_final <- distinct(trees_samp2[order(trees_samp2$MacroPlot_Name, trees_samp2$SampleEvent_Date,
                                    trees_samp2$QTR, trees_samp2$TagNo),
-                            final_names]
+                            final_names])
 
   if(nrow(trees_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 

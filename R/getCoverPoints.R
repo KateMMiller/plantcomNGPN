@@ -5,7 +5,7 @@
 #' @description This function filters and joins FFI cover point data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
-#' @importFrom dplyr filter left_join select
+#' @importFrom dplyr distinct filter left_join select
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
@@ -168,8 +168,8 @@
 #' @export
 
 getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", purpose = "NGPN_PCM",
-                              mon_status = "NGPN_PCM", years = 2011:format(Sys.Date(), "%Y"),
-                              complete_events = TRUE, output = "short"){
+                           mon_status = "NGPN_PCM", years = 2011:format(Sys.Date(), "%Y"),
+                           complete_events = TRUE, output = "short"){
   #---- Bug handling ----
   park <- match.arg(park, several.ok = TRUE,
                     c("all", "AGFO", "BADL", "DETO", "FOLA", "FOUS",
@@ -232,9 +232,11 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(covpts_samp2), keep_cols)))}
 
-  sampcov_final <- unique(covpts_samp2[order(covpts_samp2$MacroPlot_Name, covpts_samp2$SampleEvent_Date,
+  sampcov2 <- covpts_samp2[order(covpts_samp2$MacroPlot_Name, covpts_samp2$SampleEvent_Date,
                                       covpts_samp2$Transect, covpts_samp2$Point, covpts_samp2$Order),
-                                final_names])
+                                final_names]
+
+  sampcov_final <- distinct(sampcov2)
 
   if(nrow(sampcov_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 

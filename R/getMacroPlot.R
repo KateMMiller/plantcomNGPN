@@ -7,7 +7,7 @@
 #' of an internal function that other data-related getter functions source to efficiently
 #' filter on records.
 #'
-#' @importFrom dplyr left_join
+#' @importFrom dplyr distinct left_join
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
@@ -190,7 +190,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
       mac_purpose %in% c("Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
                           "Panel7", "Panel8", "Panel9", "Panel10", "PanelE", "IM_Intensive",
                           "ForestStructure", "")]
-  } else {unique(purpose)}
+  } else {distinct(purpose)}
 
   # check that the specified purpose is found in the column names
   bad_purpose <- setdiff(purpose_list, mac_purpose)

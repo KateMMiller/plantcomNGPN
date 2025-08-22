@@ -5,6 +5,8 @@
 #' @description This function filters and joins FFI density quadrat data used for seedlings and tall shrubs
 #' in NGPN by park, plot name, purpose, project, sample year, and other parameters.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -227,10 +229,10 @@ getDensityQuadrats <- function(park = 'all', plot_name = "all", project = "Park"
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(densq_samp2), keep_cols)))}
 
-  densq_final <- densq_samp2[order(densq_samp2$MacroPlot_Name, densq_samp2$SampleEvent_Date,
+  densq_final <- distinct(densq_samp2[order(densq_samp2$MacroPlot_Name, densq_samp2$SampleEvent_Date,
                                    densq_samp2$Transect, densq_samp2$Quadrat,
                                    densq_samp2$ScientificName),
-                                final_names]
+                                final_names])
 
   if(nrow(densq_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 

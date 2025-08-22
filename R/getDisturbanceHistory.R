@@ -5,6 +5,8 @@
 #' @description This function filters and joins FFI disturbance history data
 #' by park, plot name, purpose, project, sample year, and other parameters.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -205,7 +207,7 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all", project = "Pa
   disturb1 <- disturb[disturb$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- unique(sampev$SampleEvent_GUID)
+  sampev_guids <- distinct(sampev$SampleEvent_GUID)
   dist_samp <- disturb1[disturb1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   dist_samp2 <- dist_samp[dist_samp$Visited == TRUE,]

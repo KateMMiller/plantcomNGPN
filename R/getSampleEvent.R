@@ -11,6 +11,8 @@
 #' results in duplicate returns, where one row is blank and another includes a comment for the sample
 #' sample event.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -227,7 +229,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
                  "MacroPlot_GUID")
 
   keep_cols <- names(sampev4[!grepl("MonitoringStatus_Comment|MM_MonitoringStatus_GUID", names(sampev4))])
-  sampev5 <- unique(sampev4[,keep_cols])
+  sampev5 <- distinct(sampev4[,keep_cols])
 
   if(nrow(sampev5) == 0){stop(paste0("Specified function arguments returned an empty data frame. ",
                                      "Check that the combination of plot_name, purpose, project, etc.

@@ -5,6 +5,8 @@
 #' @description This function filters and joins FFI nested nested quadrat data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -226,15 +228,16 @@ getDensityBelts <- function(park = 'all', plot_name = "all", project = "Park", p
                  "UV1Desc", "UV2Desc", "SaComment",
                  "Symbol", "ITIS_TSN", "ScientificName", "CommonName", "Nativity", "Invasive",
                  "Cultural", "Concern", "LifeCycle", "LifeForm_Name", "NotBiological",
+                 "UV1", "UV2", "UV3",
                  "MacroPlot_GUID", "SampleEvent_GUID", "RegistrationUnit_GUID", "Spp_GUID")
 
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(densb_samp2), keep_cols)))}
 
-  densb_final <- densb_samp2[order(densb_samp2$MacroPlot_Name, densb_samp2$SampleEvent_Date,
+  densb_final <- distinct(densb_samp2[order(densb_samp2$MacroPlot_Name, densb_samp2$SampleEvent_Date,
                                   densb_samp2$Transect, densb_samp2$Subbelt, densb_samp2$SubFrac,
                                   densb_samp2$ScientificName),
-                                final_names]
+                                final_names])
 
   if(nrow(densb_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 

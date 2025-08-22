@@ -7,7 +7,7 @@
 #' early detection efforts in parks. When no target species were detected during monitoring, "no species" is
 #' recorded in the CommonName column, "NOSP" is the Symbol, and ScientificName is blank.
 #'
-#' @importFrom dplyr filter left_join select
+#' @importFrom dplyr distinct filter left_join select
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{

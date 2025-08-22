@@ -5,6 +5,8 @@
 #' @description This function filters and joins FFI Surface Fuels 1000Hr data by park, plot name, purpose, project,
 #' sample year, and other parameters.
 #'
+#' @importFrom dplyr distinct
+#'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one. Valid inputs:
 #' \itemize{
 #' \item{"all":} {Include all NGPN parks with FFI data}
@@ -203,7 +205,7 @@ getFuels1000 <- function(park = 'all', plot_name = "all", project = "Park", purp
   sf1001 <- sf1000[sf1000$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- unique(sampev$SampleEvent_GUID)
+  sampev_guids <- distinct(sampev$SampleEvent_GUID)
   sf1000_samp <- sf1001[sf1001$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Visited is NA or F
   sf1000_samp2 <- sf1000_samp[sf1000_samp$Visited == TRUE,]

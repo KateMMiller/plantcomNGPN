@@ -84,153 +84,29 @@ check_null_print <- function(table, tab_level = 4, tab_title){
   check_null(table)
 }
 
+macro_plots <- getMacroPlot() |>
+  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
+  distinct()
+
+park_list <- sort(unique(macro_plots$park))
+
 ### Macroplot Checks
-#### Plot Matrix List
-macro <- NGPN_tables$MacroPlot
-samp <- NGPN_tables$SampleEvent
-monstat <- NGPN_tables$MonitoringStatus
-mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
-
-plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
-
-macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
-  filter(MacroPlot_Name %in% plots)|>
-  select(MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, MacroPlot_RegistrationUnit_GUID,
-         MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_UTMzone, MacroPlot_Datum, MacroPlot_DD_Lat, MacroPlot_DD_Long,
-         MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
-         MacroPlot_SlopeTransect, MacroPlot_GUID) |>
-  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  unique()
-
-# Continue compiling sample data
-macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
-  select(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose,
-         SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
-  unique()
-
-macro_samp$SampleEvent_Date <-
-  format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
-macro_samp$year <- format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
-macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
-
-macro_samp2 <- macro_samp |> filter(year >= 2011) |>
-  mutate(park = substr(MacroPlot_Name, 1, 4),
-         DefaultMonitoringStatus = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |>
-  select(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |> unique() |>
-  group_by(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |>
-  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
-  arrange(year, DefaultMonitoringStatus) |>
-  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
-               DefaultMonitoringStatus)) |>
-  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
-         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  #arrange(plottype, plotnum, DefaultMonitoringStatus) |>
-  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, DefaultMonitoringStatus, yr2011:last_col()) |>
-  select(-plotnum, -plottype)
-
-park_list <- sort(unique(macro_plots$park))
-
-macro_samp_dups <- macro_samp2 |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(DefaultMonitoringStatus))) |>
-  filter(num_monstat > 1) |> select(MacroPlot_Name)
-
-macro_samp2$dup_ms <- ifelse(macro_samp2$MacroPlot_Name %in% macro_samp_dups$MacroPlot_Name, 1, 0)
-
-# Add in monitoringstatus_base from monitoring status table
-monstat <- NGPN_tables$MonitoringStatus
-mm_monstat_se <- NGPN_tables$MM_MonitoringStatus_SampleEvent
-
-macro_samp_ms1 <- left_join(macro_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
-
-macro_samp_ms2 <- left_join(macro_samp_ms1, monstat,
-                            by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
-                                   "datasource"))
-
-macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
-  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(grepl(
-    "blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian|2016_$|2011|2012|2014|2015",
-               MonitoringStatus_Base)) |>
-  select(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |> unique() |>
-  group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |>
-  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
-  arrange(year, MonitoringStatus_Base) |>
-  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
-         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col()) |>
-  select(-plotnum, -plottype)
-
-park_list <- sort(unique(macro_plots$park))
-
-macro_samp_ms_dups <- macro_samp_ms |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(MonitoringStatus_Base))) |>
-  filter(num_monstat > 1) |> select(MacroPlot_Name)
-
-macro_samp_ms$dup_ms <- ifelse(macro_samp_ms$MacroPlot_Name %in% macro_samp_ms_dups$MacroPlot_Name, 1, 0)
-
-
-#### Purpose
-macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot,
-                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
-macroproj <- left_join(macro2, NGPN_tables$ProjectUnit,
-                       by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"))
-
-macroproj2 <- macroproj |>
-  mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, ProjectUnit_Name, ProjectUnit_Agency,
-         MacroPlot_GUID) |> arrange(MacroPlot_Name)
-
-macroproj_dups <- macroproj2 |> group_by(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose, ProjectUnit_Name) |>
-  summarize(num_rows = sum(!is.na(park)), .groups = 'drop') |>
-  arrange(ProjectUnit_Name) |> select(-MacroPlot_GUID) |>
-  pivot_wider(names_from = ProjectUnit_Name, values_from = num_rows) |> data.frame() |>
-  #select(MacroPlot_Name, MacroPlot_Purpose, park, everything()) |>
-  arrange(MacroPlot_Name) |> mutate(park = substr(MacroPlot_Name, 1, 4))
-
-start_cols <- c("MacroPlot_Name", "MacroPlot_Purpose", "Park")
-macroproj_dups <- macroproj_dups[, c(start_cols, sort(setdiff(names(macroproj_dups), start_cols)))]
-
-macroproj_dups$num_recs <- apply(macroproj_dups[,3:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
-macroproj_dups$nonvs <- grepl("Panel|IM_Intensive", macroproj_dups$MacroPlot_Purpose)
-
-
-macro_purp1 <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |>
-  #unique() |>
-  mutate(pres = 1,
-         MacroPlot_Purpose = ifelse(is.na(MacroPlot_Purpose) |
-                                      MacroPlot_Purpose == "", "Unknown", MacroPlot_Purpose)) |>
-  arrange(MacroPlot_Purpose) |>
-  pivot_wider(names_from = MacroPlot_Purpose, values_from = pres) |>
-  arrange(MacroPlot_Name)
-
-start_cols <- c("MacroPlot_Name", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
-                "Panel7", "Panel8", "Panel9", "Panel10", "PanelE", "IM_Intensive",
-                "IM_veg", "IM_FX_Dual")
-other_cols <- sort(setdiff(names(macro_purp1), start_cols))
-
-macro_purp <- macro_purp1[,c(start_cols, other_cols)]
-
-
-# MacroPlot Checks
 # NGPN plots missing X/Y Coordinates
-macro_miss_utm <- macro_plots |> filter(is.na(MacroPlot_UTM_X) | is.na(MacroPlot_UTM_Y) | is.na(MacroPlot_UTMzone)) |>
-  select(MacroPlot_Name, MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_UTMzone, MacroPlot_DD_Lat, MacroPlot_DD_Long)
+names(macro_plots)
+macro_miss_utm <- macro_plots |> filter(is.na(UTM_X) | is.na(UTM_Y) | is.na(UTMzone)) |>
+  select(MacroPlot_Name, UTM_X, UTM_Y, UTMzone, DD_Lat, DD_Long)
 
 QC_table <- QC_check(df = macro_miss_utm, meas_type = "MacroPlot", tab = "Plot Info",
                      check = "NGPN PCM plots missing UTM X, Y, and/or UTM Zone data.",
                      chk_type = 'error')
 
 kbl_macro_miss_utm <- make_kable(macro_miss_utm, "NGPN PCM plots missing UTM X, Y, and/or Zone data. ") |>
-  column_spec(2, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTM_X), "#F2F2A0", "white")) |>
-  column_spec(3, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTM_Y), "#F2F2A0", "white")) |>
-  column_spec(4, background = ifelse(is.na(macro_miss_utm$MacroPlot_UTMzone), "#F2F2A0", "white"))
+  column_spec(2, background = ifelse(is.na(macro_miss_utm$UTM_X), "#F2F2A0", "white")) |>
+  column_spec(3, background = ifelse(is.na(macro_miss_utm$UTM_Y), "#F2F2A0", "white")) |>
+  column_spec(4, background = ifelse(is.na(macro_miss_utm$UTMzone), "#F2F2A0", "white"))
 
-park_list
 # Set bounding box for each park and check UTMs and/or lat/long against them:
 # First downloaded NPS Administrative Boundaries from: https://irma.nps.gov/DataStore/Reference/Profile/2309935
-
 tryCatch(nps_bounds <- read_sf("./docs/www/Administrative Boundaries of National Park System Units.shp"), error = function(e){})
 tryCatch(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"), error = function(e){})
 st_crs(nps_bounds) # EPSG 4269
@@ -248,21 +124,21 @@ SCBL_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "SCBL"), crs = 26913)
 THRO_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "THRO"), crs = 26913)
 WICA_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "WICA"), crs = 26913)
 
-macro_plots_gps <- macro_plots |> select(MacroPlot_Name, MacroPlot_UTM_X, MacroPlot_UTM_Y) |>
+macro_plots_gps <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(!is.na(MacroPlot_UTM_X))
+  filter(!is.na(UTM_X))
 
-AGFO_pts <- st_as_sf(macro_plots_gps |> filter(park == "AGFO"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-BADL_pts <- st_as_sf(macro_plots_gps |> filter(park == "BADL"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-DETO_pts <- st_as_sf(macro_plots_gps |> filter(park == "DETO"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-FOLA_pts <- st_as_sf(macro_plots_gps |> filter(park == "FOLA"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-FOUS_pts <- st_as_sf(macro_plots_gps |> filter(park == "FOUS"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-JECA_pts <- st_as_sf(macro_plots_gps |> filter(park == "JECA"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-KNRI_pts <- st_as_sf(macro_plots_gps |> filter(park == "KNRI"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26914)
-MORU_pts <- st_as_sf(macro_plots_gps |> filter(park == "MORU"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-SCBL_pts <- st_as_sf(macro_plots_gps |> filter(park == "SCBL"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-THRO_pts <- st_as_sf(macro_plots_gps |> filter(park == "THRO"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
-WICA_pts <- st_as_sf(macro_plots_gps |> filter(park == "WICA"), coords = c("MacroPlot_UTM_X", "MacroPlot_UTM_Y"), crs = 26913)
+AGFO_pts <- st_as_sf(macro_plots_gps |> filter(park == "AGFO"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+BADL_pts <- st_as_sf(macro_plots_gps |> filter(park == "BADL"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+DETO_pts <- st_as_sf(macro_plots_gps |> filter(park == "DETO"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+FOLA_pts <- st_as_sf(macro_plots_gps |> filter(park == "FOLA"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+FOUS_pts <- st_as_sf(macro_plots_gps |> filter(park == "FOUS"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+JECA_pts <- st_as_sf(macro_plots_gps |> filter(park == "JECA"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+KNRI_pts <- st_as_sf(macro_plots_gps |> filter(park == "KNRI"), coords = c("UTM_X", "UTM_Y"), crs = 26914)
+MORU_pts <- st_as_sf(macro_plots_gps |> filter(park == "MORU"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+SCBL_pts <- st_as_sf(macro_plots_gps |> filter(park == "SCBL"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+THRO_pts <- st_as_sf(macro_plots_gps |> filter(park == "THRO"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
+WICA_pts <- st_as_sf(macro_plots_gps |> filter(park == "WICA"), coords = c("UTM_X", "UTM_Y"), crs = 26913)
 
 out_pts1 <- rbind(as.data.frame(AGFO_pts[!st_intersects(AGFO_pts, AGFO_poly, sparse = F),]),
                   as.data.frame(BADL_pts[!st_intersects(BADL_pts, BADL_poly, sparse = F),]),
@@ -278,8 +154,8 @@ out_pts1 <- rbind(as.data.frame(AGFO_pts[!st_intersects(AGFO_pts, AGFO_poly, spa
                  )
 
 out_pts_utm <- cbind(MacroPlot_Name = out_pts1$MacroPlot_Name,
-                     MacroPlot_UTM_X = as.numeric(st_coordinates(st_as_sf(out_pts1))[,1]),
-                     MacroPlot_UTM_Y = as.numeric(st_coordinates(st_as_sf(out_pts1))[,2])
+                     UTM_X = as.numeric(st_coordinates(st_as_sf(out_pts1))[,1]),
+                     UTM_Y = as.numeric(st_coordinates(st_as_sf(out_pts1))[,2])
                      )
 
 QC_table <- rbind(QC_table,
@@ -290,8 +166,8 @@ QC_table <- rbind(QC_table,
 kbl_out_pts_utm <- make_kable(out_pts_utm, cap = "NGPN PCM MacroPlot UTM coordinates that are not within the park boundary.")
 
 # NPGN plots with non-standard datum
-datum <- macro_plots |> select(MacroPlot_Name, MacroPlot_UTM_X, MacroPlot_UTM_Y,
-                               MacroPlot_UTMzone, MacroPlot_Datum) |> filter(!MacroPlot_Datum %in% "NAD83")
+datum <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y,
+                               UTMzone, Datum) |> filter(!Datum %in% "NAD83")
 QC_table <- rbind(QC_table,
                   QC_check(df = datum, meas_type = "MacroPlot", tab = "Plot Info",
                            check = "NGPN PCM plot coordinates with datum not matching 'NAD83'.",
@@ -301,9 +177,9 @@ kbl_datum <- make_kable(datum, cap = "NGPN PCM plot coordinates with datum not m
 
 # For plots with lat/long only, check if they're within the park bounds. This helps if we need to use the lat/longs
 # to generate the UTMs. I'm not proud that I didn't iterate on this.
-macro_plots_DD <- macro_plots |> select(MacroPlot_Name, MacroPlot_DD_Lat, MacroPlot_DD_Long) |>
+macro_plots_DD <- macro_plots |> select(MacroPlot_Name, DD_Lat, DD_Long) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(!is.na(MacroPlot_DD_Lat))
+  filter(!is.na(DD_Lat))
 
 AGFO_polydd <- ngpn_poly |> filter(UNIT_CODE == "AGFO")
 BADL_polydd <- ngpn_poly |> filter(UNIT_CODE == "BADL")
@@ -317,17 +193,17 @@ SCBL_polydd <- ngpn_poly |> filter(UNIT_CODE == "SCBL")
 THRO_polydd <- ngpn_poly |> filter(UNIT_CODE == "THRO")
 WICA_polydd <- ngpn_poly |> filter(UNIT_CODE == "WICA")
 
-AGFO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "AGFO"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-BADL_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "BADL"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-DETO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "DETO"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-FOLA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "FOLA"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-FOUS_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "FOUS"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-JECA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "JECA"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-KNRI_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "KNRI"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-MORU_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "MORU"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-SCBL_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "SCBL"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-THRO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "THRO"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
-WICA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "WICA"), coords = c("MacroPlot_DD_Long", "MacroPlot_DD_Lat"), crs = 4269)
+AGFO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "AGFO"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+BADL_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "BADL"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+DETO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "DETO"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+FOLA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "FOLA"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+FOUS_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "FOUS"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+JECA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "JECA"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+KNRI_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "KNRI"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+MORU_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "MORU"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+SCBL_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "SCBL"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+THRO_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "THRO"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
+WICA_ptsdd <- st_as_sf(macro_plots_DD |> filter(park == "WICA"), coords = c("DD_Long", "DD_Lat"), crs = 4269)
 
 out_pts1dd <- rbind(if(nrow(AGFO_ptsdd) > 0){as.data.frame(AGFO_ptsdd[!st_intersects(AGFO_ptsdd, AGFO_polydd, sparse = F),])},
                     if(nrow(BADL_ptsdd) > 0){as.data.frame(BADL_ptsdd[!st_intersects(BADL_ptsdd, BADL_polydd, sparse = F),])},
@@ -343,8 +219,8 @@ out_pts1dd <- rbind(if(nrow(AGFO_ptsdd) > 0){as.data.frame(AGFO_ptsdd[!st_inters
 )
 
 out_pts_dd <- cbind(MacroPlot_Name = out_pts1dd$MacroPlot_Name,
-                    MacroPlot_DD_Long = as.numeric(st_coordinates(st_as_sf(out_pts1dd))[,1]),
-                    MacroPlot_DD_Lat = as.numeric(st_coordinates(st_as_sf(out_pts1dd))[,2])
+                    DD_Long = as.numeric(st_coordinates(st_as_sf(out_pts1dd))[,1]),
+                    DD_Lat = as.numeric(st_coordinates(st_as_sf(out_pts1dd))[,2])
 )
 
 QC_table <- rbind(QC_table,
@@ -434,141 +310,34 @@ kbl_macro_veg <- make_kable(macro_veg, cap = "Macroplot Vegetation Type (UV4) th
 macro_check <- QC_table |> filter(Type %in% "MacroPlot" & Num_Records > 0)
 macro_include <- tab_include(macro_check)
 
-### Sample Event Checks {.tabset}
-macro_guids <- unique(macro_plots$MacroPlot_GUID) # NGPN macroplot_guids for filter
-mm_projunit <- NGPN_tables$MM_ProjectUnit_MacroPlot
-regunit <- NGPN_tables$RegistrationUnit
-projunit <- NGPN_tables$ProjectUnit
-monstat <- NGPN_tables$MonitoringStatus
-mm_monstat_se = NGPN_tables$MM_MonitoringStatus_SampleEvent
-sampev <- NGPN_tables$SampleEvent |> filter(SampleEvent_Plot_GUID %in% macro_guids)
+#---- Sample Event -----
+mac_samp <- getSampleEvent(years = year_range)
 
-macro1 <- left_join(macro_plots, mm_projunit,
-                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
-macro2 <- left_join(macro1, regunit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
-macro3 <- left_join(macro2, projunit,
-                    by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
-                           "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
-                           "datasource")) |> unique()
+# Check for sample events with no data
+miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID))
 
-mac_samp <- left_join(macro3, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID", "datasource"),
-                      relationship = "many-to-many")
-
-# Plots in MacroPlot table that don't have a corresponding SampleEvent:
-miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID)) |>
-  select(MacroPlot_Name, MacroPlot_Purpose, ProjectUnit_Name, ProjectUnit_Agency)
-
-QC_table <- rbind(QC_table,
-                  QC_check(df = miss_samp, meas_type = "SampleEvent", tab = "No SampleEvents",
-                           check = "NGPN PCM MacroPlots no accompanying SampleEvents.",
-                           chk_type = 'error'))
+QC_table <- QC_check(df = miss_samp, meas_type = "SampleEvent", tab = "No SampleEvents",
+                     check = "NGPN PCM MacroPlots no accompanying SampleEvents.",
+                     chk_type = 'error')
 
 kbl_miss_samp <- make_kable(miss_samp, cap = "NGPN PCM MacroPlots with no accompanying SampleEvents.")
 
-# check if Sample Event - General checks returned at least 1 record to determine whether to include that tab in report
-sampev_gen_check <- QC_table |> filter(Type %in% "SampleEvent" & Data %in% "General" & Num_Records > 0)
-sampev_gen_include <- tab_include(sampev_gen_check)
+# check for year in MonitoringStatus_Name that differs from sample year
+mac_samp$monstat_year <- as.numeric(substr(mac_samp$MonitoringStatus_Name, 1, 4))
+mac_samp$year_match <- ifelse(mac_samp$year == mac_samp$monstat_year, 1, 0)
 
-# Checks on monitoring status.
-mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by= c("SampleEvent_GUID" = "MM_SampleEvent_GUID", "datasource"),
-                         relationship = 'many-to-many')
-mac_samp_monstat <- left_join(mac_samp_mm, monstat,
-                              by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
-                                     "datasource"))
-mac_samp_monstat$SampleEvent_Date <-
-  format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
-         "%Y-%m-%d")
-mac_samp_monstat$year <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
-mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
-mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
+mac_samp2 <- mac_samp |> filter(year_match == 0) |>
+  select(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name)
 
-keep_cols <- c("MacroPlot_Name", "RegistrationUnit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
-               #"ProjectUnit_Name",
-               "MacroPlot_UTM_X", "MacroPlot_UTM_Y",
-               "MacroPlot_DD_Lat", "MacroPlot_DD_Long", "MacroPlot_Elevation",
-               "MacroPlot_Aspect", "MacroPlot_Azimuth", "MacroPlot_SlopeHill", "MacroPlot_SlopeTransect",
-               "SampleEvent_Date", "year", "month", "doy", #"SampleEvent_DefaultMonitoringStatus",
-               "MonitoringStatus_Name", "MonitoringStatus_UV1",
-               "MacroPlot_GUID", "SampleEvent_GUID", "MM_MonitoringStatus_GUID")
-
-mac_samp_monstat2 <- mac_samp_monstat[,keep_cols]
-mac_samp_monstat3 <- mac_samp_monstat2 |> filter(year >= 2011) |>
-  select(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name) |> unique() |>
-  group_by(MacroPlot_Name, SampleEvent_Date, year, #ProjectUnit_Name,
-           MonitoringStatus_Name, #SampleEvent_DefaultMonitoringStatus,
-  ) |>
-  summarize(num_samps = sum(!is.na(SampleEvent_Date)), .groups = 'drop')
-
-mac_samp_monstat3$year_match <-
-  ifelse(substr(mac_samp_monstat3$MonitoringStatus_Name, 1, 4) %in% 2010:2024, 1, 0)
-
-mac_samp_monstat4 <- mac_samp_monstat3 |>
-  filter(year_match == 1) |>
-  filter(nchar(MonitoringStatus_Name) > 4) |>
-  filter(!grepl("Other", MonitoringStatus_Name)) |>
-  group_by(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name) |>
-  summarize(num_samps = sum(!is.na(year)), .groups = 'drop')
-
-mac_samp_monstat4$year_mismatch <- ifelse(
-  mac_samp_monstat4$year != substr(mac_samp_monstat4$MonitoringStatus_Name, 1, 4), 1, 0)
-
-monstat_yr_mismatch <- mac_samp_monstat4 |> filter(year_mismatch == 1) |> select(-num_samps, -year_mismatch)
-
-QC_table <- rbind(QC_table,
-            QC_check(df = monstat_yr_mismatch, meas_type = "SampleEvent", tab = "Year Mismatch",
+QC_table <- QC_check(df = mac_samp, meas_type = "SampleEvent", tab = "MonStat Year Mismatch",
                      check = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.",
-                     chk_type = 'error'))
-
-kbl_monstat_yr_mismatch <- kable(monstat_yr_mismatch, format = "html", align = 'c',
-                                 caption = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.") |>
-  kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
-                full_width = T, position = 'left', font_size = 10) |>
-  column_spec(1:ncol(monstat_yr_mismatch), border_left = "1px solid grey", border_right = "1px solid grey")
-
-mac_samp_monstat4$monstat <-
-  substr(mac_samp_monstat4$MonitoringStatus_Name, 6, nchar(mac_samp_monstat4$MonitoringStatus_Name))
-
-monstat_typo <- mac_samp_monstat4 |> group_by(MacroPlot_Name, monstat) |>
-  summarize(years = paste0(year, collapse = ", "),
-            .groups = 'drop') |>
-  pivot_wider(names_from = monstat, values_from = years)
-
-monstat_typo$inconsist <- rowSums(!is.na(monstat_typo[,2:ncol(monstat_typo)]))
-monstat_incon <- monstat_typo |> filter(inconsist > 1) |> arrange(MacroPlot_Name) |>
-  filter(inconsist > 1 | !is.na(`Plant Community`) | !is.na(Dual) | !is.na(PCM_Fire) |
-           !is.na(Dual))
-
-monstat_incon2 <- monstat_incon[,c("MacroPlot_Name", sort(names(monstat_incon[,2:(ncol(monstat_incon)-1)])))]
-
-QC_table <- rbind(QC_table,
-             QC_check(df = monstat_incon2, meas_type = "SampleEvent", tab = "Name Inconsistencies",
-                     check = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.",
                      chk_type = 'error')
-)
 
-# kbl_monstat_incon <- kable(monstat_incon2, format = "html", align = 'c',
-#                            caption = "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
-#                            Plots may be used for different monitoring purposes, but also seems some are incorrect.
-#                            The years in the cell are years that a given monitoring status was recored (eg 2013 in
-#                            PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity').
-#                            Note that the first Plant Community column has a space between the words.") |>
-#   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"),
-#                 full_width = T, position = 'left', font_size = 10) |>
-#   column_spec(1:ncol(monstat_incon2), border_left = "1px solid grey", border_right = "1px solid grey")
+kbl_mac_samp2 <- make_kable(mac_samp2, cap = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.")
 
-dt_monstat_incon <- make_dt(monstat_incon2, "NGPN PCM plots with inconsistently labeled MonitoringStatus_Name.
-                           Plots may be used for different monitoring purposes, but also seems some are incorrect.
-                           The years in the cell are years that a given monitoring status was recored (eg 2013 in
-                           PlantCommunity means there's a monitoring status name for that plot called '2013_PlantCommunity').
-                           Note that the first Plant Community column has a space between the words.")
-
-# check if Sample Event - Monitoring Status checks returned at least 1 record to determine whether to include that tab in report
-sampev_ms_check <- QC_table |> filter(Type %in% "SampleEvent" & Data %in% "Monitoring Status" & Num_Records > 0)
-sampev_ms_include <- tab_include(sampev_ms_check)
-
-# check if Sample Event checks returned at least 1 record to determine whether to include that tab in report
-sampev_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
-sampev_include <- tab_include(sampev_check)
+# check if Sample Event checks returned at least 1 record to determine whether to include tab
+samp_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
+samp_include <- tab_include(samp_check)
 
 #---- Taxa ----
 #------ Missing Values ------

@@ -205,7 +205,7 @@ getFuelsFine <- function(park = 'all', plot_name = "all", project = "Park", purp
   sffine1 <- sffine[sffine$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- distinct(sampev$SampleEvent_GUID)
+  sampev_guids <- unique(sampev$SampleEvent_GUID)
   sffine_samp <- sffine1[sffine1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Visited is NA or F
   sffine_samp2 <- sffine_samp[sffine_samp$Visited == TRUE,]
@@ -223,11 +223,11 @@ getFuelsFine <- function(park = 'all', plot_name = "all", project = "Park", purp
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(sffine_samp2), keep_cols)))}
 
-  sffine_final <- sffine_samp2[order(sffine_samp2$MacroPlot_Name, sffine_samp2$SampleEvent_Date,
-                                     sffine_samp2$Transect),
-                                final_names]
+  sffine_final <- distinct(sffine_samp2[order(sffine_samp2$MacroPlot_Name, sffine_samp2$SampleEvent_Date,
+                                              sffine_samp2$Transect),
+                                        final_names])
 
   if(nrow(sffine_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(sffine_final)
-  }
+}

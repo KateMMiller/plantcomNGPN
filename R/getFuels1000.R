@@ -205,7 +205,7 @@ getFuels1000 <- function(park = 'all', plot_name = "all", project = "Park", purp
   sf1001 <- sf1000[sf1000$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- distinct(sampev$SampleEvent_GUID)
+  sampev_guids <- unique(sampev$SampleEvent_GUID)
   sf1000_samp <- sf1001[sf1001$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Visited is NA or F
   sf1000_samp2 <- sf1000_samp[sf1000_samp$Visited == TRUE,]
@@ -222,11 +222,11 @@ getFuels1000 <- function(park = 'all', plot_name = "all", project = "Park", purp
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(sf1000_samp2), keep_cols)))}
 
-  sf1000_final <- sf1000_samp2[order(sf1000_samp2$MacroPlot_Name, sf1000_samp2$SampleEvent_Date,
+  sf1000_final <- distinct(sf1000_samp2[order(sf1000_samp2$MacroPlot_Name, sf1000_samp2$SampleEvent_Date,
                                   sf1000_samp2$Transect, sf1000_samp2$LogNum),
-                                final_names]
+                                final_names])
 
   if(nrow(sf1000_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(sf1000_final)
-  }
+}

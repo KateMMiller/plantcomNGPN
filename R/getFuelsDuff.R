@@ -205,7 +205,7 @@ getFuelsDuff <- function(park = 'all', plot_name = "all", project = "Park", purp
   sfduff1 <- sfduff[sfduff$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
-  sampev_guids <- distinct(sampev$SampleEvent_GUID)
+  sampev_guids <- unique(sampev$SampleEvent_GUID)
   sfduff_samp <- sfduff1[sfduff1$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Visited is NA or F
   sfduff_samp2 <- sfduff_samp[sfduff_samp$Visited == TRUE,]
@@ -223,11 +223,11 @@ getFuelsDuff <- function(park = 'all', plot_name = "all", project = "Park", purp
   final_names <- if(output == "short"){keep_cols
   } else {c(keep_cols, sort(setdiff(names(sfduff_samp2), keep_cols)))}
 
-  sfduff_final <- sfduff_samp2[order(sfduff_samp2$MacroPlot_Name, sfduff_samp2$SampleEvent_Date,
-                                     sfduff_samp2$Transect),
-                                final_names]
+  sfduff_final <- distinct(sfduff_samp2[order(sfduff_samp2$MacroPlot_Name, sfduff_samp2$SampleEvent_Date,
+                                              sfduff_samp2$Transect),
+                                        final_names])
 
   if(nrow(sfduff_final) == 0){warning("Specified arguments returned an empty dataframe.")}
 
   return(sfduff_final)
-  }
+}

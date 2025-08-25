@@ -38,12 +38,17 @@ tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN
 ```
 
 ```{r imports, include = F}
-importData(type = 'local',
-           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
-                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
-                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-           keep_tables = T)
+# Original import requires having SQL setup
+# importData(type = 'local',
+#            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+#                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
+#                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+#            keep_tables = T)
            #keep_tables = T, export_views = T, export_path = "C:/temp")
+
+# If SQL not set up, use import below instead, and update the import_path:
+importViews(import_path = "./data/NGPN_FFI_views_20250825.zip")
+#importViews(import_path = "./docs/data/NGPN_FFI_views_20250825.zip")
 ```
 
 ```{r source, include = F}
@@ -172,7 +177,11 @@ check_null_print(dt_trees_wrong_dbh, 4, "Wrong Diam - DBH")
 
 check_null_print(dt_bigt, 4, "Big Trees")
 
+check_null_print(dt_trees99, 4, "DBH over 99pct")
+
 check_null_print(dt_bigdrc, 4, "Big DRC")
+
+check_null_print(kbl_trees_drc99, 4, "DRC over 99pct")
 
 cat("\n\n")
 
@@ -213,10 +222,75 @@ cat("\n\n")
 ```
 
 
-```{r fuel, eval = fuel_include, results = 'asis'}
-cat("### Fuels {.tabset}", "\n\n")
+```{r cwd, eval = cwd_include, results = 'asis'}
+cat("### Coarse Woody Debris {.tabset}", "\n\n")
 
-cat("Work in progress...")
+check_null_print(dt_cwd_non_pp, 4, "CWD on non-PP plots")
+
+check_null_print(dt_cwd_na, 4, "Blank Transect Data")
+
+check_null_print(kbl_cwd_slope100, 4, "CWD slope over 100")
+
+check_null_print(kbl_cwd_translen, 4, "CWD TransLen not 100")
+
+check_null_print(kbl_cwd_2trans, 4, "Missing CWD Transects")
+
+check_null_print(kbl_cwd_small, 4, "CWD less than 3in")
+
+check_null_print(dt_cwdfuconst, 4, "CWDFuConSt not PP")
+
+check_null_print(dt_cwd99, 4, "CWD diameters over 99%")
+
+cat("\n\n")
+```
+
+```{r fwd, eval = fwd_include, results = 'asis'}
+cat("### Fine Woody Debris {.tabset}", "\n\n")
+
+check_null_print(dt_fwd_non_pp, 4, "FWD on non-PP plots")
+
+check_null_print(dt_fwd_na, 4, "Blank Transect Data")
+
+check_null_print(kbl_fwd_slope100, 4, "FWD slope over 100")
+
+check_null_print(kbl_fwd_az360, 4, "FWD Azimuth over 360")
+
+check_null_print(kbl_fwd_1_10hr, 4, "1-10hr transect not 6ft")
+
+check_null_print(kbl_fwd_100hr, 4, "100hr transect not 12ft")
+
+check_null_print(kbl_fwd_2trans, 4, "Missing FWD Transects")
+
+check_null_print(dt_fwdfuconst, 4, "FWDFuConSt not PP")
+
+check_null_print(dt_fwd_1hr99, 4, "One hour counts over 99pct")
+
+check_null_print(dt_fwd_10hr99, 4, "Ten hour counts over 99pct")
+
+check_null_print(dt_fwd_100hr99, 4, "Hundred hour counts over 99pct")
+
+cat("\n\n")
+```
+
+
+```{r duff, eval = duff_include, results = 'asis'}
+cat("### Duff and Litter {.tabset}", "\n\n")
+
+check_null_print(dt_duff_non_pp, 4, "Duff on non-PP plots")
+
+check_null_print(dt_duff_na, 4, "Blank Transect Data")
+
+check_null_print(kbl_duff_2trans, 4, "Missing Duff Transects")
+
+check_null_print(dt_duff3, 4, "Depths over 3in")
+
+check_null_print(dt_duff_depth99, 4, "Duff depths over 99pct")
+
+check_null_print(dt_litt_depth99, 4, "Litter depths over 99pct")
+
+check_null_print(dt_dufffuconst, 4, "DLFuConSt not PP")
+
+check_null_print(kbl_duff_samp, 4, "Sample Locations not 10")
 
 cat("\n\n")
 ```

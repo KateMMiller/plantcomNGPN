@@ -13,6 +13,12 @@
 #                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #            keep_tables = T)
 #
+# importData(type = 'local',
+#            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+#                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
+#                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+#            keep_tables = T, export_tables = TRUE, export_views = TRUE,
+#            export_path = "./docs/data")#
 # all_years <- TRUE
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
@@ -771,6 +777,18 @@ QC_table <- rbind(QC_table,
 #hist(bigt$diam, main = "Distribution of DBH/DRC > 60cm", xlab = "DBH/DRC class")
 dt_bigt <- make_dt(bigt |> select(-diam), cap = "Trees greater than 60cm DBH or DRC to check for possible errors")
 
+# Check tree Diam >99% of ever recorded.
+tree_dbh99 <- quantile(trees$DBH, probs = 0.99, na.rm = T)
+
+trees99 <- trees |> filter(DBH > tree_dbh99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(trees99, tab = "DBH over 99pct", meas_type = "Trees and Poles",
+                           check = "Tree DBH measurements greater than 99pct ever recorded.",
+                           chk_type = 'check'))
+
+dt_trees99 <- make_dt(trees99, "Tree DBH measurements greather than 99pct ever recorded. An alternate way of checking for out of range values.")
+
 # Check trees > 30 cm DRC for possible errors
 bigdrc <- trees |> filter(DRC > 30) |>
   select(MacroPlot_Name, SampleEvent_Date, year, QTR, SubFrac, TagNo, Symbol,
@@ -782,6 +800,19 @@ QC_table <- rbind(QC_table,
                            chk_type = "check"))
 
 dt_bigdrc <- make_dt(bigdrc, cap = "Trees greater than 30cm DRC to check for possible errors.")
+
+
+# Check tree Diam >99% of ever recorded.
+tree_drc99 <- quantile(trees$DRC, probs = 0.99, na.rm = T)
+
+trees_drc99 <- trees |> filter(DRC > tree_drc99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(trees_drc99, tab = "DRC over 99pct", meas_type = "Trees and Poles",
+                           check = "Tree DRC measurements greater than 99pct ever recorded.",
+                           chk_type = 'check'))
+
+kbl_trees_drc99 <- make_kable(trees_drc99, "Tree DRC measurements greather than 99pct ever recorded. An alternate way of checking for out of range values.")
 
 # Check for missing tree data
 # Trees >15cm DBH should have UV1 In/Out and UV2 Condition Code column and that are Trees (not shrubs)
@@ -931,18 +962,362 @@ QC_table <- rbind(QC_table,
                            check = "Counts > 100 for a species on a plot with a SubFrac = 1.",
                            chk_type = 'error'))
 
-dt_subfrac100 <- make_dt(subfrac100b, "Counts > 100 for a species on a plot with a SubFrac = 1.")
+dt_subfrac100b <- make_dt(subfrac100b, "Counts > 100 for a species on a plot with a SubFrac = 1.")
 
 # check if seedlings checks returned at least 1 record to determine whether to include tab
 seed_check <- QC_table |> filter(Type %in% "Seedlings" & Num_Records > 0)
 seed_include <- tab_include(seed_check)
 
-#---- Fuels Checks ----
+#---- CWD Checks ----
+# Fuels1000 (cwd)
+cwd1 <- getFuels1000(years = year_range) |> select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
+                                                  TranLen, Transect, Slope, LogNum, Dia, DecayCl,
+                                                  CWDFuConSt, Comment, SaComment)
 
+# add veg type from MacroPlot table to help understand why non-standard data shows up
+macroveg <- getMacroPlot() |> select(MacroPlot_Name, veg_type = MacroPlot_UV4)
+cwd <- left_join(cwd1, macroveg, by = "MacroPlot_Name")
 
-# check if fuels checks returned at least 1 record to determine whether to include tab
-fuel_check <- QC_table |> filter(Type %in% "Fuels" & Num_Records > 0)
-fuel_include <- tab_include(fuel_check)
+# Check that cwd is only on Ponderosa Pine forests using MacroPlot_UV4 to determine PP plots
+macro_PP <- macroveg |> filter(grepl("PP", veg_type))
+
+pp_plots <- unique(macro_PP$MacroPlot_Name)
+
+cwd_non_pp <- cwd |> filter(!MacroPlot_Name %in% pp_plots) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect) |>
+  distinct()
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_non_pp, tab = "CWD on non-PP plots", meas_type = "Coarse Woody Debris",
+                           check = "Coarse Woody Debris record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column.",
+                           chk_type = 'error'))
+
+dt_cwd_non_pp <- make_dt(cwd_non_pp, "Coarse Woody Debris record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column. Returns a lot of records, so may not be
+                           a worthwhile check")
+
+# Plots with blank transects
+cwd_na <- cwd |> filter(is.na(Transect))
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_na, tab = "Blank Transect data", meas_type = "Coarse Woody Debris",
+                           check = "Coarse Woody Debris records with blank Transect data.",
+                           chk_type = 'error'))
+
+dt_cwd_na <- make_dt(cwd_na, "Coarse Woody Debris records with blank Transect data. Returns a
+                           lot of records, so may not be a worthwhile check.")
+
+# Check that slopes are < abs(100)
+cwd_slope100 <- cwd |> filter(abs(Slope) >= 100)
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_slope100, tab = "CWD slope over 100", meas_type = "Coarse Woody Debris",
+                           check = "Coarse Woody Debris slopes that are >= 100.",
+                           chk_type = 'error'))
+
+kbl_cwd_slope100 <- make_kable(cwd_slope100, "Coarse Woody Debris slopes that are >= 100")
+
+# Check Trans length is 100
+cwd_translen <- cwd |> filter(TranLen != 100)
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_translen, tab = "CWD TransLen not 100", meas_type = "Coarse Woody Debris",
+                           "Coarse Woody Debris transect lengths that are not equal to 100ft.",
+                           chk_type = 'error'))
+kbl_cwd_translen <- make_kable(cwd_translen, "Coarse Woody Debris transect lengths that are not equal to 100ft.")
+
+# Check that 2 transects are sampled
+cwd_2trans <- cwd |> filter(NumTran != 2)
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_2trans, tab = "Missing CWD Transects", meas_type = "Coarse Woody Debris",
+                           "Coarse Woody Debris records where NumTran column does not equal 2",
+                           chk_type = 'error'))
+
+kbl_cwd_2trans <- make_kable(cwd_2trans, "Coarse Woody Debris records where NumTran column does not equal 2")
+
+# Check that CWD diam > 3"
+cwd_small <- cwd |> filter(Dia <= 3)
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd_small, tab = "CWD less than 3in", meas_type = "Coarse Woody Debris",
+                           check = "Coarse Woody Debris less than or equal to 3in.",
+                           chk_type = 'error'))
+
+kbl_cwd_small <- make_kable(cwd_small, cap = "Coarse Woody Debris less than or equal to 3in.")
+
+# Check coarse fuel constant if not listed as Ponderosa Pine
+#table(cwd$CWDFuConSt)
+cwdfuconst <- cwd |> filter(!CWDFuConSt %in% "Ponderosa pine" & !is.na(CWDFuConSt))
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwdfuconst, tab = "CWDFuConSt not PP", meas_type = "Coarse Woody Debris",
+                  check = "Coarse Woody Debris CWDFuConSt records that are not Ponderosa pine.",
+                  chk_type = "error"))
+
+dt_cwdfuconst <- make_dt(cwdfuconst, "Coarse Woody Debris CWDFuConSt records that are not Ponderosa pine.
+                         Check taken from FFI_QAQC_UserGuide_20130930.docx.")
+
+# Check Dia that are >99% of recorded Dia
+dia99 = quantile(cwd$Dia, probs = 0.99, na.rm = T)
+
+cwd99 <- cwd |> filter(Dia > dia99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(cwd99, tab = "CWD diam over 99pct", meas_type = "Coarse Woody Debris",
+                           check = "Coarse Woody Debris diameters > 99% of diameters ever recorded",
+                           chk_type = 'check'))
+
+dt_cwd99 <- make_dt(cwd99, "Coarse Woody Debris diameters > 99% of diameters ever recorded")
+
+# check if cwd checks returned at least 1 record to determine whether to include tab
+cwd_check <- QC_table |> filter(Type %in% "Coarse Woody Debris" & Num_Records > 0)
+cwd_include <- tab_include(cwd_check)
+
+#---- FWD Checks ----
+fwd1 <- getFuelsFine(years = year_range) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran, OneHrTranLen, TenHrTranLen,
+         HunHrTranLen, Transect, Azimuth_Fuels, Slope, OneHr, TenHr, HunHr,
+         FWDFuConSt, UV1Desc)
+
+fwd <- left_join(fwd1, macroveg, by = "MacroPlot_Name")
+
+fwd_non_pp <- fwd |> filter(!MacroPlot_Name %in% pp_plots) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect) |>
+  distinct()
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_non_pp, tab = "FWD on non-PP plots", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column.",
+                           chk_type = 'error'))
+
+dt_fwd_non_pp <- make_dt(fwd_non_pp, "Fine Woody Debris record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column. Returns a lot of records, so may not be
+                           a worthwhile check.")
+
+# Plots with blank transects
+fwd_na <- fwd |> filter(is.na(Transect))
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_na, tab = "Blank Transect data", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris records with blank Transect data.",
+                           chk_type = 'error'))
+
+dt_fwd_na <- make_dt(fwd_na, "Fine Woody Debris records with blank Transect data. Returns a
+                           lot of records, so may not be a worthwhile check.")
+
+# Check that slopes are < abs(100)
+fwd_slope100 <- fwd |> filter(abs(Slope) >= 100)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_slope100, tab = "FWD slope over 100", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris slopes that are >= 100.",
+                           chk_type = 'error'))
+
+kbl_fwd_slope100 <- make_kable(fwd_slope100, "Fine Woody Debris slopes that are >= 100")
+
+# Check that Azimuth_Fuels <= 360
+fwd_az360 <- fwd |> filter(Azimuth_Fuels > 360 | Azimuth_Fuels < 0)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_az360, tab = "FWD Azimuth over 360", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris Azimuth_Fuels > 360 or < 0.",
+                           chk_type = 'error'))
+
+kbl_fwd_az360 <- make_kable(fwd_slope100, "Fine Woody Debris Azimuth_Fuels > 360 or < 0.")
+
+# Check plots with non-standard transect lengths
+# One & 10 hour != 6
+fwd_1_10hr <- fwd |> filter(OneHrTranLen != 6 | TenHrTranLen != 6)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_1_10hr, tab = "1-10hr transect not 6ft", meas_type = "Fine Woody Debris",
+                           check = "One or 10-hour transect lengths not equal to 6ft.",
+                           chk_type = "error"))
+
+kbl_fwd_1_10hr <- make_kable(fwd_1_10hr, "One or 10-hour transect lengths not equal to 6ft.")
+
+# 100 hour != 12
+fwd_100hr <- fwd |> filter(HunHrTranLen != 12)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_100hr, tab = "100hr transect not 12ft", meas_type = "Fine Woody Debris",
+                           check = "100-hour transect lengths not equal to 12ft.",
+                           chk_type = "error"))
+
+kbl_fwd_100hr <- make_kable(fwd_100hr, "100-hour transect lengths not equal to 12ft.")
+
+# missing transects
+fwd_2trans <- fwd |> filter(NumTran != 2 & !is.na(NumTran))
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_2trans, tab = "Missing FWD Transects", meas_type = "Fine Woody Debris",
+                           "Fine Woody Debris records where NumTran column does not equal 2",
+                           chk_type = 'error'))
+
+kbl_fwd_2trans <- make_kable(fwd_2trans, "Fine Woody Debris records where NumTran column does not equal 2")
+
+# Check coarse fuel constant if not listed as Ponderosa Pine
+# table(fwd$FWDFuConSt)
+fwdfuconst <- fwd |> filter(!FWDFuConSt %in% "Ponderosa pine" & !is.na(FWDFuConSt))
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwdfuconst, tab = "FWDFuConSt not PP", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris FWDFuConSt records that are not Ponderosa pine.",
+                           chk_type = "error"))
+
+dt_fwdfuconst <- make_dt(fwdfuconst, "Fine Woody Debris CWDFuConSt records that are not Ponderosa pine.
+                         Check taken from FFI_QAQC_UserGuide_20130930.docx.")
+
+# Check counts that are >99% of recorded for the 3 fuels
+# 1 hr
+onehr99 <- quantile(fwd$OneHr, probs = 0.99, na.rm = T)
+
+fwd_1hr99 <- fwd |> filter(OneHr > onehr99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_1hr99, tab = "One hour counts over 99pct", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris One-hour counts > 99% of counts ever recorded",
+                           chk_type = 'check'))
+
+dt_fwd_1hr99 <- make_dt(fwd_1hr99, "Fine Woody Debris One-hour counts > 99% of counts ever recorded")
+
+# 10 hr
+tenhr99 <- quantile(fwd$TenHr, probs = 0.99, na.rm = T)
+
+fwd_10hr99 <- fwd |> filter(TenHr > tenhr99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_10hr99, tab = "Ten hour counts over 99pct", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris 10-hour counts > 99% of counts ever recorded",
+                           chk_type = 'check'))
+
+dt_fwd_10hr99 <- make_dt(fwd_10hr99, "Fine Woody Debris 10-hour counts > 99% of counts ever recorded")
+
+hunhr99 <- quantile(fwd$HunHr, probs = 0.99, na.rm = T)
+
+# 100 hr
+fwd_100hr99 <- fwd |> filter(HunHr > hunhr99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(fwd_100hr99, tab = "Hundred hour counts over 99pct", meas_type = "Fine Woody Debris",
+                           check = "Fine Woody Debris 100-hour counts > 99% of counts ever recorded",
+                           chk_type = 'check'))
+
+dt_fwd_100hr99 <- make_dt(fwd_100hr99, "Fine Woody Debris One-hour counts > 99% of counts ever recorded")
+
+# check if fwd checks returned at least 1 record to determine whether to include tab
+fwd_check <- QC_table |> filter(Type %in% "Fine Woody Debris" & Num_Records > 0)
+fwd_include <- tab_include(fwd_check)
+
+#---- Duff Checks ----
+duff1 <- getFuelsDuff(years = year_range) |> select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
+                                                    Transect, SampLoc, OffSet, LittDep, DuffDep,
+                                                    FuelbedDep, DLFuConSt, Comment, UV1Desc)
+duff <- left_join(duff1, macroveg, by = "MacroPlot_Name")
+
+# check on duff not on pp
+duff_non_pp <- duff |> filter(!MacroPlot_Name %in% pp_plots) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect) |>
+  distinct()
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff_non_pp, tab = "Duff on non-PP plots", meas_type = "Duff and Litter",
+                           check = "Duff record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column.",
+                           chk_type = 'error'))
+
+dt_duff_non_pp <- make_dt(duff_non_pp, "Duff record on plots not classified as Ponderosa Pine,
+                           based on MacroPlot_UV4 column. Returns a lot of records, so may not be
+                           a worthwhile check.")
+
+# Plots with blank transects
+duff_na <- duff |> filter(is.na(Transect))
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff_na, tab = "Blank Transect data", meas_type = "Duff and Litter",
+                           check = "Duff records with blank Transect data.",
+                           chk_type = 'error'))
+
+dt_duff_na <- make_dt(duff_na, "Duff records with blank Transect data. Returns a
+                           lot of records, so may not be a worthwhile check.")
+
+# missing transects
+duff_2trans <- duff |> filter(NumTran != 2 & !is.na(NumTran))
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff_2trans, tab = "Missing Duff Transects", meas_type = "Duff and Litter",
+                           check = "Duff records where NumTran column does not equal 2",
+                           chk_type = 'error'))
+
+kbl_duff_2trans <- make_kable(duff_2trans, "Duff records where NumTran column does not equal 2")
+
+# Duff or litter > 3
+duff3 <- duff |> filter(DuffDep >= 3 | LittDep >= 3)
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff3, tab = "Depths over 3in", meas_type = "Duff and Litter",
+                           check = "Duff or Litter depths over 3in.",
+                           chk_type = "check"))
+
+dt_duff3 <- make_dt(duff3, "Duff or Litter depths over 3in.")
+
+# Duff over 99% recorded
+duff99 <- quantile(duff$DuffDep, probs = 0.99, na.rm = T)
+
+duff_depth99 <- duff |> filter(DuffDep > duff99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff_depth99, tab = "Duff depths over 99pct", meas_type = "Duff and Litter",
+                           check = "Duff depths > 99% of depths ever recorded.",
+                           chk_type = "check"))
+
+dt_duff_depth99 <- make_dt(duff_depth99, "Duff depths > 99% of depths ever recorded.")
+
+# Litter over 99% recorded
+litter99 <- quantile(duff$LittDep, probs = 0.99, na.rm = T)
+
+litt_depth99 <- duff |> filter(LittDep > litter99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(litt_depth99, tab = "Litter depths over 99pct", meas_type = "Duff and Litter",
+                           check = "Litter depths > 99% of depths ever recorded.",
+                           chk_type = "check"))
+
+dt_litt_depth99 <- make_dt(litt_depth99, "Litter depths > 99% of depths ever recorded.")
+
+# Check duff fuel constant if not listed as Ponderosa Pine
+# table(duff$DLFuConSt)
+dufffuconst <- duff |> filter(!DLFuConSt %in% "Ponderosa pine" & !is.na(DLFuConSt))
+
+QC_table <- rbind(QC_table,
+                  QC_check(dufffuconst, tab = "DLFuConSt not PP", meas_type = "Duff and Litter",
+                           check = "Duff DLFuConSt records that are not Ponderosa pine.",
+                           chk_type = "error"))
+
+dt_dufffuconst <- make_dt(dufffuconst, "Duff DLFuConSt records that are not Ponderosa pine.
+                         Check taken from FFI_QAQC_UserGuide_20130930.docx.")
+
+# Check number of SampLocs = 19
+duff_samp <- duff |> filter(!is.na(Transect)) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect, SampLoc) |>
+  distinct() |>
+  group_by(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, Transect) |>
+  summarize(num_samps = sum(!is.na(SampLoc)), .groups = 'drop') |>
+  filter(num_samps != 10)
+
+QC_table <- rbind(QC_table,
+                  QC_check(duff_samp, tab = "Sample Locations not 10", meas_type = "Duff and Litter",
+                           check = "Number of unique duff SampLoc does not equal 10.",
+                           chk_type = 'error'))
+
+kbl_duff_samp <- make_kable(duff_samp, "Number of unique duff SampLoc does not equal 10.")
+
+# check if duff checks returned at least 1 record to determine whether to include tab
+duff_check <- QC_table |> filter(Type %in% "Duff and Litter" & Num_Records > 0)
+duff_include <- tab_include(duff_check)
 
 #---- Cover Spp Comp/Target Species ----
 #+++ KEEP THIS SECTION LAST +++

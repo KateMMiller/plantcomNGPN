@@ -306,15 +306,19 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       z_list = sort(zfiles[grepl(paste0(csv_list1, collapse = "|"), zfiles)])
 
       # Drop date stamp (if it exists) from file name if exists in 2 steps
-      z_list_names <- gsub("[[:digit:]]+|.csv", "", z_list)
-      z_list_names <- gsub("./", "", z_list_names)
-      z_list_names <- gsub("_$","", z_list_names)
+      z_list_names1 <- gsub("[[:digit:]]+|.csv", "", z_list)
+      z_list_names1 <- gsub("./", "", z_list_names1)
+      z_list_names1 <- gsub("_$","", z_list_names1)
+
+      z_list_names <- z_list_names1[!z_list_names1 %in% c("SurfaceFuels_Hr_Attribute", "SurfaceFuels_Hr_Sample")]
 
       # Drop csvs from csv_list not in z_list
       csv_list <- csv_list1[csv_list1 %in% z_list_names]
 
-      miss_tbls <- setdiff(z_list_names, csv_list) # currently circular. Once I know the tables that should always be included,
+      miss_tbls1 <- setdiff(z_list_names, csv_list) # currently circular. Once I know the tables that should always be included,
       # I'll update csv_list1 above and use the same tables for each park.
+
+      miss_tbls <- miss_tbls1[!miss_tbls1 %in% c("SurfaceFuels_Hr_Attribute", "SurfaceFuels_Hr_Sample")]
 
       # Check for missing views
       if(length(miss_tbls) > 0){warning("The following tables are not included in specified database: ",
@@ -390,17 +394,22 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         # Drop date stamp (if it exists) from file name if exists in 2 steps
         #z_list_names <- gsub("[[:digit:]]+|.csv", "", z_list)
-        z_list_names <- gsub("./", "", z_list)
-        z_list_names <- gsub(".csv$","", z_list_names)
-        z_list_names <- gsub("_$","", z_list_names)
+        z_list_names1 <- gsub("[[:digit:]]+|.csv", "", z_list)
+        z_list_names1 <- gsub("./", "", z_list_names1)
+        z_list_names1 <- gsub("_$","", z_list_names1)
+
+        z_list_names <- z_list_names1[!z_list_names1 %in% c("SurfaceFuels_Hr_Attribute", "SurfaceFuels_Hr_Sample")]
+
 
         # Drop csvs from csv_list not in z_list
         csv_list <- csv_list1[csv_list1 %in% z_list_names]
 
         # "SurfaceFuels_Hr_Attribute", "SurfaceFuels_Hr_Sample",
 
-        miss_tbls <- setdiff(z_list_names, csv_list) # currently circular. Once I know the tables that should always be included,
+        miss_tbls1 <- setdiff(z_list_names, csv_list) # currently circular. Once I know the tables that should always be included,
         # I'll update csv_list1 above and use the same tables for each park.
+
+        miss_tbls <- miss_tbls1[!miss_tbls1 %in% c("SurfaceFuels_Hr_Attribute", "SurfaceFuels_Hr_Sample")]
 
         # Check for missing views
         if(length(miss_tbls) > 0){warning("Missing the following tables from the specified import_path: ",

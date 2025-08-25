@@ -6,21 +6,23 @@
 # library(sf)
 # library(data.table)
 # library(DT)
-#
+
 # importData(type = 'local',
 #            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
 #                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
 #                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #            keep_tables = T)
+
+# importData(type = 'csv', import_path = "./docs/data/NGPN_FFI_table_export_20250825.zip", keep_tables = T)
 #
 # all_years <- TRUE
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
 #
-# tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 
-options(scipen = 100)
+# options(scipen = 100)
 
 ### Functions
 # Summarize results of QC check
@@ -88,6 +90,10 @@ check_null_print <- function(table, tab_level = 4, tab_title){
 #### Plot Matrix List
 macro <- NGPN_tables$MacroPlot
 samp <- NGPN_tables$SampleEvent
+
+samp$SampleEvent_Date <-
+  as.Date(substr(samp$SampleEvent_Date, 1, 11), format = "%Y-%m-%d")
+
 monstat <- NGPN_tables$MonitoringStatus
 mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
 
@@ -108,9 +114,9 @@ macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEven
          SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
   distinct()
 
-macro_samp$SampleEvent_Date <-
-  format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
-macro_samp$year <- format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
+# macro_samp$SampleEvent_Date <-
+#   format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
+macro_samp$year <- as.numeric(format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y"))
 macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
 
 macro_samp2 <- macro_samp |> filter(year >= 2011) |>
@@ -175,7 +181,8 @@ macro_samp_ms$dup_ms <- ifelse(macro_samp_ms$MacroPlot_Name %in% macro_samp_ms_d
 macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot,
                     by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
 macroproj <- left_join(macro2, NGPN_tables$ProjectUnit,
-                       by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"))
+                       by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"),
+                       relationship = "many-to-many")
 
 macroproj2 <- macroproj |>
   mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |>
@@ -252,9 +259,9 @@ mac_samp_mm <- left_join(mac_samp, mm_monstat_se, by= c("SampleEvent_GUID" = "MM
 mac_samp_monstat <- left_join(mac_samp_mm, monstat,
                               by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
                                      "datasource"))
+
 mac_samp_monstat$SampleEvent_Date <-
-  format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
-         "%Y-%m-%d")
+  as.Date(substr(mac_samp_monstat$SampleEvent_Date, 1, 11), format = "%Y-%m-%d")
 mac_samp_monstat$year <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
 mac_samp_monstat$month <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
 mac_samp_monstat$doy <- format(as.Date(mac_samp_monstat$SampleEvent_Date, format = "%Y-%m-%d"), "%j")

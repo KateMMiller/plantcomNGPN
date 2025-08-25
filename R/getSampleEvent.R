@@ -195,6 +195,9 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
     sampev <- get("SampleEvents", envir = env),
     error = function(e){stop("SampleEvents view not found. Please import NGPN FFI data.")}
   )
+
+  sampev$SampleEvent_Date <- format(as.Date(substr(sampev$SampleEvent_Date, 1, 11), format = "%Y-%m-%d"), "%Y-%m-%d")
+
   # Update monitoring status for all or NGPN_PCM
   mon_status <- if(any(mon_status %in% 'all')){
     sort(unique(sampev$MonitoringStatus_Base))

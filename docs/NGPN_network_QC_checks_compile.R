@@ -529,6 +529,18 @@ QC_table <- rbind(QC_table,
 
 kbl_ht_oor <- make_kable(ht_oor, cap = "Points with a Height > 2.0m.")
 
+# Find heights > 99% ever recorded.
+point_ht99 <- quantile(point_int$Height, probs = 0.99, na.rm = T)
+
+point99 <- point_int |> filter(Height > point_ht99) |> mutate(Height99 = point_ht99)
+
+QC_table <- rbind(QC_table,
+                  QC_check(point99, tab = "Heights over 99pct", meas_type = "Point Intercept",
+                           check = "Heights greater than 99pct ever recorded.",
+                           chk_type = 'check'))
+
+kbl_point99 <- make_dt(point99, "Heights greater than 99pct ever recorded.")
+
 # Find inconsistent Status Codes
 stat_code <- point_int |> filter(!Status %in% c("D", "L")) |>
   filter(!is.na(Status)) |> filter(!Status == "") |>

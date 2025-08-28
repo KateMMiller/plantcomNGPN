@@ -126,6 +126,8 @@ check_null_print(kbl_dup_order, 4, "Duplicate Order")
 
 check_null_print(kbl_ht_oor, 4, "Height over 2m")
 
+check_null_print(kbl_point99, 4, "Heights over 99pct")
+
 check_null_print(kbl_stat_code, 4, "Status Typos")
 
 check_null_print(dt_stat_blank, 4, "Status Blanks")
@@ -139,6 +141,7 @@ check_null_print(kbl_trans50, 4, "Transects not 50m")
 #check_null_print(kbl_hit1_ht, 4, "Heights on Order != 1") # returns >8k of records
 
 #check_null_print(kbl_nb_dm_stat, 4, "NotBio Dead") # returns >125k records
+
 
 cat("\n\n")
 ```

@@ -96,12 +96,12 @@ makeViews <- function(){
       "Metadata", "StartPoint", "Directions", "MacroPlot_Comment","Unit_Comment", "Description",
       "MacroPlot_GUID", "RegistrationUnit_GUID", "MM_ProjectUnit_GUID", "datasource")
 
-  macro4 <- macro3[,keep_cols_macro]
-  macroplot <- macro4 |>
-    mutate(keep = ifelse(grepl("RCM", MacroPlot_Name) |
-                          grepl("Panel|ForestStructure", MacroPlot_Purpose),
-                         1, 0))
-    dplyr::filter(keep == 1)
+  macroplot <- macro3[,keep_cols_macro]
+  # macroplot <- macro4 |>
+  #   mutate(keep = ifelse(grepl("RCM", MacroPlot_Name) |
+  #                         grepl("Panel|ForestStructure", MacroPlot_Purpose),
+  #                        1, 0))
+  #   dplyr::filter(keep == 1) |> select(-keep)
 
   #### Compile Sample Event Data ####
   tryCatch(

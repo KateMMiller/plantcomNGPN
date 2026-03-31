@@ -23,7 +23,7 @@
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
-#
+
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 
 options(scipen = 100)
@@ -90,7 +90,7 @@ check_null_print <- function(table, tab_level = 4, tab_title){
   check_null(table)
 }
 
-macro_plots <- getMacroPlot() |>
+macro_plots <- getMacroPlot(purpose = "NGPN_PCM") |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   distinct()
 

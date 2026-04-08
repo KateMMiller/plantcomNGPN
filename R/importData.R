@@ -428,6 +428,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                "MacroPlot_UV5", "MacroPlot_UV7", "MM_SpeciesPickList_GUID", "MM_LocalSpecies_GUID",
                "MonitoringStatus_Suffix", "SampleAttributeCode_GUID", "SampleAttributeCode_SampleAttribute_GUID",
                "SampleAttributeCode_Code", "SampleAttributeCode_Text", "SampleAttributeCode_Description",
+               "SampleEvent_GUID",
                "val1", "key1", "SpeciesPickList_GUID", "SpeciesPickList_RegistrationUnitGUID",
                "SpeciesPickList_Name", "SpeciesPickList_Describe", "DamCd3", "DamCd4", "DamCd5")
 

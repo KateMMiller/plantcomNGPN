@@ -23,7 +23,7 @@
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
-#
+
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 
 options(scipen = 100)
@@ -90,7 +90,7 @@ check_null_print <- function(table, tab_level = 4, tab_title){
   check_null(table)
 }
 
-macro_plots <- getMacroPlot() |>
+macro_plots <- getMacroPlot(purpose = "NGPN_PCM") |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   distinct()
 
@@ -237,8 +237,9 @@ QC_table <- rbind(QC_table,
 kbl_out_pts_dd <- make_kable(out_pts_dd, cap = "NGPN PCM MacroPlot DD coordinates that are not within the park boundary for plots missing UTM X,Y.")
 
 # Check for blank macro data
-macro_blanks <- getMacroPlot() |> select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
-                                         Aspect, SlopeHill, SlopeTransect) |>
+macro_blanks <- getMacroPlot(purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
+         Aspect, SlopeHill, SlopeTransect) |>
   filter(is.na(Elevation) | is.na(ElevationUnits) | is.na(Azimuth) | is.na(Aspect) |
            is.na(SlopeHill) | is.na(SlopeTransect))# |>
   #filter(!(SlopeHill < 5 * is.na(Aspect)))
@@ -250,8 +251,9 @@ QC_table <- rbind(QC_table,
 kbl_macro_blanks <- make_kable(macro_blanks, cap = "Macroplots missing location information")
 
 # Check for impossible macro data
-macro_imp <- getMacroPlot() |> select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
-                                      Aspect, SlopeHill, SlopeTransect) |>  # slopes should be <= 100%
+macro_imp <- getMacroPlot(purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
+         Aspect, SlopeHill, SlopeTransect) |>  # slopes should be <= 100%
              filter(Azimuth > 360 | Azimuth < 0 | Aspect > 360 | Aspect < 0 |
                     SlopeHill > 100 | SlopeTransect > 100)
 
@@ -264,8 +266,9 @@ kbl_macro_imp <- make_kable(macro_imp, cap = "Macroplot location data with impos
 
 # Check on UV values
 # UV1 = Topographic position; UV2 = Surface water; UV3 = Hydrologic Regime; UV4 = Vegetation Type
-macro_uv <- getMacroPlot() |> select(MacroPlot_Name, MacroPlot_UV1, MacroPlot_UV2,
-                                     MacroPlot_UV3, MacroPlot_UV4)
+macro_uv <- getMacroPlot(purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, MacroPlot_UV1, MacroPlot_UV2,
+         MacroPlot_UV3, MacroPlot_UV4)
 
 # check topo positions that aren't CR, DR, LV, LS, MS, RO, SB, US
 macro_topo <- macro_uv |> filter(!MacroPlot_UV1 %in%
@@ -317,7 +320,7 @@ macro_check <- QC_table |> filter(Type %in% "MacroPlot" & Num_Records > 0)
 macro_include <- tab_include(macro_check)
 
 #---- Sample Event -----
-mac_samp <- getSampleEvent(years = year_range)
+mac_samp <- getSampleEvent(years = year_range, purpose = "NGPN_PCM")
 
 # Check for sample events with no data
 miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID))
@@ -335,7 +338,7 @@ mac_samp$year_match <- ifelse(mac_samp$year == mac_samp$monstat_year, 1, 0)
 mac_samp2 <- mac_samp |> filter(year_match == 0) |>
   select(MacroPlot_Name, SampleEvent_Date, year, MonitoringStatus_Name)
 
-QC_table <- QC_check(df = mac_samp, meas_type = "SampleEvent", tab = "MonStat Year Mismatch",
+QC_table <- QC_check(df = mac_samp2, meas_type = "SampleEvent", tab = "MonStat Year Mismatch",
                      check = "NGPN PCM plots with mismatch in year of SampleEvent_Date, and MonitoringStatus_Name.",
                      chk_type = 'error')
 
@@ -446,7 +449,7 @@ taxa_check <- QC_table |> filter(Type %in% "Taxa" & Num_Records > 0)
 taxa_include <- tab_include(taxa_check)
 
 #---- Cover Point Data ----
-point_int <- getCoverPoints(years = year_range) |>
+point_int <- getCoverPoints(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
          year, month, TranLen, NumPtsTran, Transect, Point, Tape, Order, Height,
          ScientificName, Status, NotBiological) #|> unique()
@@ -612,7 +615,7 @@ pint_include <- tab_include(pint_check)
 
 
 #---- Nested Quadrats/ Density Belts ----#
-densb <- getDensityBelts(years = year_range) |>
+densb <- getDensityBelts(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, NumTran, TranLen, TranWid, Area, Transect,
          Subbelt, SubFrac, Status, Count, Symbol, ITIS_TSN, ScientificName, UV1, UV2, UV3)
 
@@ -743,7 +746,7 @@ densb_check <- QC_table |> filter(Type %in% "Nested Quadrats" & Num_Records > 0)
 densb_include <- tab_include(densb_check)
 
 #---- Trees and Poles ----
-trees1 <- getTrees(years = year_range) |>
+trees1 <- getTrees(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, MacroPlotSize, SnagPlotSize,
          BrkPntDia, QTR, SubFrac, TagNo, Symbol, ScientificName, Status, DBH, CrwnCl, LiCrBHt, CrwnRad, DRC,
          UV1, UV2)
@@ -946,7 +949,7 @@ tree_check <- QC_table |> filter(Type %in% "Trees and Poles" & Num_Records > 0)
 tree_include <- tab_include(tree_check)
 
 #---- Density Quadrats (seedlings) ----
-seeds <- getDensityQuadrats(years = year_range) |>
+seeds <- getDensityQuadrats(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, SampleEvent_Date, year, month, NumTran, NumQuadTran, QuadLen, QuadWid, Area,
          Transect, Quadrat, Status, SizeCl, AgeCl, Count, SubFrac, Symbol, ScientificName)
 
@@ -982,12 +985,14 @@ seed_include <- tab_include(seed_check)
 
 #---- CWD Checks ----
 # Fuels1000 (cwd)
-cwd1 <- getFuels1000(years = year_range) |> select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
-                                                  TranLen, Transect, Slope, LogNum, Dia, DecayCl,
-                                                  CWDFuConSt, Comment, SaComment)
+cwd1 <- getFuels1000(years = year_range, purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
+         TranLen, Transect, Slope, LogNum, Dia, DecayCl,
+         CWDFuConSt, Comment, SaComment)
 
 # add veg type from MacroPlot table to help understand why non-standard data shows up
-macroveg <- getMacroPlot() |> select(MacroPlot_Name, veg_type = MacroPlot_UV4)
+macroveg <- getMacroPlot(purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, veg_type = MacroPlot_UV4)
 cwd <- left_join(cwd1, macroveg, by = "MacroPlot_Name")
 
 # Check that cwd is only on Ponderosa Pine forests using MacroPlot_UV4 to determine PP plots
@@ -1088,7 +1093,7 @@ cwd_check <- QC_table |> filter(Type %in% "Coarse Woody Debris" & Num_Records > 
 cwd_include <- tab_include(cwd_check)
 
 #---- FWD Checks ----
-fwd1 <- getFuelsFine(years = year_range) |>
+fwd1 <- getFuelsFine(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran, OneHrTranLen, TenHrTranLen,
          HunHrTranLen, Transect, Azimuth_Fuels, Slope, OneHr, TenHr, HunHr,
          FWDFuConSt, UV1Desc)
@@ -1225,9 +1230,10 @@ fwd_check <- QC_table |> filter(Type %in% "Fine Woody Debris" & Num_Records > 0)
 fwd_include <- tab_include(fwd_check)
 
 #---- Duff Checks ----
-duff1 <- getFuelsDuff(years = year_range) |> select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
-                                                    Transect, SampLoc, OffSet, LittDep, DuffDep,
-                                                    FuelbedDep, DLFuConSt, Comment, UV1Desc)
+duff1 <- getFuelsDuff(years = year_range, purpose = "NGPN_PCM") |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, NumTran,
+         Transect, SampLoc, OffSet, LittDep, DuffDep,
+         FuelbedDep, DLFuConSt, Comment, UV1Desc)
 duff <- left_join(duff1, macroveg, by = "MacroPlot_Name")
 
 # check on duff not on pp
@@ -1334,7 +1340,7 @@ duff_include <- tab_include(duff_check)
 #---- Cover Spp Comp/Target Species ----
 #+++ KEEP THIS SECTION LAST +++
 # Target species lists by park
-covspp <- getCoverSpeciesComp(years = year_range) |>
+covspp <- getCoverSpeciesComp(years = year_range, purpose = "NGPN_PCM") |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
          Symbol, ScientificName, CommonName, Nativity, Invasive, Cultural, Concern, LifeCycle, LifeForm_Name)
 
@@ -1367,7 +1373,9 @@ that are stored in the FFI database. This report primarily checks data that are 
 the 'MacroPlot and SampleEvent checks' report, which checks data that once fixed, are unlikely to produce errors again.
 If records are returned for a given check, the row is highlighted yellow for errors and blue for records that aren't
 necessarily errors, but need further review (e.g., large DBH measurements). A separate tab corresponding to each check
-that returned results by protocol module (e.g. Point Intercept, Nested Quadrats, etc.) is printed to the right of this tab."
+that returned results by protocol module (e.g. Point Intercept, Nested Quadrats, etc.) is printed to the right of this tab.
+Only MacroPlots with a MacroPlot_Purpose with Panel or ForestStructure in the name, or plots with RCM in the name are
+included in this check."
 
 QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap,
                         col.names = c("Type", "Data Tab", "Check Description", "Number of Records", "Check Type")) |>

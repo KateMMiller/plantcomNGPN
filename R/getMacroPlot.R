@@ -188,7 +188,7 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   } else if(any(purpose %in% "NGPN_PCM")){
     mac_purpose[
       mac_purpose %in% c("Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
-                          "Panel7", "Panel8", "Panel9", "Panel10", "PanelE", "IM_Intensive",
+                          "Panel7", "Panel8", "Panel9", "Panel10", "PanelE",# "IM_Intensive",
                           "ForestStructure", "")]
   } else {distinct(purpose)}
 

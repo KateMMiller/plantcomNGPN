@@ -97,7 +97,8 @@ samp$SampleEvent_Date <-
 monstat <- NGPN_tables$MonitoringStatus
 mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
 
-plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
+#plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
+plots <- macro$MacroPlot_Name[grepl("_PCM_|_RCM_", macro$MacroPlot_Name)]
 
 macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   filter(MacroPlot_Name %in% plots)|>
@@ -106,7 +107,10 @@ macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
          MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
          MacroPlot_SlopeTransect, MacroPlot_GUID) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  distinct()
+  distinct() |>
+  mutate(keep = ifelse(grepl("Panel|ForestStructure", MacroPlot_Purpose)|
+                         grepl("RCM", MacroPlot_Name), 1, 0)) |>
+  filter(keep == 1) |> select(-keep)
 
 # Continue compiling sample data
 macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
@@ -213,8 +217,8 @@ macro_purp1 <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |>
   arrange(MacroPlot_Name)
 
 start_cols <- c("MacroPlot_Name", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
-                "Panel7", "Panel8", "Panel9", "Panel10", "PanelE", "IM_Intensive",
-                "IM_veg", "IM_FX_Dual")
+                "Panel7", "Panel8", "Panel9", "Panel10", "PanelE")#, "IM_Intensive",
+                #"IM_veg", "IM_FX_Dual")
 other_cols <- sort(setdiff(names(macro_purp1), start_cols))
 
 macro_purp <- macro_purp1[,c(start_cols, other_cols)]

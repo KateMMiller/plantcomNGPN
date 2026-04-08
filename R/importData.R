@@ -643,8 +643,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                        relationship = 'many-to-many')
 
   sampev3$SampleEvent_Date <-
-    format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"),
+    format(as.Date(substr(sampev3$SampleEvent_Date, 1, 10), format = "%Y-%m-%d"),
            "%Y-%m-%d")
+
   sampev3$year <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%Y")
   sampev3$month <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%m")
   sampev3$doy <- format(as.Date(sampev3$SampleEvent_Date, format = "%Y-%m-%d"), "%j")
@@ -695,11 +696,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   setTxtProgressBar(pb,2)
   tryCatch(localspp <- get("LocalSpecies", envir = env),
            error = function(e){stop("LocalSpecies table not found. Please import NGPN FFI data tables.")})
-  tryCatch(mastspp <- get("MasterSpecies", envir = env),
+  tryCatch(mastspp <- get("MasterSpecies", envir = env) |> distinct(),
            error = function(e){stop("MasterSpecies table not found. Please import NGPN FFI data tables.")})
   tryCatch(auxspp <- get("AuxSpecies", envir = env),
            error = function(e){stop("AuxSpecies table not found. Please import NGPN FFI data tables.")})
-  tryCatch(lifeform <- get("LU_LifeForm", envir = env),
+  tryCatch(lifeform <- get("LU_LifeForm", envir = env) |> distinct(),
            error = function(e){stop("LU_LifeForm table not found. Please import NGPN FFI data tables.")})
   # NGPN does not appear to use the SpeciesPickList, so not including here.
   # lifecycle doesn't appear to be used much by NGPN, so not including it here.

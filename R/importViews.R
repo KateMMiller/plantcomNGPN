@@ -18,7 +18,7 @@
 #' \dontrun{
 #' library(plantcomNGPN)
 #' # import views from specified path
-#' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
+#' importViews(import_path = "C:/temp/NGPN_FFI_views_20250825.zip")
 #'
 #' }
 #'

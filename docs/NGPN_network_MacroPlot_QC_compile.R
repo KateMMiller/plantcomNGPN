@@ -13,7 +13,7 @@
 #                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
 #            keep_tables = T)
 
-# importData(type = 'csv', import_path = "./docs/data/NGPN_FFI_table_export_20250825.zip", keep_tables = T)
+# importData(type = 'csv', import_path = "./docs/data/NGPN_FFI_table_export_20260408.zip", keep_tables = T)
 #
 # all_years <- TRUE
 # year_curr <- 2024
@@ -131,7 +131,7 @@ macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
   arrange(year, DefaultMonitoringStatus) |>
   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian",
+  filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian|IM_Intensive",
                DefaultMonitoringStatus)) |>
   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>

@@ -36,16 +36,15 @@ year_hist <- 2011:(year_curr - 1)
 
 ```{r imports, include = F}
 # If SQL setup:
-importData(type = 'local',
-           dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
-                      "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
-                      "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
-           keep_tables = T)
+# importData(type = 'local',
+#            dbname = c("FFI_RA_AGFO", "FFI_RA_BADL", "FFI_RA_DETO", "FFI_RA_FOLA",
+#                       "FFI_RA_FOUS", "FFI_RA_JECA", "FFI_RA_KNRI", #"FFI_RA_MNRR",
+#                       "FFI_RA_MORU", "FFI_RA_SCBL", "FFI_RA_THRO", "FFI_RA_WICA"),
+#            keep_tables = T)
 #keep_tables = T, export_views = T, export_path = "C:/temp")
 
 # If SQL not set up, use import below instead, and update the import_path:
-#importData(type = 'csv', import_path = "./data/NGPN_FFI_table_export_20250825.zip", keep_tables = T) 
-#importData(type = 'csv', import_path = "./docs/data/NGPN_FFI_table_export_20250825.zip", keep_tables = T) 
+importData(type = 'csv', import_path = "C:/NETN/R_Dev/data/NGPN_FFI_table_export_20260408.zip", keep_tables = T) 
 
 ```
 
@@ -55,29 +54,30 @@ source("NGPN_network_MacroPlot_QC_compile.R")
 #source("./docs/NGPN_network_QC_checks_compile.R")
 ```
 
-#### Monitoring Status - SE {.tabset}
-```{r monstat_park, eval = F}
-df <- macro_samp2 |> filter(park %in% parkcode) |> 
-  select(-park, -DefaultMonitoringStatus) |> 
-  summarize(across(where(is.numeric), function(x){sum(x, na.rm = T)}), 
-            .by = c(MacroPlot_Name, MacroPlot_Purpose)) |> 
-  distinct()  
-  
-df[,3:ncol(df)][df[,3:ncol(df)] == 0] <- NA
+#### Monitoring Status - MS {.tabset}
+```{r monstat_ms_park, eval = F}
+dfms <- macro_samp_ms |> filter(park %in% parkcode) |> select(-park)
+yrs <- names(dfms[,grepl("yr", names(dfms))])
 
-yrs <- names(df[,grepl("yr", names(df))])
+dfms$dup <- rowSums(dfms[,yrs] > 1, na.rm = T)
 
-df$dup <- rowSums(df[,yrs] > 1, na.rm = T)
-
-
-plot_mat <- 
-kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
-      caption = paste0('Table 1. Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status, purpose, and year sampled. ',
-                       "Only plots with 'PCM' or 'RCM' in their name are included. ",
+plot_mat_ms <- 
+kable(dfms |> select(-dup, -dup_ms), format = 'html', align = 'c',
+      caption = paste0('Table 2. Matrix of NGPN PCM plots for **', parkcode, '** by monitoring status, purpose, and year sampled. ',
+                       "Only plots with 'PCM' in their name are included. ",
+                       "Plots with LPCM in their name (legacy plots) are sorted last. ", "<br>","<br>",
                        
-                       "Values indicate the number of records for each plot, year for plots with Panel or
-                       ForestStructure in their MacroPlot_Purpose, or MacroPlots with RCM in their name 
-                       and blank MacroPlot_Purpose. ", 
+                       "The monitoring status in this table comes from the MonitoringStatus$MonitoringStatus_Base ", 
+                       "column, which has typos (eg '_' in the name) that make it difficult to use as a filter. ",
+                       "Typos are indicated by <b style='background-color:#ff9797;'>red</b>. ",
+                       
+                       "Plots with multiple rows have multiple monitoring statuses recorded over time, ",
+                       "and are color coded <b style='background-color:orange;'>orange</b>. ",
+                       "Are the different monitoring statuses correct/intentional? Does one indicate a NGPN sample event, ",
+                       "and another indicate a fire effects or other sample event? <br>", "<br>",
+                       
+                       
+                       "Values indicate the number of records for each plot, year, and monitoring status. ", 
                        "Values > 1 indicate duplicate sampling events in the SampleEvent table for that year and ",
                        "are highlighted <b style='background-color:#F2F2A0;'>yellow</b>. ",
                        "Duplicates within a year mean there are multiple dates and SampleEvent_GUIDs for a given year,
@@ -89,33 +89,31 @@ kable(df |> select(-dup, -dup_ms), format = 'html', align = 'c',
                        "the only way to pull out NGPN PCM monitoring events?")) %>%
   kable_styling(fixed_thead = T, bootstrap_options = c("condensed", "striped"), 
                 full_width = T, position = 'left', font_size = 10) %>%
-  column_spec(1:(ncol(df)-2), border_left = "1px solid grey", border_right = "1px solid grey") %>%
-  purrr::reduce(3:(ncol(df)-2), function(x, y){
-    col = df[,y]
-    column_spec(x, y, background = case_when(is.na(df[,y]) ~ "#ffffff",
-                                             df[,y] == 1 ~ "#ffffff",
-                                             df[,y] == 0 ~ "#ffffff",
+  column_spec(1:(ncol(dfms)-2), border_left = "1px solid grey", border_right = "1px solid grey") %>%
+  purrr::reduce(4:(ncol(dfms)-2), function(x, y){
+    col = dfms[,y]
+    column_spec(x, y, background = case_when(is.na(dfms[,y]) ~ "#ffffff",
+                                             dfms[,y] == 1 ~ "#ffffff",
                                              TRUE ~ "#F2F2A0"))}, .init = .) %>%
   #column_spec(1, background = ifelse(df$dup > 0, "#F2F2A0", "#ffffff")) %>%
-  column_spec(1, background = case_when(#df$dup_ms > 1 ~ "orange",
-                                        df$dup > 0 ~ "#F2F2A0", 
+  column_spec(1, background = case_when(dfms$dup_ms > 0 ~ "orange",
+                                        dfms$dup > 0 ~ "#F2F2A0", 
                                         TRUE ~ "white")) %>%
-  #column_spec(3, background = ifelse(df$DefaultMonitoringStatus == "blank", "#AFAFAF", "white")) %>%
+  column_spec(3, background = ifelse(grepl("_|2011|2012|2014|2015|2016' '", dfms$MonitoringStatus_Base), "#ff9797", "white")) %>%
   collapse_rows(1, valign = "top")
 
-print(plot_mat)
+print(plot_mat_ms)
 ```
 
-```{r, parktabs, results = 'asis'}
+```{r, parktab2, results = 'asis'}
 for(i in seq_along(park_list)){
   parkcode = park_list[[i]]
   cat("##### ", parkcode, "{.tabset}", "\n\n")
-  <<monstat_park>>
+  <<monstat_ms_park>>
   cat("\n\n")
   cat("\n\n")
 }
 ```
-
 #### Purpose {.tabset}
 ```{r purpose_park, include = F, eval = F}
 df2 <- macro_purp |> mutate(park = substr(MacroPlot_Name, 1, 4)) |> filter(park == parkcode) |> select(-park)

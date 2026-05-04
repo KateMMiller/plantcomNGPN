@@ -99,23 +99,35 @@ park_list <- sort(unique(macro_plots$park))
 ### Macroplot Checks
 # NGPN plots missing X/Y Coordinates
 names(macro_plots)
-macro_miss_utm <- macro_plots |> filter(is.na(UTM_X) | is.na(UTM_Y) | is.na(UTMzone)) |>
+
+macro_miss_utm <- macro_plots |>
+  filter(is.na(UTM_X) | is.na(UTM_Y) | is.na(UTMzone)) |>
   select(MacroPlot_Name, UTM_X, UTM_Y, UTMzone, DD_Lat, DD_Long)
 
 QC_table <- QC_check(df = macro_miss_utm, meas_type = "MacroPlot", tab = "Plot Info",
                      check = "NGPN PCM plots missing UTM X, Y, and/or UTM Zone data.",
                      chk_type = 'error')
 
-kbl_macro_miss_utm <- make_kable(macro_miss_utm, "NGPN PCM plots missing UTM X, Y, and/or Zone data. ") |>
-  column_spec(2, background = ifelse(is.na(macro_miss_utm$UTM_X), "#F2F2A0", "white")) |>
-  column_spec(3, background = ifelse(is.na(macro_miss_utm$UTM_Y), "#F2F2A0", "white")) |>
-  column_spec(4, background = ifelse(is.na(macro_miss_utm$UTMzone), "#F2F2A0", "white"))
+kbl_macro_miss_utm <- make_kable(macro_miss_utm,
+                                 "NGPN PCM plots missing UTM X, Y, and/or Zone data. ") |>
+  column_spec(2, background = ifelse(is.na(macro_miss_utm$UTM_X),
+                                     "#F2F2A0", "white")) |>
+  column_spec(3, background = ifelse(is.na(macro_miss_utm$UTM_Y),
+                                     "#F2F2A0", "white")) |>
+  column_spec(4, background = ifelse(is.na(macro_miss_utm$UTMzone),
+                                     "#F2F2A0", "white"))
 
 # Set bounding box for each park and check UTMs and/or lat/long against them:
-# First downloaded NPS Administrative Boundaries from: https://irma.nps.gov/DataStore/Reference/Profile/2309935
-tryCatch(nps_bounds <- read_sf("./docs/www/Administrative Boundaries of National Park System Units.shp"), error = function(e){})
-tryCatch(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"), error = function(e){})
+# First downloaded NPS Administrative Boundaries from:
+# https://irma.nps.gov/DataStore/Reference/Profile/2309935
+tryCatch(nps_bounds <- read_sf("./docs/www/Administrative Boundaries of National Park System Units.shp"),
+         error = function(e){})
+
+tryCatch(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"),
+         error = function(e){})
+
 st_crs(nps_bounds) # EPSG 4269
+
 ngpn_poly <- nps_bounds |> filter(UNIT_CODE %in% park_list) |> arrange(UNIT_CODE)
 
 AGFO_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "AGFO"), crs = 26913)

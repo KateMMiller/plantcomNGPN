@@ -1,15 +1,22 @@
 #' @title importData
 #'
-#' @description Imports data from FFI SQL Server database or csvs of FFI database tables using the schema designed for
-#' the Northern Great Plains Network plant community monitoring protocol. Currently can only import from a local installation
-#' of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
-#' from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
-#' are row binded, so that all NPGN parks can be queried, summarized, etc. at once. After raw FFI tables are imported, they
-#' are then joined into flattened views for each protocol. The views currently only include plots that are part of NGPN PCM monitoring,
-#' and only include sample events from 2011 and on, but this can be revised as needed. The raw tables with all data and views of
-#' only NGPN PCM plots >= 2011 can both be  exported via the export arguments. Function is slow if running for all parks and
-#' exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
-#' Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
+#' @description Imports data from FFI SQL Server database or csvs of FFI
+#' database tables using the schema designed for the Northern Great Plains
+#' Network plant community monitoring protocol. Currently can only import from
+#' a local installation of a park FFI database in SQL Server Management Studio
+#' (SSMS), but the goal is to add an option for importing directly from the SQL
+#' Server where the production FFI databases are housed. If multiple parks
+#' worth of data are imported, tables are row binded, so that all NPGN parks
+#' can be queried, summarized, etc. at once. After raw FFI tables are imported,
+#' they are then joined into flattened views for each protocol. The views
+#' currently only include plots that are part of NGPN PCM monitoring, and only
+#' include sample events from 2011 and on, but this can be revised as needed.
+#' The raw tables with all data and views of only NGPN PCM plots >= 2011 can
+#' both be  exported via the export arguments. Function is slow if running for
+#' all parks and exporting tables or views. Once the views are created/exported,
+#' they can be imported using importViews() for faster importing. Note that
+#' view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent')
+#' where unnecessary for easier coding.
 #'
 #' @importFrom dplyr bind_rows collect distinct inner_join left_join mutate rename right_join select tbl
 #' @importFrom tidyr pivot_wider
@@ -24,10 +31,13 @@
 #'
 #' @param server If type = 'server', requires quoted FFI server address (not currently enabled).
 #'
-#' @param dbname If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO"). If
-#' multiple database names are specified, views will be row bound for tables in common for all of the databases with a column
-#' indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
-#' aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).
+#' @param dbname If type = "server" or "local", quoted name of database matching
+#' the name of the database (eg. "FFI_RA_AGFO"). If multiple database names are
+#' specified, views will be row bound for tables in common for all of the
+#' databases with a column indicating the dbname in each table. Note that the
+#' tables being row binded must be identical for this to work, and there aren't
+#' thorough checks built in the function to ensure that's true (i.e.,
+#' it's likely to fail, but the error message may be weird).
 #'
 #' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 #' environment.
@@ -272,23 +282,32 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   if(type == 'csv'){
 
     # Pulling in only tables commonly used across NGPN parks
-    csv_list1 <- c('AuxSpecies', 'Cover_Frequency_metric_Attribute', 'Cover_Frequency_metric_Sample',
-                  'Cover_Points_metric_Attribute', 'Cover_Points_metric_Sample', 'Cover_SpeciesComposition_metric_Attribute',
-                  'Cover_SpeciesComposition_metric_Sample', 'DataGridViewSettings', 'Density_Belts_metric_Attribute',
-                  'Density_Belts_metric_Sample', 'Density_Quadrats_metric_Attribute', 'Density_Quadrats_metric_Sample',
-                  'DisturbanceHistory_Attribute', 'DisturbanceHistory_Sample', 'FuelConstants_CWD', 'FuelConstants_DL',
-                  'FuelConstants_ExpDL', 'FuelConstants_FWD', 'FuelConstants_Veg', 'LU_Contact', 'LU_DataLevel', 'LU_DataType',
-                  'LU_LifeCycle', 'LU_LifeForm', 'LU_MacroPlot_Type', 'LU_Shape', 'LU_Unit', 'Last_Modified_Date', 'LocalSpecies',
-                  'MM_LocalSpecies_SpeciesPickList', 'MM_Method_Reference',
-                  'MM_MonitoringStatus_SampleEvent', 'MM_Organization_Method', 'MM_ProjectUnit_MacroPlot',
-                  'MM_Project_Protocol', 'MM_Protocol_Method', 'MM_SampleEvent_Protocol', 'MSchange_tracking_history',
-                  'MacroPlot', 'MasterSpecies', 'MasterSpecies_LastModified', 'Method', 'MethodAttribute', 'MethodAttributeCode',
-                  'MethodVersion', 'MonitoringStatus', 'Organization', 'OrganizationGroup', 'PostBurnSeverity_metric_Attribute',
-                  'PostBurnSeverity_metric_Sample', 'Program', 'Project', 'ProjectUnit', 'Protocol', 'ProtocolVersion', 'RegistrationUnit',
-                  'SampleAttribute', 'SampleAttributeCode', 'SampleEvent', 'SchemaVersions', 'Schema_Version', 'Settings',
-                  'SpeciesPickList', 'SurfaceFuels_1000Hr_Attribute', 'SurfaceFuels_1000Hr_Sample', 'SurfaceFuels_Duff_Litter_Attribute',
-                  'SurfaceFuels_Duff_Litter_Sample', 'SurfaceFuels_Fine_Attribute', 'SurfaceFuels_Fine_Sample',
-                  'Trees_Individuals_metric_Attribute', 'Trees_Individuals_metric_Sample')
+    csv_list1 <- c('AuxSpecies', 'Cover_Frequency_metric_Attribute',
+                   'Cover_Frequency_metric_Sample','Cover_Points_metric_Attribute',
+                   'Cover_Points_metric_Sample', 'Cover_SpeciesComposition_metric_Attribute',
+                   'Cover_SpeciesComposition_metric_Sample', 'DataGridViewSettings',
+                   'Density_Belts_metric_Attribute','Density_Belts_metric_Sample',
+                   'Density_Quadrats_metric_Attribute', 'Density_Quadrats_metric_Sample',
+                   'DisturbanceHistory_Attribute', 'DisturbanceHistory_Sample',
+                   'FuelConstants_CWD', 'FuelConstants_DL','FuelConstants_ExpDL',
+                   'FuelConstants_FWD', 'FuelConstants_Veg', 'LU_Contact', 'LU_DataLevel',
+                   'LU_DataType','LU_LifeCycle', 'LU_LifeForm', 'LU_MacroPlot_Type',
+                   'LU_Shape', 'LU_Unit', 'Last_Modified_Date', 'LocalSpecies',
+                   'MM_LocalSpecies_SpeciesPickList', 'MM_Method_Reference',
+                   'MM_MonitoringStatus_SampleEvent', 'MM_Organization_Method',
+                   'MM_ProjectUnit_MacroPlot','MM_Project_Protocol', 'MM_Protocol_Method',
+                   'MM_SampleEvent_Protocol', 'MSchange_tracking_history','MacroPlot',
+                   'MasterSpecies', 'MasterSpecies_LastModified', 'Method', 'MethodAttribute',
+                   'MethodAttributeCode', 'MethodVersion', 'MonitoringStatus',
+                   'Organization', 'OrganizationGroup', 'PostBurnSeverity_metric_Attribute',
+                   'PostBurnSeverity_metric_Sample', 'Program', 'Project', 'ProjectUnit',
+                   'Protocol', 'ProtocolVersion', 'RegistrationUnit','SampleAttribute',
+                   'SampleAttributeCode', 'SampleEvent', 'SchemaVersions', 'Schema_Version',
+                   'Settings','SpeciesPickList', 'SurfaceFuels_1000Hr_Attribute',
+                   'SurfaceFuels_1000Hr_Sample', 'SurfaceFuels_Duff_Litter_Attribute',
+                   'SurfaceFuels_Duff_Litter_Sample', 'SurfaceFuels_Fine_Attribute',
+                   'SurfaceFuels_Fine_Sample','Trees_Individuals_metric_Attribute',
+                   'Trees_Individuals_metric_Sample')
 
 
     if(length(import_path) == 1){
@@ -428,8 +447,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                "MacroPlot_UV5", "MacroPlot_UV7", "MM_SpeciesPickList_GUID", "MM_LocalSpecies_GUID",
                "MonitoringStatus_Suffix", "SampleAttributeCode_GUID", "SampleAttributeCode_SampleAttribute_GUID",
                "SampleAttributeCode_Code", "SampleAttributeCode_Text", "SampleAttributeCode_Description",
-               "SampleEvent_GUID",
-               "val1", "key1", "SpeciesPickList_GUID", "SpeciesPickList_RegistrationUnitGUID",
+               "SampleEvent_GUID", "val1", "key1", "SpeciesPickList_GUID", "SpeciesPickList_RegistrationUnitGUID",
                "SpeciesPickList_Name", "SpeciesPickList_Describe", "DamCd3", "DamCd4", "DamCd5")
 
           if(any(cols_to_char %in% names(tbl_temp))){

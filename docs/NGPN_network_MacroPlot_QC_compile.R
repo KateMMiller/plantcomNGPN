@@ -97,8 +97,8 @@ samp$SampleEvent_Date <-
 monstat <- NGPN_tables$MonitoringStatus
 mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
 
-#plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
-plots <- macro$MacroPlot_Name[grepl("_PCM_|_RCM_", macro$MacroPlot_Name)]
+plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
+# plots <- macro$MacroPlot_Name[grepl("_PCM_|_RCM_", macro$MacroPlot_Name)]
 
 macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   filter(MacroPlot_Name %in% plots)|>
@@ -109,7 +109,8 @@ macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   distinct() |>
   mutate(keep = ifelse(grepl("Panel|ForestStructure", MacroPlot_Purpose)|
-                         grepl("RCM", MacroPlot_Name), 1, 0)) |>
+                         grepl("RCM", MacroPlot_Name) |
+                         grepl("FPCM", MacroPlot_Name), 1, 0)) |>
   filter(keep == 1) |> select(-keep)
 
 # Continue compiling sample data
@@ -131,7 +132,8 @@ macro_samp2 <- macro_samp |> filter(year >= 2011) |>
   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
   arrange(year, DefaultMonitoringStatus) |>
   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  filter(grepl("blank|Dual|Fire|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian|IM_Intensive",
+  filter(grepl("blank|00|01|02|03|Dual|Fire|FirePlantCommunity|ForestStructure|
+               PCM_Fire|Plant Community|PlantCommunity|Riparian|IM_Intensive",
                DefaultMonitoringStatus)) |>
   mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
          plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
@@ -159,8 +161,10 @@ macro_samp_ms2 <- left_join(macro_samp_ms1, monstat,
 
 macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(grepl(
-    "blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|ForestStructure|PCM_Fire|Plant Community|PlantCommunity|Riparian|2016_$|2011|2012|2014|2015",
+  filter(grepl("blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|
+               ForestStructure|PCM_Fire|Plant Community|PlantCommunity|
+               Riparian|2016|2011|2012|2013|2014|2015|Panel|Riparian|
+               _PCM|ForestStructure",
                MonitoringStatus_Base)) |>
   select(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |> distinct() |>
   group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |>

@@ -1,4 +1,6 @@
 # Params for troubleshooting ----
+## These parameters come from NGPM_network_MacroPlot_Qc_Checks.Rmd
+
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
@@ -19,24 +21,38 @@
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
-#
 
 # Start of source code ----
-## loading species list ----
+## Loading data ----
+# Species list
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 # or UPDATE PATH
 tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 
-## loading sampling schedule ----
-# UPDATE PATH
+# PCM Panel sampling schedule
+# Path will need to be updated
 panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
                            na.strings = "")
 
-# pivote to longer
+# pivot to longer
 panel_sch <- panel_sch_wide |>
   pivot_longer(!Year,
                names_to = "Panel") |>
   drop_na() |>
+  # filtering to current date (will update every year)
+  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+  select(Year,
+         Panel)
+
+# Forest panel sampling schedule
+forest_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/forest_panel_schedule.csv",
+                           na.strings = "")
+
+# pivot to linger
+forest_sch <- forest_sch_wide |>
+  pivot_longer(!Year,
+               names_to = "Panel") |>
+  drop_na()|>
   # filtering to current date (will update every year)
   filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
   select(Year,
@@ -67,6 +83,7 @@ make_kable <- function(df, cap){
         row_spec(nrow(df), extra_css = 'border-bottom: 1px solid #000000;')
     }
   } else NULL
+
 }
 
 ### function to make data tables

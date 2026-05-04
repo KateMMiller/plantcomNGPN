@@ -46,7 +46,7 @@ tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN
 #            keep_tables = T)
 
 # If SQL not set up, use import below instead, and update the import_path:
-importViews(import_path = "./data/NGPN_FFI_views_20250825.zip") 
+importViews(import_path = "C:/Users/kbailey/OneDrive - DOI/Documents/NGPN/plantcomNGPN/data/NGPN_FFI_views_20250825 1.zip")
 #importViews(import_path = "./docs/data/NGPN_FFI_views_20250825.zip")
 ```
 

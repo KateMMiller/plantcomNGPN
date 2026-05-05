@@ -3,10 +3,9 @@
 .RData
 .Ruserdata
 *.svg
-docs/NGPN_network_QC_checks.html
 docs/NGPN_network_QC_checks_cache/
-docs/NGPN_network_MacroPlot_QC_MonStatPurpchecks.html
 docs/NGPN_network_MacroPlot_QC_checks_cache/
+docs/*.html
 *.zip
 *.jpg
 *.txt

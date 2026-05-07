@@ -1,4 +1,4 @@
-# # -- Params for troubleshooting --
+# ---- Params for troubleshooting ----
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
@@ -25,6 +25,173 @@
 # year_hist <- 2011:(year_curr - 1)
 
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+
+# Plot Filtering from MacroPlot Compile ----
+# PCM Panel sampling schedule
+# Path will need to be updated
+panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
+                           na.strings = "")
+
+# pivot to longer
+panel_sch <- panel_sch_wide |>
+  pivot_longer(!Year,
+               names_to = "Panel") |>
+  drop_na() |>
+  # filtering to current date (will update every year)
+  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+  select(Year,
+         Panel)
+
+#### Plot Matrix List
+macro <- NGPN_tables$MacroPlot # list of plots and purpose
+samp <- NGPN_tables$SampleEvent # list of sample events
+
+#### formatting date
+samp$SampleEvent_Date <-
+  as.Date(substr(samp$SampleEvent_Date, 1, 11), format = "%Y-%m-%d")
+
+#### selecting only pcm type plots
+plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
+# plots <- macro$MacroPlot_Name[grepl("_PCM_|_RCM_", macro$MacroPlot_Name)]
+
+### Macro plot df ----
+macro_plots <- macro |>
+  # filtering pcm plots
+  filter(MacroPlot_Name %in% plots)|>
+  # cleaning up columns
+  select(MacroPlot_Name,
+         MacroPlot_Purpose,
+         MacroPlot_Type,
+         MacroPlot_RegistrationUnit_GUID,
+         MacroPlot_UTM_X,
+         MacroPlot_UTM_Y,
+         MacroPlot_UTMzone,
+         MacroPlot_Datum,
+         MacroPlot_DD_Lat,
+         MacroPlot_DD_Long,
+         MacroPlot_Elevation,
+         MacroPlot_Aspect,
+         MacroPlot_Azimuth,
+         MacroPlot_SlopeHill,
+         MacroPlot_SlopeTransect,
+         MacroPlot_GUID) |>
+  # naming parks
+  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
+  # dropping duplicate plots
+  distinct() #|>
+# removes HTLN legacy, treatment/control, and samples that don't have purpose or monitoring status from MacroPlot_Purpose
+# mutate(keep = ifelse(grepl("Panel|ForestStructure|FS", MacroPlot_Purpose)|
+#                        grepl("RCM", MacroPlot_Name) |
+#                        grepl("FPCM", MacroPlot_Name), 1, 0)) |>
+# filter(keep == 1) |> select(-keep)
+
+### Macro plot/sample events ----
+# joining macro plots with sample events
+macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
+  # cleaning up columns
+  select(park,
+         MacroPlot_Name,
+         MacroPlot_GUID,
+         MacroPlot_Purpose,
+         SampleEvent_GUID,
+         SampleEvent_Date,
+         SampleEvent_DefaultMonitoringStatus) |>
+  # removing duplicates
+  distinct()
+
+# adding year
+macro_samp$year <- as.numeric(format(as.Date(macro_samp$SampleEvent_Date,
+                                             format = "%Y-%m-%d"), "%Y"))
+
+# NA to blanks
+macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
+
+### Add monitoringstatus_base ----
+monstat <- NGPN_tables$MonitoringStatus # monitoringstatus_base
+mm_monstat_se <- NGPN_tables$MM_MonitoringStatus_SampleEvent # needed for GUID matching
+
+# merge for correct GUID
+macro_samp_ms1 <- left_join(macro_samp,
+                            mm_monstat_se,
+                            by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
+
+# merge for monitoringstatus_base
+macro_samp_ms2 <- left_join(macro_samp_ms1,
+                            monstat,
+                            by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
+                                   "datasource"))
+
+
+macro_samp_ms <- macro_samp_ms2 |>
+  # removing anything before 2011
+  filter(year >= 2011) |>
+  select(park,
+         MacroPlot_Name,
+         MonitoringStatus_Base,
+         MonitoringStatus_Name,
+         MacroPlot_Purpose,
+         # MacroPlot_GUID,
+         # SampleEvent_DefaultMonitoringStatus,
+         SampleEvent_Date,
+         year)
+
+## Panel Filter ----
+# removing sample events from macro_samp_ms that don't have a panel_yr match (keeping all observations for panel_sch)
+samp_events_all <- right_join(macro_samp_ms,
+                              panel_sch,
+                              by = c("MacroPlot_Purpose" = "Panel",
+                                     "year" = "Year"))
+
+# filtering plots that NEED a monitoring status base
+# samp_events_base <- samp_events_all |>
+#   filter(is.na(MonitoringStatus_Base)) |>
+#   select(park,
+#          MacroPlot_Name,
+#          SampleEvent_Date,
+#          MonitoringStatus_Base) |>
+#   arrange(SampleEvent_Date, MacroPlot_Name)
+
+# filtering plots that NEED a monitoring status name
+samp_events_name <- samp_events_all |>
+  filter(is.na(MonitoringStatus_Name)) |>
+  select(park,
+         MacroPlot_Name,
+         SampleEvent_Date,
+         # MacroPlot_GUID,
+         # MonitoringStatus_Base,
+         MonitoringStatus_Name) |>
+  arrange(SampleEvent_Date, MacroPlot_Name)
+
+# getting count for each panel-year
+samp_events <- samp_events_all |>
+  # filtering anything that isn't plant community samples
+  mutate(keep = case_when(!grepl("Fire",
+                                 MonitoringStatus_Name) &
+                            grepl("PlantCommunity",
+                                  MonitoringStatus_Name) ~ 1,
+                          grepl("Dual",
+                                MonitoringStatus_Name) ~ 1,
+                          TRUE ~ 0)) |>
+  filter(keep == 1) |> select(-keep) |>
+  arrange(MacroPlot_Name, year)
+
+samp_events_indv <- samp_events |>
+  distinct()
+
+plots_keep <- unique(samp_events_indv$MacroPlot_Name)
+
+keep_df <- samp_events_indv |>
+  select(MacroPlot_Name,
+         SampleEvent_Date) |>
+  mutate(SampleEvent_Date = as.character(SampleEvent_Date))
+
+macro_plots <- getMacroPlot(purpose = "NGPN_PCM") |>
+  # filtering by plots_sampled!!!!!!
+  filter(MacroPlot_Name %in% plots_keep) |>
+  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
+  distinct()
+
+park_list <- sort(unique(macro_plots$park))
 
 options(scipen = 100)
 
@@ -90,14 +257,10 @@ check_null_print <- function(table, tab_level = 4, tab_title){
   check_null(table)
 }
 
-macro_plots <- getMacroPlot(purpose = "NGPN_PCM") |>
-  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  distinct()
-
-park_list <- sort(unique(macro_plots$park))
-
 ### Macroplot Checks
+
 # NGPN plots missing X/Y Coordinates
+# names(macro_plots)
 names(macro_plots)
 
 macro_miss_utm <- macro_plots |>
@@ -120,11 +283,13 @@ kbl_macro_miss_utm <- make_kable(macro_miss_utm,
 # Set bounding box for each park and check UTMs and/or lat/long against them:
 # First downloaded NPS Administrative Boundaries from:
 # https://irma.nps.gov/DataStore/Reference/Profile/2309935
-tryCatch(nps_bounds <- read_sf("./docs/www/Administrative Boundaries of National Park System Units.shp"),
-         error = function(e){})
-
 tryCatch(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"),
          error = function(e){})
+
+# nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp")
+
+# tryCatch(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"),
+#          error = function(e){})
 
 st_crs(nps_bounds) # EPSG 4269
 
@@ -142,7 +307,8 @@ SCBL_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "SCBL"), crs = 26913)
 THRO_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "THRO"), crs = 26913)
 WICA_poly <- st_transform(ngpn_poly |> filter(UNIT_CODE == "WICA"), crs = 26913)
 
-macro_plots_gps <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y) |>
+macro_plots_gps <- macro_plots |>
+  select(MacroPlot_Name, UTM_X, UTM_Y) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   filter(!is.na(UTM_X))
 
@@ -184,8 +350,11 @@ QC_table <- rbind(QC_table,
 kbl_out_pts_utm <- make_kable(out_pts_utm, cap = "NGPN PCM MacroPlot UTM coordinates that are not within the park boundary.")
 
 # NPGN plots with non-standard datum
-datum <- macro_plots |> select(MacroPlot_Name, UTM_X, UTM_Y,
-                               UTMzone, Datum) |> filter(!Datum %in% "NAD83")
+datum <- macro_plots |>
+  select(MacroPlot_Name, UTM_X, UTM_Y,
+         UTMzone, Datum) |>
+  filter(!Datum %in% "NAD83")
+
 QC_table <- rbind(QC_table,
                   QC_check(df = datum, meas_type = "MacroPlot", tab = "Plot Info",
                            check = "NGPN PCM plot coordinates with datum not matching 'NAD83'.",
@@ -195,7 +364,8 @@ kbl_datum <- make_kable(datum, cap = "NGPN PCM plot coordinates with datum not m
 
 # For plots with lat/long only, check if they're within the park bounds. This helps if we need to use the lat/longs
 # to generate the UTMs. I'm not proud that I didn't iterate on this.
-macro_plots_DD <- macro_plots |> select(MacroPlot_Name, DD_Lat, DD_Long) |>
+macro_plots_DD <- macro_plots |>
+  select(MacroPlot_Name, DD_Lat, DD_Long) |>
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   filter(!is.na(DD_Lat))
 
@@ -250,6 +420,8 @@ kbl_out_pts_dd <- make_kable(out_pts_dd, cap = "NGPN PCM MacroPlot DD coordinate
 
 # Check for blank macro data
 macro_blanks <- getMacroPlot(purpose = "NGPN_PCM") |>
+  # filtering for plots sampled
+  filter(MacroPlot_Name %in% plots_keep) |>
   select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
          Aspect, SlopeHill, SlopeTransect) |>
   filter(is.na(Elevation) | is.na(ElevationUnits) | is.na(Azimuth) | is.na(Aspect) |
@@ -264,6 +436,8 @@ kbl_macro_blanks <- make_kable(macro_blanks, cap = "Macroplots missing location 
 
 # Check for impossible macro data
 macro_imp <- getMacroPlot(purpose = "NGPN_PCM") |>
+  # filtering for plots sampled
+  filter(MacroPlot_Name %in% plots_keep) |>
   select(MacroPlot_Name, Elevation, ElevationUnits, Azimuth,
          Aspect, SlopeHill, SlopeTransect) |>  # slopes should be <= 100%
              filter(Azimuth > 360 | Azimuth < 0 | Aspect > 360 | Aspect < 0 |
@@ -279,6 +453,8 @@ kbl_macro_imp <- make_kable(macro_imp, cap = "Macroplot location data with impos
 # Check on UV values
 # UV1 = Topographic position; UV2 = Surface water; UV3 = Hydrologic Regime; UV4 = Vegetation Type
 macro_uv <- getMacroPlot(purpose = "NGPN_PCM") |>
+  # filtering for plots sampled
+  filter(MacroPlot_Name %in% plots_keep) |>
   select(MacroPlot_Name, MacroPlot_UV1, MacroPlot_UV2,
          MacroPlot_UV3, MacroPlot_UV4)
 
@@ -332,7 +508,10 @@ macro_check <- QC_table |> filter(Type %in% "MacroPlot" & Num_Records > 0)
 macro_include <- tab_include(macro_check)
 
 #---- Sample Event -----
-mac_samp <- getSampleEvent(years = year_range, purpose = "NGPN_PCM")
+mac_samp <- getSampleEvent(years = year_range, purpose = "NGPN_PCM") |>
+  # filtering for plots sampled
+  # filter(MacroPlot_Name %in% plots_keep)
+  semi_join(y = keep_df)
 
 # Check for sample events with no data
 miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID))
@@ -361,6 +540,7 @@ samp_check <- QC_table |> filter(Type %in% "SampleEvent" & Num_Records > 0)
 samp_include <- tab_include(samp_check)
 
 #---- Taxa ----
+# Does not remove "only active" plots
 #------ Missing Values ------
 # Check for species with inconsistent scientific names (eg genus only, genus spp.) but the same symbol
 taxa <- unique(VIEWS_NGPN$Taxa_Table[,c("Symbol", "ITIS_TSN", "ScientificName", "Unit_Name", "NotBiological")])
@@ -462,6 +642,9 @@ taxa_include <- tab_include(taxa_check)
 
 #---- Cover Point Data ----
 point_int <- getCoverPoints(years = year_range, purpose = "NGPN_PCM") |>
+  # filtering active plots
+  # filter(MacroPlot_Name %in% plots_keep) |>
+  semi_join(y = keep_df) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
          year, month, TranLen, NumPtsTran, Transect, Point, Tape, Order, Height,
          ScientificName, Status, NotBiological) #|> unique()
@@ -628,6 +811,9 @@ pint_include <- tab_include(pint_check)
 
 #---- Nested Quadrats/ Density Belts ----#
 densb <- getDensityBelts(years = year_range, purpose = "NGPN_PCM") |>
+  # filtering active plots
+  # filter(MacroPlot_Name %in% plots_keep) |>
+  semi_join(y = keep_df) |>
   select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, NumTran, TranLen, TranWid, Area, Transect,
          Subbelt, SubFrac, Status, Count, Symbol, ITIS_TSN, ScientificName, UV1, UV2, UV3)
 
@@ -1353,8 +1539,12 @@ duff_include <- tab_include(duff_check)
 #+++ KEEP THIS SECTION LAST +++
 # Target species lists by park
 covspp <- getCoverSpeciesComp(years = year_range, purpose = "NGPN_PCM") |>
-  select(MacroPlot_Name, Unit_Name, SampleEvent_Date, year, month, SaComment, Cover, UV1,
-         Symbol, ScientificName, CommonName, Nativity, Invasive, Cultural, Concern, LifeCycle, LifeForm_Name)
+  # filtering active plots
+  semi_join(y = keep_df) |>
+  select(MacroPlot_Name, Unit_Name, SampleEvent_Date,
+         year, month, SaComment, Cover, UV1, Symbol,
+         ScientificName, CommonName, Nativity, Invasive,
+         Cultural, Concern, LifeCycle, LifeForm_Name)
 
 inv_targ <- covspp |> filter(Invasive == TRUE)
 

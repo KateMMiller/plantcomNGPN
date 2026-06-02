@@ -175,12 +175,7 @@ macro_plots <- macro |>
   # naming parks
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
   # dropping duplicate plots
-  distinct() #|>
-  # removes HTLN legacy, treatment/control, and samples that don't have purpose or monitoring status from MacroPlot_Purpose
-  # mutate(keep = ifelse(grepl("Panel|ForestStructure|FS", MacroPlot_Purpose)|
-  #                        grepl("RCM", MacroPlot_Name) |
-  #                        grepl("FPCM", MacroPlot_Name), 1, 0)) |>
-  # filter(keep == 1) |> select(-keep)
+  distinct()
 
 ### Macro plot/sample events ----
 # joining macro plots with sample events
@@ -191,18 +186,13 @@ macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEven
          MacroPlot_GUID,
          MacroPlot_Purpose,
          SampleEvent_GUID,
-         SampleEvent_Date,
-         # SampleEvent_DefaultMonitoringStatus
-         ) |>
+         SampleEvent_Date) |>
   # removing duplicates
   distinct()
 
 # adding year
 macro_samp$year <- as.numeric(format(as.Date(macro_samp$SampleEvent_Date,
                                              format = "%Y-%m-%d"), "%Y"))
-
-# NA to blanks
-# macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
 
 ### Add monitoringstatus_base ----
 monstat <- NGPN_tables$MonitoringStatus # monitoringstatus_base
@@ -225,17 +215,14 @@ macro_samp_ms <- macro_samp_ms2 |>
   filter(year >= 2011) |>
   select(park,
          MacroPlot_Name,
-         # MonitoringStatus_Base,
          MonitoringStatus_Name,
          MacroPlot_Purpose,
-         # MacroPlot_GUID,
-         # SampleEvent_DefaultMonitoringStatus,
          SampleEvent_Date,
          year)
 
 # Fire Filtering ----
 samp_events_fire <- macro_samp_ms |>
-  mutate(keep = ifelse(grepl("Pre|Burn|Post|yr",
+  mutate(keep = ifelse(grepl("Pre|Burn|Post|yr|Yr",
                              MonitoringStatus_Name), 1, 0)) |>
   filter(keep == 1) |>  select(-keep) |>
   arrange(MacroPlot_Name, year)
@@ -252,12 +239,33 @@ samp_events_count_fire <- samp_events_fire |>
               values_from = count) |>
   arrange(park, MonitoringStatus_Name)
 
+## Off Sched Panels ----
+samp_events_off1 <- macro_samp_ms |>
+  mutate(keep = case_when(MonitoringStatus_Name = grepl("Pre|Burn|Post|yr|Yr",
+                                                        MonitoringStatus_Name) ~ 0,
+                          MacroPlot_Purpose = grepl("PanelE",
+                                                    MacroPlot_Purpose) ~ 0,
+                          MacroPlot_Name = grepl("_PCM_",
+                                                 MacroPlot_Name) ~ 1,
+                          TRUE ~ 0)) |>
+  filter(keep == 1) |>
+  select(-keep)
+
+samp_events_off <- bind_rows(samp_events_off1 |>
+                               filter(!park == "THRO") |>
+                               anti_join(panel_sch,
+                                         by = c("MacroPlot_Purpose" = "Panel",
+                                                "year" = "Year")),
+                             samp_events_off1 |>
+                               filter(park == "THRO") |>
+                               anti_join(panel_sch_thro,
+                                         by = c("MacroPlot_Purpose" = "Panel",
+                                                "year" = "Year"))) |>
+  select(-year) |>
+  arrange(SampleEvent_Date, MacroPlot_Name)
+
 ## Panel Filter ----
 # removing sample events from macro_samp_ms that don't have a panel_yr match (keeping all observations for panel_sch)
-# samp_events_all <- right_join(macro_samp_ms,
-#                               panel_sch,
-#                               by = c("MacroPlot_Purpose" = "Panel",
-#                                      "year" = "Year"))
 
 # THRO filtering
 samp_event_thro <- macro_samp_ms |>
@@ -347,6 +355,7 @@ park_list <- sort(unique(macro_plots$park))
 park_list_name <- sort(unique(samp_events_name$park))
 park_list_samp <- sort(unique(samp_events_count$park))
 park_list_samp_fire <- sort(unique(samp_events_count_fire$park))
+park_list_samp_off <- sort(unique(samp_events_off$park))
 # park_list2 <- sort(unique(macro_samp_ms_fpcm$park))
 
 # NGPN dups

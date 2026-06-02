@@ -7,7 +7,7 @@ output:
       in_header: "header_manual.html"
 
 params:
-  year_curr: 2024 # Current year of sampling
+  year_curr: 2025 # Current year of sampling
   all_years: TRUE # If FALSE, only reports on year_curr; TRUE reports on all years; not enabled yet- currently all years
 ---
 
@@ -47,7 +47,7 @@ year_hist <- 2011:(year_curr - 1)
 
 # If SQL not set up, use import below instead, and update the import_path:
 importData(type = 'csv', 
-           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260408.zip",
+           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260526.zip",
            keep_tables = T) 
 ```
 
@@ -61,7 +61,13 @@ source("NGPN_network_MacroPlot_QC_compile2.R")
 #### Macroplot QA/QC Info {.tabset}
 <span style="font-size:15px;">
 
-This tab is for the Plant Community Monitoring Plots. 
+This tab is for Plant Community Monitoring Plots. 
+
+<p><strong>Plots Off Schedule</strong></p>
+
+<ul style="padding-left: 40px;">
+  <li>This list shows the Plant Community Monitoring plots that were sampled off the 2 years on, 3 years off schedule (THIS DOES NOT INCLUDE RIPARIAN (_RCM_) OR FOREST STRUCTURE PLOTS (PanelE)). Note: Any sampling that is known to be off the schedule is already captured in the filtering (through panel_schedule.csv). Please check there is something looks wonky or if sample years need to be added. If only one site is off the panel schedule, please let Kinzie know and we can figure out the best way to include those plots in the report.</li>
+</ul>
 
 <p><strong>Monitoring Status Name</strong></p>
 
@@ -80,6 +86,41 @@ This tab is for the Plant Community Monitoring Plots.
 </ul>
 
 </span>
+
+#### Plots off Schedule {.tabset}
+```{r off_sched_plots, eval = F}
+df_samp_off <- samp_events_off |> filter(park %in% parkcode) |> select(-park)
+
+table_off_sched <- df_samp_off |>
+  kable(format = 'html',
+        align = 'c',
+        caption = paste0('A table of all the NGPN PCM plots from **',
+                         parkcode,
+                         '** that are off the sample schedule. ',
+                         'These need to be checked to make sure they should ',
+                         'not be included in any analyses.')) |>
+  kable_styling(fixed_thead = T,
+                bootstrap_options = c("condensed",
+                                      "striped"),
+                full_width = T,
+                position = 'left',
+                font_size = 10) |>
+  column_spec(1:ncol(df_samp_off),
+              border_left = "1px solid grey",
+              border_right = "1px solid grey")
+
+print(table_off_sched)
+```
+
+```{r, parktab_off, results = 'asis'}
+for(i in seq_along(park_list_samp_off)){
+  parkcode = park_list_samp_off[[i]]
+  cat("##### ", parkcode, "{.tabset}", "\n\n")
+  <<off_sched_plots>>
+  cat("\n\n")
+  cat("\n\n")
+}
+```
 
 #### Monitoring Status Name {.tabset}
 ```{r samp_events_name, eval = F}

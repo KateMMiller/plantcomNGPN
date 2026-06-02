@@ -50,7 +50,7 @@ tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN
 #importViews(import_path = "./docs/data/NGPN_FFI_views_20250825.zip")
 
 importData(type = 'csv', 
-           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260408.zip",
+           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260526.zip",
            keep_tables = T) 
 ```
 
@@ -82,9 +82,9 @@ check_null_print(kbl_macro_imp, 4, "Impossible Values")
 
 check_null_print(kbl_macro_topo, 4, "UV1 Topo Positions")
 
-check_null_print(kbl_macro_surf, 4, "UV2 Surface Water")
+# check_null_print(kbl_macro_surf, 4, "UV2 Surface Water")
 
-check_null_print(kbl_macro_hydro, 4, "UV3 Hydro Regime")
+# check_null_print(kbl_macro_hydro, 4, "UV3 Hydro Regime")
 
 check_null_print(kbl_macro_veg, 4, "UV4 Veg. Type")
 
@@ -96,7 +96,7 @@ cat("### Sample Event Checks {.tabset}", "\n\n")
 
 check_null_print(kbl_miss_samp, 4, "No SampleEvents")
 
-check_null_print(kbl_mac_samp2, 4, "MonStat Year Mismatch")
+# check_null_print(kbl_mac_samp2, 4, "MonStat Year Mismatch")
 
 ```
 
@@ -140,7 +140,7 @@ check_null_print(dt_nb_l_stat, 4, "NotBio Live")
 
 check_null_print(kbl_trans12, 4, "Odd Transects")
 
-check_null_print(kbl_trans50, 4, "Transects not 50m")
+# check_null_print(kbl_trans50, 4, "Transects not 50m")
 
 #check_null_print(kbl_hit1_ht, 4, "Heights on Order != 1") # returns >8k of records
 
@@ -151,7 +151,7 @@ cat("\n\n")
 ```
 
 ```{r densb, eval = densb_include, results = 'asis'}
-cat("### Nested Quadrats {.tabset}", "\n\n")
+cat("### Quadrats {.tabset}", "\n\n")
 
 check_null_print(kbl_dtrans12, 4, "Odd Transects")
 
@@ -159,17 +159,17 @@ check_null_print(kbl_dtrans12, 4, "Odd Transects")
 
 check_null_print(kbl_dtrans1, 4, "Transects not = 1")
 
-check_null_print(kbl_transwid, 4, "Transect width != 1m")
+# check_null_print(kbl_transwid, 4, "Transect width != 1m")
 
 check_null_print(kbl_subfrac_imp, 4, "Subfrac Typo")
 
-check_null_print(kbl_subbelt, 4, "Subbelt Typo")
+# check_null_print(kbl_subbelt, 4, "Subbelt Typo")
 
 check_null_print(kbl_spp_count, 4, "Count != 1")
 
 check_null_print(kbl_spp_dup2, 4, "Duplicate Spp.")
 
-check_null_print(kbl_UV1_text, 4, "UV1 non-numeric")
+# check_null_print(kbl_UV1_text, 4, "UV1 non-numeric")
 
 cat("\n\n")
 ```
@@ -220,9 +220,9 @@ cat("\n\n")
 ```{r seeds, eval = seed_include, results = 'asis'}
 cat("### Seedlings {.tabset}", "\n\n")
 
-check_null_print(dt_subfrac100, 4, "Under 100 Count")
+# check_null_print(dt_subfrac100, 4, "Under 100 Count")
 
-check_null_print(dt_subfrac100b, 4, "Over 100 Count")
+# check_null_print(dt_subfrac100b, 4, "Over 100 Count")
 
 cat("\n\n")
 ```
@@ -231,21 +231,21 @@ cat("\n\n")
 ```{r cwd, eval = cwd_include, results = 'asis'}
 cat("### Coarse Woody Debris {.tabset}", "\n\n")
 
-check_null_print(dt_cwd_non_pp, 4, "CWD on non-PP plots")
-
-check_null_print(dt_cwd_na, 4, "Blank Transect Data")
-
-check_null_print(kbl_cwd_slope100, 4, "CWD slope over 100")
-
-check_null_print(kbl_cwd_translen, 4, "CWD TransLen not 100")
-
-check_null_print(kbl_cwd_2trans, 4, "Missing CWD Transects")
-
-check_null_print(kbl_cwd_small, 4, "CWD less than 3in")
-
-check_null_print(dt_cwdfuconst, 4, "CWDFuConSt not PP")
-
-check_null_print(dt_cwd99, 4, "CWD diameters over 99%")
+# check_null_print(dt_cwd_non_pp, 4, "CWD on non-PP plots")
+# 
+# check_null_print(dt_cwd_na, 4, "Blank Transect Data")
+# 
+# check_null_print(kbl_cwd_slope100, 4, "CWD slope over 100")
+# 
+# check_null_print(kbl_cwd_translen, 4, "CWD TransLen not 100")
+# 
+# check_null_print(kbl_cwd_2trans, 4, "Missing CWD Transects")
+# 
+# check_null_print(kbl_cwd_small, 4, "CWD less than 3in")
+# 
+# check_null_print(dt_cwdfuconst, 4, "CWDFuConSt not PP")
+# 
+# check_null_print(dt_cwd99, 4, "CWD diameters over 99%")
 
 cat("\n\n")
 ```

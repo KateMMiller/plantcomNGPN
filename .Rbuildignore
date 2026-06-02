@@ -8,3 +8,5 @@
 ^\docs$
 ^\SQL$
 ^\data$
+^\.positai$
+^\.claude$

@@ -23,7 +23,6 @@ Suggests:
     dbplyr,
     odbc,
     zip
-RoxygenNote: 7.3.3
 Collate: 
     'getTaxa.R'
     'getMacroPlot.R'
@@ -41,3 +40,4 @@ Collate:
     'importData.R'
     'importViews.R'
     'makeViews.R'
+Config/roxygen2/version: 8.0.0

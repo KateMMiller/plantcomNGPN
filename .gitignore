@@ -11,3 +11,4 @@ docs/*.html
 *.txt
 testing_scripts/
 data/
+.positai

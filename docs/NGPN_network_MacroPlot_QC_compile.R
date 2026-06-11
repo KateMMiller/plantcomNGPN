@@ -1,4 +1,6 @@
-# # -- Params for troubleshooting --
+# Params for troubleshooting ----
+## These parameters come from NGPM_network_MacroPlot_Qc_Checks.Rmd
+
 # library(plantcomNGPN)
 # library(tidyverse) # dplyr, purrr, tidyr
 # library(knitr) # for kable and include_graphic()
@@ -19,19 +21,65 @@
 # year_curr <- 2024
 # year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 # year_hist <- 2011:(year_curr - 1)
+
+# Start of source code ----
+## Loading data ----
+# Species list
+# tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+# or UPDATE PATH
+tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+
+# PCM Panel sampling schedule
+# Path will need to be updated
+panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
+                           na.strings = "")
+
+# pivot to longer
+panel_sch <- panel_sch_wide |>
+  pivot_longer(!Year,
+               names_to = "Panel") |>
+  drop_na() |>
+  # filtering to current date (will update every year)
+  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+  select(Year,
+         Panel)
+
+#THRO Panel sch
+panel_sch_wide_thro <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/THRO_panel_schedule.csv",
+                           na.strings = "")
+
+# pivot to longer
+panel_sch_thro <- panel_sch_wide_thro |>
+  pivot_longer(!Year,
+               names_to = "Panel") |>
+  drop_na() |>
+  # filtering to current date (will update every year)
+  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+  select(Year,
+         Panel)
+
+# Forest panel sampling schedule
+# forest_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/forest_panel_schedule.csv",
+#                            na.strings = "")
 #
-tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+# # pivot to linger
+# forest_sch <- forest_sch_wide |>
+#   pivot_longer(!Year,
+#                names_to = "Panel") |>
+#   drop_na()|>
+#   # filtering to current date (will update every year)
+#   filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+#   select(Year,
+#          Panel)
 
-# options(scipen = 100)
-
-### Functions
-# Summarize results of QC check
+## Functions ----
+### Summarize results of QC check
 QC_check <- function(df, meas_type, tab, check, chk_type = "error"){
   result <- data.frame("Type" = meas_type, "Data" = tab,
                        "Description" = check, "Num_Records" = nrow(df), "check_type" = chk_type)
 }
 
-# function to make tables via kable
+### function to make tables via kable
 make_kable <- function(df, cap){
   QC_table <- if(nrow(df) > 0){
     if(nrow(df) > 1){
@@ -49,8 +97,10 @@ make_kable <- function(df, cap){
         row_spec(nrow(df), extra_css = 'border-bottom: 1px solid #000000;')
     }
   } else NULL
+
 }
 
+### function to make data tables
 make_dt <- function(df, cap){
   datatable(df,
             class = 'cell-border stripe', rownames = FALSE,
@@ -73,10 +123,10 @@ make_dt <- function(df, cap){
             filter = list(position = c('top'), clear = FALSE))
 }
 
-# Determine whether to include/drop tab in rmd output
+### Determine whether to include/drop tab in rmd output
 tab_include <- function(df){ifelse(nrow(df) > 0, TRUE, FALSE)}
 
-# Determine if table exists or is null used in eval for rmd
+### Determine if table exists or is null used in eval for rmd
 check_null <- function(table){
   if(!is.null(table)){table}
 }
@@ -86,148 +136,291 @@ check_null_print <- function(table, tab_level = 4, tab_title){
   check_null(table)
 }
 
-### Macroplot Checks
-#### Plot Matrix List
-macro <- NGPN_tables$MacroPlot
-samp <- NGPN_tables$SampleEvent
+## Macroplot Checks ----
+### Merging tables ----
 
+#### Plot Matrix List
+macro <- NGPN_tables$MacroPlot # list of plots and purpose
+samp <- NGPN_tables$SampleEvent # list of sample events
+
+#### formatting date
 samp$SampleEvent_Date <-
   as.Date(substr(samp$SampleEvent_Date, 1, 11), format = "%Y-%m-%d")
 
-monstat <- NGPN_tables$MonitoringStatus
-mm_monstat <- NGPN_tables$MM_MonitoringStatus_SampleEvent
-
+#### selecting only pcm type plots
 plots <- macro$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro$MacroPlot_Name)]
 # plots <- macro$MacroPlot_Name[grepl("_PCM_|_RCM_", macro$MacroPlot_Name)]
 
-macro_plots <- macro |> mutate(park = substr(datasource, 8, 11)) |>
+### Macro plot df ----
+macro_plots <- macro |>
+  # filtering pcm plots
   filter(MacroPlot_Name %in% plots)|>
-  select(MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, MacroPlot_RegistrationUnit_GUID,
-         MacroPlot_UTM_X, MacroPlot_UTM_Y, MacroPlot_UTMzone, MacroPlot_Datum, MacroPlot_DD_Lat, MacroPlot_DD_Long,
-         MacroPlot_Elevation, MacroPlot_Aspect, MacroPlot_Azimuth, MacroPlot_SlopeHill,
-         MacroPlot_SlopeTransect, MacroPlot_GUID) |>
+  # cleaning up columns
+  select(MacroPlot_Name,
+         MacroPlot_Purpose,
+         MacroPlot_Type,
+         MacroPlot_RegistrationUnit_GUID,
+         MacroPlot_UTM_X,
+         MacroPlot_UTM_Y,
+         MacroPlot_UTMzone,
+         MacroPlot_Datum,
+         MacroPlot_DD_Lat,
+         MacroPlot_DD_Long,
+         MacroPlot_Elevation,
+         MacroPlot_Aspect,
+         MacroPlot_Azimuth,
+         MacroPlot_SlopeHill,
+         MacroPlot_SlopeTransect,
+         MacroPlot_GUID) |>
+  # naming parks
   mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  distinct() |>
-  mutate(keep = ifelse(grepl("Panel|ForestStructure", MacroPlot_Purpose)|
-                         grepl("RCM", MacroPlot_Name) |
-                         grepl("FPCM", MacroPlot_Name), 1, 0)) |>
-  filter(keep == 1) |> select(-keep)
-
-# Continue compiling sample data
-macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
-  select(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose,
-         SampleEvent_GUID, SampleEvent_Date, SampleEvent_DefaultMonitoringStatus) |>
+  # dropping duplicate plots
   distinct()
 
-# macro_samp$SampleEvent_Date <-
-#   format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d %H:%m:%s"), "%Y-%m-%d")
-macro_samp$year <- as.numeric(format(as.Date(macro_samp$SampleEvent_Date, format = "%Y-%m-%d"), "%Y"))
-macro_samp$SampleEvent_DefaultMonitoringStatus[is.na(macro_samp$SampleEvent_DefaultMonitoringStatus)] <- "blank"
+### Macro plot/sample events ----
+# joining macro plots with sample events
+macro_samp <- left_join(macro_plots, samp, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID")) |>
+  # cleaning up columns
+  select(park,
+         MacroPlot_Name,
+         MacroPlot_GUID,
+         MacroPlot_Purpose,
+         SampleEvent_GUID,
+         SampleEvent_Date) |>
+  # removing duplicates
+  distinct()
 
-macro_samp2 <- macro_samp |> filter(year >= 2011) |>
-  mutate(park = substr(MacroPlot_Name, 1, 4),
-         DefaultMonitoringStatus = sub(".*\\_", "", SampleEvent_DefaultMonitoringStatus)) |>
-  select(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |> distinct() |>
-  group_by(park, MacroPlot_Name, DefaultMonitoringStatus, MacroPlot_Purpose, year) |>
-  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
-  arrange(year, DefaultMonitoringStatus) |>
-  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  filter(grepl("blank|00|01|02|03|Dual|Fire|FirePlantCommunity|ForestStructure|
-               PCM_Fire|Plant Community|PlantCommunity|Riparian|IM_Intensive",
-               DefaultMonitoringStatus)) |>
-  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
-         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  #arrange(plottype, plotnum, DefaultMonitoringStatus) |>
-  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, DefaultMonitoringStatus, yr2011:last_col()) |>
-  select(-plotnum, -plottype)
+# adding year
+macro_samp$year <- as.numeric(format(as.Date(macro_samp$SampleEvent_Date,
+                                             format = "%Y-%m-%d"), "%Y"))
 
-park_list <- sort(unique(macro_plots$park))
+### Add monitoringstatus_base ----
+monstat <- NGPN_tables$MonitoringStatus # monitoringstatus_base
+mm_monstat_se <- NGPN_tables$MM_MonitoringStatus_SampleEvent # needed for GUID matching
 
-macro_samp_dups <- macro_samp2 |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(DefaultMonitoringStatus))) |>
-  filter(num_monstat > 1) |> select(MacroPlot_Name)
+# merge for correct GUID
+macro_samp_ms1 <- left_join(macro_samp,
+                            mm_monstat_se,
+                            by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
 
-macro_samp2$dup_ms <- ifelse(macro_samp2$MacroPlot_Name %in% macro_samp_dups$MacroPlot_Name, 1, 0)
-
-# Add in monitoringstatus_base from monitoring status table
-monstat <- NGPN_tables$MonitoringStatus
-mm_monstat_se <- NGPN_tables$MM_MonitoringStatus_SampleEvent
-
-macro_samp_ms1 <- left_join(macro_samp, mm_monstat_se, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"))
-
-macro_samp_ms2 <- left_join(macro_samp_ms1, monstat,
+# merge for monitoringstatus_base
+macro_samp_ms2 <- left_join(macro_samp_ms1,
+                            monstat,
                             by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID",
                                    "datasource"))
 
-macro_samp_ms <- macro_samp_ms2 |> filter(year >= 2011) |>
-  mutate(park = substr(MacroPlot_Name, 1, 4)) |>
-  filter(grepl("blank|Dual|^Fire$|^Fire_$|FirePlantCommunity|
-               ForestStructure|PCM_Fire|Plant Community|PlantCommunity|
-               Riparian|2016|2011|2012|2013|2014|2015|Panel|Riparian|
-               _PCM|ForestStructure",
-               MonitoringStatus_Base)) |>
-  select(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |> distinct() |>
-  group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year) |>
-  summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
-  arrange(year, MonitoringStatus_Base) |>
-  pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
-  mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
-         plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
-  arrange(plottype, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col()) |>
-  select(-plotnum, -plottype)
 
+macro_samp_ms <- macro_samp_ms2 |>
+  # removing anything before 2011
+  filter(year >= 2011) |>
+  select(park,
+         MacroPlot_Name,
+         MonitoringStatus_Name,
+         MacroPlot_Purpose,
+         SampleEvent_Date,
+         year)
+
+# Fire Filtering ----
+samp_events_fire <- macro_samp_ms |>
+  mutate(keep = ifelse(grepl("Pre|Burn|Post|yr|Yr",
+                             MonitoringStatus_Name), 1, 0)) |>
+  filter(keep == 1) |>  select(-keep) |>
+  arrange(MacroPlot_Name, year)
+
+# getting MonStat_Name plot
+samp_events_count_fire <- samp_events_fire |>
+  # distinct() |>
+  summarize(count = n(),
+            .by = c(park,
+                    MonitoringStatus_Name,
+                    year)) |>
+  arrange(year) |>
+  pivot_wider(names_from = year,
+              values_from = count) |>
+  arrange(park, MonitoringStatus_Name)
+
+## Off Sched Panels ----
+samp_events_off1 <- macro_samp_ms |>
+  mutate(keep = case_when(MonitoringStatus_Name = grepl("Pre|Burn|Post|yr|Yr",
+                                                        MonitoringStatus_Name) ~ 0,
+                          MacroPlot_Purpose = grepl("PanelE",
+                                                    MacroPlot_Purpose) ~ 0,
+                          MacroPlot_Name = grepl("_PCM_",
+                                                 MacroPlot_Name) ~ 1,
+                          TRUE ~ 0)) |>
+  filter(keep == 1) |>
+  select(-keep)
+
+samp_events_off <- bind_rows(samp_events_off1 |>
+                               filter(!park == "THRO") |>
+                               anti_join(panel_sch,
+                                         by = c("MacroPlot_Purpose" = "Panel",
+                                                "year" = "Year")),
+                             samp_events_off1 |>
+                               filter(park == "THRO") |>
+                               anti_join(panel_sch_thro,
+                                         by = c("MacroPlot_Purpose" = "Panel",
+                                                "year" = "Year"))) |>
+  select(-year) |>
+  arrange(SampleEvent_Date, MacroPlot_Name)
+
+## Panel Filter ----
+# removing sample events from macro_samp_ms that don't have a panel_yr match (keeping all observations for panel_sch)
+
+# THRO filtering
+samp_event_thro <- macro_samp_ms |>
+  filter(park == "THRO") |>
+  # semi joining with panel sch
+  semi_join(panel_sch_thro,
+            by = c("MacroPlot_Purpose" = "Panel",
+                   "year" = "Year"))
+
+# Other PCM filtering
+samp_events_all <- macro_samp_ms |>
+  filter(!park == "THRO") |>
+  semi_join(panel_sch,
+            by = c("MacroPlot_Purpose" = "Panel",
+                   "year" = "Year")) |>
+  bind_rows(samp_event_thro)
+
+# filtering plots that NEED a monitoring status name
+samp_events_name <- samp_events_all |>
+  filter(is.na(MonitoringStatus_Name)) |>
+  select(park,
+         MacroPlot_Name,
+         SampleEvent_Date,
+         # MacroPlot_GUID,
+         # MonitoringStatus_Base,
+         MonitoringStatus_Name) |>
+  arrange(SampleEvent_Date, MacroPlot_Name)
+
+# getting count for each panel-year
+samp_events <- samp_events_all |>
+  # filtering anything that isn't plant community samples
+  mutate(keep = case_when(!grepl("Fire",
+                                 MonitoringStatus_Name) &
+                          grepl("PlantCommunity",
+                                MonitoringStatus_Name) ~ 1,
+                          grepl("Dual",
+                                MonitoringStatus_Name) ~ 1,
+                          TRUE ~ 0)) |>
+  filter(keep == 1) |> select(-keep) |>
+  arrange(MacroPlot_Name, year)
+
+samp_events_indv <- samp_events |>
+  distinct()
+
+# samp_events_b <- samp_events_all |>
+#   # filtering anything that isn't plant community samples
+#   mutate(keep = ifelse(grepl("PlantCommunity",
+#                              MonitoringStatus_Base), 1, 0)) |>
+#   filter(keep == 1) |> select(-keep) |>
+#   arrange(MacroPlot_Name, year)
+
+# checking duplicate rows
+sampe_events_dup <- samp_events[duplicated(samp_events) | duplicated(samp_events, fromLast = TRUE), ]
+
+## Sample event counts ----
+samp_events_count <- samp_events |>
+  distinct() |>
+  summarize(count = n(),
+            .by = c(park,
+                    MacroPlot_Purpose,
+                    year)) |>
+  pivot_wider(names_from = MacroPlot_Purpose,
+              values_from = count) |>
+  arrange(park, year)
+
+
+#   group_by(park, MacroPlot_Name, MonitoringStatus_Base, MacroPlot_Purpose, year, type) |>
+#   summarize(num_recs = sum(!is.na(year)), .groups = 'drop') |>
+#   arrange(year, MonitoringStatus_Base) |>
+#   pivot_wider(names_from = year, values_from = num_recs, names_prefix = 'yr') |>
+#   # mutate(plotnum = as.numeric(gsub("\\D", "", MacroPlot_Name)),
+#   #        plottype = ifelse(grepl("_LPCM", MacroPlot_Name), 1, 0)) |>
+#   arrange(MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, type)
+#
+# # Fire Plots
+# macro_samp_ms_fpcm <- macro_samp_ms |>
+#   filter(type == "fire") |>
+#   select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col())
+#
+# # NGPN Plots
+# macro_samp_ms_pcm <- macro_samp_ms |>
+#   filter(type == "ngpn") |>
+#   select(park, MacroPlot_Name, MacroPlot_Purpose, MonitoringStatus_Base, yr2011:last_col())
+
+## Creating Park List ----
 park_list <- sort(unique(macro_plots$park))
+park_list_name <- sort(unique(samp_events_name$park))
+park_list_samp <- sort(unique(samp_events_count$park))
+park_list_samp_fire <- sort(unique(samp_events_count_fire$park))
+park_list_samp_off <- sort(unique(samp_events_off$park))
+# park_list2 <- sort(unique(macro_samp_ms_fpcm$park))
 
-macro_samp_ms_dups <- macro_samp_ms |> group_by(MacroPlot_Name) |> summarize(num_monstat = sum(!is.na(MonitoringStatus_Base))) |>
-  filter(num_monstat > 1) |> select(MacroPlot_Name)
-
-macro_samp_ms$dup_ms <- ifelse(macro_samp_ms$MacroPlot_Name %in% macro_samp_ms_dups$MacroPlot_Name, 1, 0)
-
-
-#### Purpose
-macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot,
-                    by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
-macroproj <- left_join(macro2, NGPN_tables$ProjectUnit,
-                       by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"),
-                       relationship = "many-to-many")
-
-macroproj2 <- macroproj |>
-  mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |>
-  select(park, MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type, ProjectUnit_Name, ProjectUnit_Agency,
-         MacroPlot_GUID) |> arrange(MacroPlot_Name)
-
-macroproj_dups <- macroproj2 |> group_by(MacroPlot_Name, MacroPlot_GUID, MacroPlot_Purpose, ProjectUnit_Name) |>
-  summarize(num_rows = sum(!is.na(park)), .groups = 'drop') |>
-  arrange(ProjectUnit_Name) |> select(-MacroPlot_GUID) |>
-  pivot_wider(names_from = ProjectUnit_Name, values_from = num_rows) |> data.frame() |>
-  #select(MacroPlot_Name, MacroPlot_Purpose, park, everything()) |>
-  arrange(MacroPlot_Name) |> mutate(park = substr(MacroPlot_Name, 1, 4))
-
-start_cols <- c("MacroPlot_Name", "MacroPlot_Purpose", "Park")
-macroproj_dups <- macroproj_dups[, c(start_cols, sort(setdiff(names(macroproj_dups), start_cols)))]
-
-macroproj_dups$num_recs <- apply(macroproj_dups[,3:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
-macroproj_dups$nonvs <- grepl("Panel|IM_Intensive", macroproj_dups$MacroPlot_Purpose)
-
-
-macro_purp1 <- macro_plots |> select(MacroPlot_Name, MacroPlot_Purpose) |>
-  #unique() |>
-  mutate(pres = 1,
-         MacroPlot_Purpose = ifelse(is.na(MacroPlot_Purpose) |
-                                      MacroPlot_Purpose == "", "Unknown", MacroPlot_Purpose)) |>
-  arrange(MacroPlot_Purpose) |>
-  pivot_wider(names_from = MacroPlot_Purpose, values_from = pres) |>
-  arrange(MacroPlot_Name)
-
-start_cols <- c("MacroPlot_Name", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
-                "Panel7", "Panel8", "Panel9", "Panel10", "PanelE")#, "IM_Intensive",
-                #"IM_veg", "IM_FX_Dual")
-other_cols <- sort(setdiff(names(macro_purp1), start_cols))
-
-macro_purp <- macro_purp1[,c(start_cols, other_cols)]
-
-### Sample Event Checks {.tabset}
+# NGPN dups
+# macro_samp_ms_pcm_dups <- macro_samp_ms_pcm |>
+#   group_by(MacroPlot_Name) |>
+#   summarize(num_monstat = sum(!is.na(MonitoringStatus_Base))) |>
+#   filter(num_monstat > 1) |> select(MacroPlot_Name)
+#
+# # macro_samp_ms$dup_ms <- ifelse(macro_samp_ms$MacroPlot_Name %in% macro_samp_ms_dups$MacroPlot_Name, 1, 0)
+#
+# # writing for plot checks from NGPN staff
+# # writexl::write_xlsx()
+#
+#
+# #### Purpose ---------
+# macro2 <- left_join(macro_plots, NGPN_tables$MM_ProjectUnit_MacroPlot,
+#                     by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID"))
+# macroproj <- left_join(macro2, NGPN_tables$ProjectUnit,
+#                        by = c("MM_ProjectUnit_GUID" = "ProjectUnit_GUID", "datasource"),
+#                        relationship = "many-to-many")
+#
+# macroproj2 <- macroproj |>
+#   # mutate(park = substr(datasource, nchar(datasource)-3, nchar(datasource))) |>
+#   select(park, MacroPlot_Name, MacroPlot_Purpose, MacroPlot_Type,
+#          ProjectUnit_Name, ProjectUnit_Agency, MacroPlot_GUID) |>
+#   arrange(MacroPlot_Name)
+#
+# macroproj_dups <- macroproj2 |>
+#   group_by(MacroPlot_Name, MacroPlot_GUID,
+#            MacroPlot_Purpose, ProjectUnit_Name) |>
+#   summarize(num_rows = sum(!is.na(park)), .groups = 'drop') |>
+#   arrange(ProjectUnit_Name) |>
+#   select(-MacroPlot_GUID) |>
+#   pivot_wider(names_from = ProjectUnit_Name,
+#               values_from = num_rows) |>
+#   data.frame() |>
+#   #select(MacroPlot_Name, MacroPlot_Purpose, park, everything()) |>
+#   arrange(MacroPlot_Name) |>
+#   mutate(park = substr(MacroPlot_Name, 1, 4))
+#
+# start_cols <- c("MacroPlot_Name", "MacroPlot_Purpose", "Park")
+# macroproj_dups <- macroproj_dups[, c(start_cols, sort(setdiff(names(macroproj_dups), start_cols)))]
+#
+# macroproj_dups$num_recs <- apply(macroproj_dups[,3:ncol(macroproj_dups)], 1, function(x) sum(!is.na(x)))
+# macroproj_dups$nonvs <- grepl("Panel|IM_Intensive", macroproj_dups$MacroPlot_Purpose)
+#
+#
+# macro_purp1 <- macro_plots |>
+#   select(MacroPlot_Name, MacroPlot_Purpose) |>
+#   #unique() |>
+#   mutate(pres = 1,
+#          MacroPlot_Purpose = ifelse(is.na(MacroPlot_Purpose) |
+#                                       MacroPlot_Purpose == "", "Unknown", MacroPlot_Purpose)) |>
+#   arrange(MacroPlot_Purpose) |>
+#   pivot_wider(names_from = MacroPlot_Purpose, values_from = pres) |>
+#   arrange(MacroPlot_Name)
+#
+# start_cols <- c("MacroPlot_Name", "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
+#                 "Panel7", "Panel8", "Panel9", "Panel10", "PanelE")#, "IM_Intensive",
+#                 #"IM_veg", "IM_FX_Dual")
+# other_cols <- sort(setdiff(names(macro_purp1), start_cols))
+#
+# macro_purp <- macro_purp1[,c(start_cols, other_cols)]
+#
+### Sample Event Checks {.tabset} ---------
 macro_guids <- unique(macro_plots$MacroPlot_GUID) # NGPN macroplot_guids for filter
 mm_projunit <- NGPN_tables$MM_ProjectUnit_MacroPlot
 regunit <- NGPN_tables$RegistrationUnit
@@ -382,3 +575,4 @@ QC_check_table <- kable(QC_table, format = 'html', align = 'c', caption = QC_cap
                        ifelse(QC_table$Num_Records > 0 & QC_table$check_type == "check", "#b7d8ef", "#ffffff"))) |>
   collapse_rows(1, valign = 'top') |>
   row_spec(nrow(QC_table), extra_css = 'border-bottom: 1px solid #000000;')
+

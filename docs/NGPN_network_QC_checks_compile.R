@@ -193,7 +193,8 @@ macro_miss_utm <- macro_plots |>
          UTM_Y,
          UTMzone,
          DD_Lat,
-         DD_Long)
+         DD_Long) |>
+  arrange(MacroPlot_Name)
 
 # Adding to initial table
 QC_table <- QC_check(df = macro_miss_utm, meas_type = "MacroPlot", tab = "Plot Info",
@@ -276,7 +277,8 @@ out_pts_utm <- out_pts |>
   mutate(UTM_X = st_coordinates(geometry)[,1],
          UTM_Y = st_coordinates(geometry)[,2]) |>
   st_drop_geometry() |>
-  select(MacroPlot_Name, UTM_X, UTM_Y)
+  select(MacroPlot_Name, UTM_X, UTM_Y) |>
+  arrange(MacroPlot_Name)
 
 # Adding values to QC_table
 QC_table <- rbind(QC_table,
@@ -293,7 +295,8 @@ kbl_out_pts_utm <- make_kable(out_pts_utm,
 datum <- macro_plots |>
   select(MacroPlot_Name, UTM_X, UTM_Y,
          UTMzone, Datum) |>
-  filter(!Datum %in% "NAD83")
+  filter(!Datum %in% "NAD83") |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = datum,
@@ -305,8 +308,9 @@ QC_table <- rbind(QC_table,
 kbl_datum <- make_kable(datum,
                         cap = "NGPN PCM plot coordinates with datum not matching 'NAD83'")
 
-# For plots with lat/long only, check if they're within the park bounds. This helps if we need to use the lat/longs
-# to generate the UTMs. I'm not proud that I didn't iterate on this.
+# For plots with lat/long only, check if they're within the park bounds.
+# This helps if we need to use the lat/longs
+
 
 # Getting Plot locations
 macro_plots_DD <- macro_plots |>
@@ -342,7 +346,8 @@ out_pts_dd <- out_ptsdd |>
   st_drop_geometry() |>
   select(MacroPlot_Name,
          DD_Long,
-         DD_Lat)
+         DD_Lat) |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = out_pts_dd,
@@ -361,11 +366,10 @@ macro_blanks <- macro_plots |>
          ElevationUnits,
          Azimuth,
          Aspect,
-         # SlopeHill
-         ) |>
+         SlopeHill) |>
   filter(is.na(Elevation) | is.na(ElevationUnits) | is.na(Azimuth) |
-           is.na(Aspect) #| is.na(SlopeHill)
-         )
+           is.na(Aspect) | is.na(SlopeHill)) |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = macro_blanks,
@@ -386,9 +390,10 @@ macro_imp <- macro_plots |>
          Aspect,
          SlopeHill,
          SlopeTransect) |>  # slopes should be <= 100%
-  filter(#SlopeTransect != 9999,
+  filter(SlopeTransect != 9999,
          Azimuth > 360 | Azimuth < 0 | Aspect > 360 | Aspect < 0 |
-         SlopeHill > 100 | SlopeTransect > 100)
+         SlopeHill > 100 | SlopeTransect > 100) |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = macro_imp,
@@ -415,7 +420,8 @@ macro_topo <- macro_uv |>
   filter(!MacroPlot_UV1 %in%
          c('CR', 'DR', 'LV', 'LS', 'MS', 'RO', 'SB', 'US')) |>
   select(MacroPlot_Name,
-         MacroPlot_UV1)
+         MacroPlot_UV1) |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = macro_topo,
@@ -460,7 +466,8 @@ kbl_macro_topo <- make_kable(macro_topo,
 macro_veg <- macro_uv |>
   filter(!MacroPlot_UV4 %in% c("BS", "HR", "PP", "RW", "SH", "UG", "WD")) |>
   select(MacroPlot_Name,
-         MacroPlot_UV4)
+         MacroPlot_UV4) |>
+  arrange(MacroPlot_Name)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = macro_veg,
@@ -495,7 +502,9 @@ mac_samp <- bind_rows(mac_samp_all |>
                                          "year" = "Year")))
 
 ### Check for sample events with no data ----
-miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID))
+miss_samp <- mac_samp |> filter(is.na(SampleEvent_GUID)) |>
+  arrange(MacroPlot_Name,
+          SampleEvent_Date)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = miss_samp,
@@ -734,11 +743,14 @@ num_ground <- point_int |>
          year,
          Transect,
          NumPtsTran,
-         num_ground)
+         num_ground) |>
+  arrange(MacroPlot_Name,
+          SampleEvent_Date,
+          Transect)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = num_ground,
-                           tab = "Missing Ground",
+                           tab = "Incorrect Ground",
                            meas_type = "Point Intercept",
                            check = "Transects where number of ground hits doesn't match number of points sampled.",
                            chk_type = "error"))
@@ -758,7 +770,9 @@ ht_check <- point_int |>
                     Transect,
                     Point,
                     Tape)) |>
-  filter(num_orders > 1 & Height == 0)
+  filter(num_orders > 1 & Height == 0) |>
+  arrange(MacroPlot_Name,
+          SampleEvent_Date)
 
 ht_check$Height[ht_check$Height == 0] <- NA_real_ # Adding NA back in due to sum
 
@@ -800,7 +814,9 @@ dup_order <- point_int |>
                     Point,
                     Tape,
                     Order)) |>
-  filter(num_hits > 1)
+  filter(num_hits > 1) |>
+  arrange(MacroPlot_Name,
+          SampleEvent_Date)
 
 QC_table <- rbind(QC_table,
                   QC_check(df = dup_order,
@@ -838,22 +854,23 @@ kbl_ht_oor <- make_kable(ht_oor, cap = "Points with a Height > 2.0m.")
 
 ### Find heights > 99% ever recorded ----
 point_ht99 <- quantile(point_int$Height,
-                       probs = 0.99,
+                       probs = 0.998,
                        na.rm = T)
 
 point99 <- point_int |>
   filter(Height > point_ht99) |>
-  mutate(Height99 = point_ht99)
+  mutate(Height99 = point_ht99) |>
+  arrange()
 
 QC_table <- rbind(QC_table,
                   QC_check(point99,
-                           tab = "Heights over 99pct",
+                           tab = "Heights over 99.8pct",
                            meas_type = "Point Intercept",
-                           check = "Heights greater than 99pct ever recorded.",
+                           check = "Heights greater than 99.8pct ever recorded.",
                            chk_type = 'check'))
 
 kbl_point99 <- make_dt(point99,
-                       cap = "Heights greater than 99pct ever recorded.")
+                       cap = "Heights greater than 99.8pct ever recorded.")
 
 ### Find inconsistent Status Codes ----
 stat_code <- point_int |>
@@ -931,6 +948,7 @@ dt_nb_l_stat <- make_dt(nb_l_stat,
 #                   QC_check(nb_dm_stat, tab = "Dead NotBiological", meas_type = "Point Intercept",
 #                            check = "Status = Dead or Blank and NotBiological = FALSE",
 #                            chk_type = "error"))
+#
 # kbl_nb_l_stat <- make_kable(nb_dm_stat, cap = "Status = Live and NotBiological = TRUE")
 
 #### Transect numbers that aren't 1 or 2 ----
@@ -1574,25 +1592,25 @@ tree_check <- QC_table |>
 tree_include <- tab_include(tree_check)
 
 ## Density Quadrats (seedlings) ----
-seeds <- getDensityQuadrats(years = year_range, purpose = "NGPN_PCM") |>
-  select(MacroPlot_Name,
-         SampleEvent_Date,
-         year,
-         month,
-         NumTran,
-         NumQuadTran,
-         QuadLen,
-         QuadWid,
-         Area,
-         Transect,
-         Quadrat,
-         Status,
-         SizeCl,
-         AgeCl,
-         Count,
-         SubFrac,
-         Symbol,
-         ScientificName)
+# seeds <- getDensityQuadrats(years = year_range, purpose = "NGPN_PCM") |>
+#   select(MacroPlot_Name,
+#          SampleEvent_Date,
+#          year,
+#          month,
+#          NumTran,
+#          NumQuadTran,
+#          QuadLen,
+#          QuadWid,
+#          Area,
+#          Transect,
+#          Quadrat,
+#          Status,
+#          SizeCl,
+#          AgeCl,
+#          Count,
+#          SubFrac,
+#          Symbol,
+#          ScientificName)
 
 ### Check that if counts are < 100, SubFrac == 1 (page 86/105 in SOP) ----
 # subfrac100 <- seeds |>
@@ -1645,8 +1663,8 @@ seeds <- getDensityQuadrats(years = year_range, purpose = "NGPN_PCM") |>
 # dt_subfrac100b <- make_dt(subfrac100b, "Counts > 100 for a species on a plot with a SubFrac = 1.")
 
 # check if seedlings checks returned at least 1 record to determine whether to include tab
-seed_check <- QC_table |> filter(Type %in% "Seedlings" & Num_Records > 0)
-seed_include <- tab_include(seed_check)
+# seed_check <- QC_table |> filter(Type %in% "Seedlings" & Num_Records > 0)
+# seed_include <- tab_include(seed_check)
 
 ## CWD Checks ----
 
@@ -1926,10 +1944,10 @@ cwd <- left_join(cwd1,
 # dt_fwd_100hr99 <- make_dt(fwd_100hr99, "Fine Woody Debris One-hour counts > 99% of counts ever recorded")
 
 # check if fwd checks returned at least 1 record to determine whether to include tab
-# fwd_check <- QC_table |>
-#   filter(Type %in% "Fine Woody Debris" & Num_Records > 0)
-#
-# fwd_include <- tab_include(fwd_check)
+fwd_check <- QC_table |>
+  filter(Type %in% "Fine Woody Debris" & Num_Records > 0)
+
+fwd_include <- tab_include(fwd_check)
 
 ## Duff Checks ----
 # duff1 <- getFuelsDuff(years = year_range, purpose = "NGPN_PCM") |>

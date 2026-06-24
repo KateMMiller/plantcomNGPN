@@ -31,10 +31,6 @@ all_years <- params$all_years
 year_curr <- params$year_curr
 year_range <- if(all_years == TRUE){2011:year_curr} else {year_curr}
 year_hist <- 2011:(year_curr - 1)
-
-# Read in NGPN SOP Table 4 tree DBH vs DRC species list:
-tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
-
 ```
 
 ```{r imports, include = F}
@@ -50,7 +46,7 @@ tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN
 #importViews(import_path = "./docs/data/NGPN_FFI_views_20250825.zip")
 
 importData(type = 'csv', 
-           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260526.zip",
+           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260616.zip",
            keep_tables = T) 
 ```
 
@@ -65,41 +61,6 @@ source("NGPN_network_QC_checks_compile.R")
 QC_check_table
 ```
 
-```{r macro, eval = macro_include, results = 'asis'}
-cat("### MacroPlot Checks {.tabset}", "\n\n")
-
-check_null_print(kbl_macro_miss_utm, 4, "Missing UTM")
-
-check_null_print(kbl_out_pts_utm, 4, "Incorrect UTM")
-
-check_null_print(kbl_datum, 4, "Datum check")
-
-check_null_print(kbl_out_pts_dd, 4, "Incorrect DD")
-
-check_null_print(kbl_macro_blanks, 4, "Blank Loc. Values")
-
-check_null_print(kbl_macro_imp, 4, "Impossible Values")
-
-check_null_print(kbl_macro_topo, 4, "UV1 Topo Positions")
-
-# check_null_print(kbl_macro_surf, 4, "UV2 Surface Water")
-
-# check_null_print(kbl_macro_hydro, 4, "UV3 Hydro Regime")
-
-check_null_print(kbl_macro_veg, 4, "UV4 Veg. Type")
-
-cat("\n\n")
-```
-
-```{r sampev, eval = samp_include, results = 'asis'}
-cat("### Sample Event Checks {.tabset}", "\n\n")
-
-check_null_print(kbl_miss_samp, 4, "No SampleEvents")
-
-# check_null_print(kbl_mac_samp2, 4, "MonStat Year Mismatch")
-
-```
-
 ```{r taxa, eval = taxa_include, results = 'asis'}
 cat("### Taxa Table {.tabset}", "\n\n")
 
@@ -110,10 +71,6 @@ check_null_print(kbl_taxa_miss_sym, 4, "Blank Symbol")
 check_null_print(dt_taxa_miss_tsn, 4, "Blank ITIS_TSN")
 
 check_null_print(kbl_taxa_miss_nb, 4, "Blank NotBio")
-
-check_null_print(dt_taxa_dup_notbio, 4, "Inconsistent NotBio")
-
-check_null_print(dt_taxa_dup_bio, 4, "Inconsistent Species")
 
 cat("\n\n")
 ```
@@ -129,22 +86,9 @@ check_null_print(kbl_dup_order, 4, "Duplicate Order")
 
 check_null_print(kbl_ht_oor, 4, "Height over 2m")
 
-check_null_print(kbl_point99, 4, "Heights over 99pct")
-
-check_null_print(kbl_stat_code, 4, "Status Typos")
-
-check_null_print(dt_stat_blank, 4, "Status Blanks")
-
-check_null_print(dt_nb_l_stat, 4, "NotBio Live")
+check_null_print(kbl_point99, 4, "Heights over 99.8pct")
 
 check_null_print(kbl_trans12, 4, "Odd Transects")
-
-# check_null_print(kbl_trans50, 4, "Transects not 50m")
-
-#check_null_print(kbl_hit1_ht, 4, "Heights on Order != 1") # returns >8k of records
-
-#check_null_print(kbl_nb_dm_stat, 4, "NotBio Dead") # returns >125k records
-
 
 cat("\n\n")
 ```
@@ -154,21 +98,13 @@ cat("### Quadrats {.tabset}", "\n\n")
 
 check_null_print(kbl_dtrans12, 4, "Odd Transects")
 
-# check_null_print(kbl_trans1_10, 4, "Odd Areas") # Returns ~500 records
-
 check_null_print(kbl_dtrans1, 4, "Transects not = 1")
 
-# check_null_print(kbl_transwid, 4, "Transect width != 1m")
-
 check_null_print(kbl_subfrac_imp, 4, "Subfrac Typo")
-
-# check_null_print(kbl_subbelt, 4, "Subbelt Typo")
 
 check_null_print(kbl_spp_count, 4, "Count != 1")
 
 check_null_print(kbl_spp_dup2, 4, "Duplicate Spp.")
-
-# check_null_print(kbl_UV1_text, 4, "UV1 non-numeric")
 
 cat("\n\n")
 ```
@@ -188,6 +124,8 @@ check_null_print(dt_bigdrc, 4, "Big DRC")
 
 check_null_print(kbl_trees_drc99, 4, "DRC over 99pct")
 
+check_null_print(kbl_small_dbh, 4, "DBH under 2.54")
+
 cat("\n\n")
 
 cat("#### Big Trees Diam. Distr", "\n\n")
@@ -204,8 +142,6 @@ check_null_print(dt_tree_conds_UV2, 4, "Trees incon. UV2")
 
 check_null_print(dt_pole_uv, 4, "Poles with UV")
 
-check_null_print(kbl_small_dbh, 4, "DBH under 2.54")
-
 check_null_print(kbl_tree_statcodes, 4, "Incons. Live Status Codes")
 
 check_null_print(dt_dead_con, 4, "Incons. Dead UV2")
@@ -215,14 +151,3 @@ check_null_print(kbl_dead_miss_uv2, 4, "Dead missing UV2")
 cat("\n\n")
 
 ```
-
-```{r targspp, eval = targ_include, results = 'asis'}
-cat("### Target Species Detections {.tabset}", "\n\n")
-
-check_null_print(dt_inv_targ, 4, "Invasive Species")
-
-check_null_print(dt_oth_targ, 4, "Other Species")
-
-cat("\n\n")
-```
-

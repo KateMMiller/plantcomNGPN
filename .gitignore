@@ -12,3 +12,5 @@ docs/*.html
 testing_scripts/
 data/
 .positai
+*.mp4
+*.png

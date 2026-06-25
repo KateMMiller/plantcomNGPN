@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.svg
+docs/NGPN_network_QC_checks_cache/
+docs/NGPN_network_MacroPlot_QC_checks_cache/
+docs/*.html
+*.zip
+*.jpg
+*.txt
+testing_scripts/
+data/
+.positai
+*.mp4
+*.png

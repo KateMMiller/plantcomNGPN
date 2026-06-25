@@ -26,10 +26,13 @@ importData(
 
 \item{server}{If type = 'server', requires quoted FFI server address (not currently enabled).}
 
-\item{dbname}{If type = "server" or "local", quoted name of database matching the name of the database (eg. "FFI_RA_AGFO"). If
-multiple database names are specified, views will be row bound for tables in common for all of the databases with a column
-indicating the dbname in each table. Note that the tables being row binded must be identical for this to work, and there
-aren't thorough checks built in the function to ensure that's true (i.e., it's likely to fail, but the error message may be weird).}
+\item{dbname}{If type = "server" or "local", quoted name of database matching
+the name of the database (eg. "FFI_RA_AGFO"). If multiple database names are
+specified, views will be row bound for tables in common for all of the
+databases with a column indicating the dbname in each table. Note that the
+tables being row binded must be identical for this to work, and there aren't
+thorough checks built in the function to ensure that's true (i.e.,
+it's likely to fail, but the error message may be weird).}
 
 \item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
 environment.}
@@ -52,16 +55,23 @@ only returns the flattened views. This feature is primarily for internal use to 
 Either an environment of NGPN_PCM views as data frames and possibly an environment of the original FFI database tables.
 }
 \description{
-Imports data from FFI SQL Server database or csvs of FFI database tables using the schema designed for
-the Northern Great Plains Network plant community monitoring protocol. Currently can only import from a local installation
-of a park FFI database in SQL Server Management Studio (SSMS), but the goal is to add an option for importing directly
-from the SQL Server where the production FFI databases are housed. If multiple parks worth of data are imported, tables
-are row binded, so that all NPGN parks can be queried, summarized, etc. at once. After raw FFI tables are imported, they
-are then joined into flattened views for each protocol. The views currently only include plots that are part of NGPN PCM monitoring,
-and only include sample events from 2011 and on, but this can be revised as needed. The raw tables with all data and views of
-only NGPN PCM plots >= 2011 can both be  exported via the export arguments. Function is slow if running for all parks and
-exporting tables or views. Once the views are created/exported, they can be imported using importViews() for faster importing.
-Note that view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent') where unnecessary for easier coding.
+Imports data from FFI SQL Server database or csvs of FFI
+database tables using the schema designed for the Northern Great Plains
+Network plant community monitoring protocol. Currently can only import from
+a local installation of a park FFI database in SQL Server Management Studio
+(SSMS), but the goal is to add an option for importing directly from the SQL
+Server where the production FFI databases are housed. If multiple parks
+worth of data are imported, tables are row binded, so that all NPGN parks
+can be queried, summarized, etc. at once. After raw FFI tables are imported,
+they are then joined into flattened views for each protocol. The views
+currently only include plots that are part of NGPN PCM monitoring, and only
+include sample events from 2011 and on, but this can be revised as needed.
+The raw tables with all data and views of only NGPN PCM plots >= 2011 can
+both be  exported via the export arguments. Function is slow if running for
+all parks and exporting tables or views. Once the views are created/exported,
+they can be imported using importViews() for faster importing. Note that
+view column names dropped the original table name (eg 'MacroPlot_', 'SampleEvent')
+where unnecessary for easier coding.
 }
 \examples{
 \dontrun{

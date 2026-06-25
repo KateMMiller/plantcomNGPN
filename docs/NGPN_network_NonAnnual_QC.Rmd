@@ -46,9 +46,16 @@ year_hist <- 2011:(year_curr - 1)
 #keep_tables = T, export_views = T, export_path = "C:/temp")
 
 # If SQL not set up, use import below instead, and update the import_path:
-importData(type = 'csv', 
-           import_path = "C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_FFI_table_export_20260616.zip",
-           keep_tables = T) 
+try(importData(type = 'csv', 
+           import_path = "./data/NGPN_FFI_table_export_20260616.zip",
+           keep_tables = T), 
+    silent = T)
+
+try(importData(type = 'csv', 
+           import_path = "../data/NGPN_FFI_table_export_20260616.zip",
+           keep_tables = T), 
+    silent = T)
+
 ```
 
 ```{r source, include = F}

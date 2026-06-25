@@ -73,6 +73,7 @@ make_kable <- function(df, cap){
 }
 
 make_dt <- function(df, cap){
+  if(nrow(df) > 0){
   datatable(df,
             class = 'cell-border stripe',
             rownames = FALSE,
@@ -97,6 +98,7 @@ make_dt <- function(df, cap){
             ),
             filter = list(position = c('top'),
                           clear = FALSE))
+    } else {NULL}
 }
 
 # Determine whether to include/drop tab in rmd output
@@ -120,12 +122,14 @@ check_null_print <- function(table, tab_level = 4, tab_title){
 # Species list
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 # or UPDATE PATH
-tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+#tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+try(tab4_spp <- read.csv("./data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = TRUE)
+try(tab4_spp <- read.csv("../data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = TRUE)
 
 # PCM Panel sampling schedule
 # Path will need to be updated
-panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
-                           na.strings = "")
+try(panel_sch_wide <- read.csv("./data/panel_schedule.csv", na.strings = ""), silent = TRUE)
+try(panel_sch_wide <- read.csv("../data/panel_schedule.csv", na.strings = ""), silent = TRUE)
 
 # pivot to longer
 panel_sch <- panel_sch_wide |>
@@ -138,8 +142,8 @@ panel_sch <- panel_sch_wide |>
          Panel)
 
 #THRO Panel sch
-panel_sch_wide_thro <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/THRO_panel_schedule.csv",
-                                na.strings = "")
+try(panel_sch_wide_thro <- read.csv("./data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
+try(panel_sch_wide_thro <- read.csv("../data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
 
 # pivot to longer
 panel_sch_thro <- panel_sch_wide_thro |>
@@ -742,8 +746,10 @@ QC_table <- rbind(QC_table,
                            check = "Trees that should have had DBH instead of DRC measured.",
                            chk_type = 'error'))
 
-dt_trees_wrong_dbh <- make_dt(trees_wrong_dbh,
-                                  cap = "Trees that should have had DBH instead of DRC measured, based on Table 4 in SOPs.")
+dt_trees_wrong_dbh <-
+  make_dt(trees_wrong_dbh, cap = "Trees that should have had DBH instead of DRC measured, based on Table 4 in SOPs.")
+
+
 
 #### Check trees > 80 cm for possible errors ----
 bigt <- trees |>

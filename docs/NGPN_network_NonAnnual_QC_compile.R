@@ -31,12 +31,13 @@
 # Species list
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 # or UPDATE PATH
-tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+try(tab4_spp <- read.csv("./data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = T)
+try(tab4_spp <- read.csv("../data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = T)
 
 # PCM Panel sampling schedule
 # Path will need to be updated
-panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
-                           na.strings = "")
+try(panel_sch_wide <- read.csv("./data/panel_schedule.csv", na.strings = ""), silent = T)
+try(panel_sch_wide <- read.csv("../data/panel_schedule.csv", na.strings = ""), silent = T)
 
 # pivot to longer
 panel_sch <- panel_sch_wide |>
@@ -49,8 +50,8 @@ panel_sch <- panel_sch_wide |>
          Panel)
 
 #THRO Panel sch
-panel_sch_wide_thro <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/THRO_panel_schedule.csv",
-                                na.strings = "")
+try(panel_sch_wide_thro <- read.csv("./data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
+try(panel_sch_wide_thro <- read.csv("../data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
 
 # pivot to longer
 panel_sch_thro <- panel_sch_wide_thro |>
@@ -328,8 +329,11 @@ kbl_macro_miss_utm <- make_kable(macro_miss_utm,
 # Set bounding box for each park and check UTMs and/or lat/long against them:
 # First downloaded NPS Administrative Boundaries from:
 # https://irma.nps.gov/DataStore/Reference/Profile/2309935
-tryCatch(nps_bounds <- read_sf("C:/Users/kbailey/Documents/Development/plantcomNGPN/docs/www/Administrative Boundaries of National Park System Units.shp"),
-         error = function(e){})
+try(nps_bounds <- read_sf("./www/Administrative Boundaries of National Park System Units.shp"), silent = T)
+
+try(nps_bounds <- read_sf("./docs/www/Administrative Boundaries of National Park System Units.shp"), silent = T)
+
+if(!exists("nps_bounds"))stop("Administrative Boundaries of National Park System Units.shp not found. Please add this to the ./docs/www/ folder")
 
 st_crs(nps_bounds) # EPSG 4269
 

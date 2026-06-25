@@ -32,12 +32,14 @@
 # Species list
 # tab4_spp <- read.csv("https://raw.githubusercontent.com/KateMMiller/plantcomNGPN/refs/heads/main/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
 # or UPDATE PATH
-tab4_spp <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv")
+
+try(tab4_spp <- read.csv("./data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = T)
+try(tab4_spp <- read.csv("../data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = T)
 
 # PCM Panel sampling schedule
 # Path will need to be updated
-panel_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/panel_schedule.csv",
-                           na.strings = "")
+try(panel_sch_wide <- read.csv("./data/panel_schedule.csv", na.strings = ""), silent = T)
+try(panel_sch_wide <- read.csv("../data/panel_schedule.csv", na.strings = ""), silent = T)
 
 # pivot to longer
 panel_sch <- panel_sch_wide |>
@@ -50,8 +52,8 @@ panel_sch <- panel_sch_wide |>
          Panel)
 
 #THRO Panel sch
-panel_sch_wide_thro <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/THRO_panel_schedule.csv",
-                           na.strings = "")
+try(panel_sch_wide_thro <- read.csv("./data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
+try(panel_sch_wide_thro <- read.csv("../data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
 
 # pivot to longer
 panel_sch_thro <- panel_sch_wide_thro |>

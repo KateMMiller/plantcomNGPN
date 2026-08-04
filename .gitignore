@@ -10,7 +10,7 @@ docs/*.html
 *.jpg
 *.txt
 testing_scripts/
-data/
+data/*.zip
 .positai
 *.mp4
 *.png

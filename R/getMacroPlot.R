@@ -71,7 +71,7 @@
 #' to the bug handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
-#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and all of the purposes defined below.}
+#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and Panel 1 - 6 defined below.}
 #' \item{"ForestStructure":}{NGPN Forest Structure plot. Found in KNRI and WICA.}
 #' \item{"IM_Intensive"}{NGPN intensive monitoring plot. Found in AGFO, FOUS, and THRO.}
 #' \item{"Panel1":} {NGPN PCM Panel 1}
@@ -188,9 +188,14 @@ getMacroPlot <- function(park = 'all', plot_name = "all", project = "Park", purp
   } else if(any(purpose %in% "NGPN_PCM")){
     mac_purpose[
       mac_purpose %in% c("Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "Panel6",
-                          "Panel7", "Panel8", "Panel9", "Panel10", "PanelE",# "IM_Intensive",
-                          "ForestStructure", "")]
-  } else {distinct(purpose)}
+                          "Panel7", "Panel8", "Panel9", "Panel10"#, "PanelE"
+                         )]
+  # } else if(any(purpose %in% "IM_Intensive")){
+  #   mac_purpose[
+  #     mac_purpose %in% c("FX Dual", "FX Intensive", "FX Monitoring", "IM_FX_Dual",
+  #                        "IM_Intesive", "FX Extensive"
+  #     )]
+    } else {distinct(purpose)}
 
   # check that the specified purpose is found in the column names
   bad_purpose <- setdiff(purpose_list, mac_purpose)

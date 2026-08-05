@@ -68,14 +68,14 @@
 #'                         "Monitoring", "Pringle Dog Town Herbicide Trial", "Woodland")
 #'
 #' @param purpose Quoted string to return plots with a particular purpose, which typically refers to a characteristic
-#' of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
-#' standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
-#' that can be specified are below. By default, "NGPN_PCM" plots are selected, which includes all plots with c("_PCM_",
-#' "_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
-#' to the bug handling code in the function. Valid inputs:
+#' of the plot's sample design in NGPN (e.g., Panel1). This function standardizes some purposes (eg "FX" and
+#' "Fire Effects" are both called "FX monitoring"). The following purposes that can be specified are below. By default,
+#' "NGPN_PCM" plots are selected, which includes all plots with "_PCM_" in their name and the Panel 1 - 10 associated
+#' with the SOP for vital signs. If new purposes are added in the future, they will need to be added to the bug
+#' handling code in the function. Valid inputs:
 #' \itemize{
 #' \item{"all":} {All plots in imported FFI database}
-#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and all of the purposes defined below.}
+#' \item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with "_PCM_" in their name, and Panel 1 - 10 defined below.}
 #' \item{"ForestStructure":}{NGPN Forest Structure plot. Found in KNRI and WICA.}
 #' \item{"IM_Intensive"}{NGPN intensive monitoring plot. Found in AGFO, FOUS, and THRO.}
 #' \item{"Panel1":} {NGPN PCM Panel 1}
@@ -115,13 +115,15 @@
 #'      "Pre- and Post-treatment of fuels" (JECA),
 #'      "Research" (WICA), "Treatment" (MNRR))
 #'
-#' @param mon_status Quoted string. Allows you to select different MonitoringStatus$MonitoringStatus_Base types. Default is "NGPN_PCM",
-#' which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_PCM below).
+#' @param mon_status Quoted string. Allows you to select different
+#' MonitoringStatus$MonitoringStatus_Name types. Default is "NGPN_PCM",
+#' which will pull in sample events coded a NGPN Plant Community Monitoring
+#' (see description for NGPN_PCM below). Note: ForestStructure and not yet enabled.
 #' Current valid inputs:
 #' \itemize{
-#' \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status base of "PlantCommunity", "FirePlantCommunity", "ForestStructure".
-#' Note that some base names have _, spaces, or years in them. These are cleaned up in the function until they're fixed in the database.}
-#' \item{"PlantCommunity":} {PlantCommunity only records}
+#' \item{"all":} {Pulls all records in FFI database.}
+#' \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status name of "PlantCommunity".}
+#' \item{"FireEffects":} {Fire effects monitoring only}
 #' \item{"FirePlantCommunity":} {FirePlantCommunity only records}
 #' \item{"ForestStructure":} {ForestStructure only records}
 #' }
@@ -190,37 +192,154 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   stopifnot(class(years) %in% c("numeric", "integer"), years >= 2011)
   stopifnot(class(complete_events) == "logical")
 
+  #---- Panel Schedule ----
+  ## loading panel schedule all
+  panel_filepath <- system.file("extdata",
+                                "panel_schedule.csv",
+                                package = "plantcomNGPN")
+
+  # Bug handing
+  current_year <- as.integer(format(Sys.Date(), "%Y"))
+
+  ## Panel schedule not found
+  if(panel_filepath == ""){
+    stop("Data file 'panel_schedule.csv' not found in inst/extdata.")
+  }
+
+  panel_sch <- read.csv(panel_filepath)
+
+  # making sure it is up-to-date
+  last_year_all <- max(panel_sch$Year, na.rm = TRUE)
+
+  if(last_year_all < current_year){
+    warning(
+      paste0("The panel_schedule.csv is outdated. The last year recorded was ",
+             last_year_all,
+             ". Please update the panel schedule to ",
+             current_year,
+             ".")
+    )
+  }
+
+  # pivot to longer
+  panel_sch <- panel_sch |>
+    pivot_longer(!Year,
+                 names_to = "Panel") |>
+    drop_na() |>
+    # filtering to current date
+    filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+    select(Year,
+           Panel)
+
+  ### THRO panel schedule
+  thro_panel_filepath <- system.file("extdata",
+                                     "THRO_panel_schedule.csv",
+                                     package = "plantcomNGPN")
+
+  # Bug handing
+  if(thro_panel_filepath == ""){
+    stop("Data file 'THRO_panel_schedule.csv' not found in inst/extdata.")
+  }
+
+  # Loading data
+  thro_panel_sch <- read.csv(thro_panel_filepath)
+
+  # making sure it is up-to-date
+  thro_last_year <- max(thro_panel_sch$Year, na.rm = TRUE)
+
+  if(thro_last_year < current_year){
+    warning(
+      paste0("The THRO_panel_schedule.csv is outdated. The last year recorded was ",
+             thro_last_year,
+             ". Please update the panel schedule to ",
+             current_year,
+             ".")
+      )
+  }
+
+  # pivot to longer
+  thro_panel_sch <- thro_panel_sch |>
+    pivot_longer(!Year,
+                 names_to = "Panel") |>
+    drop_na() |>
+    # filtering to current date (will update every year)
+    filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
+    select(Year,
+           Panel)
+
+  #---- Getting SampleEvents ----
   env <- if(exists("VIEWS_NGPN")){VIEWS_NGPN} else {.GlobalEnv}
   tryCatch(
     sampev <- get("SampleEvents", envir = env),
     error = function(e){stop("SampleEvents view not found. Please import NGPN FFI data.")}
   )
 
-  sampev$SampleEvent_Date <- format(as.Date(substr(sampev$SampleEvent_Date, 1, 11), format = "%Y-%m-%d"), "%Y-%m-%d")
+  sampev$SampleEvent_Date <- format(as.Date(substr(sampev$SampleEvent_Date, 1, 11),
+                                            format = "%Y-%m-%d"), "%Y-%m-%d")
 
-  # Update monitoring status for all or NGPN_PCM
-  mon_status <- if(any(mon_status %in% 'all')){
-    sort(unique(sampev$MonitoringStatus_Base))
-  } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian", "IM_Intensive",
-      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
-  } else {mon_status}
+  #---- Getting MacroPlot info ----
+  macro_guids <- getMacroPlot(park = park, plot_name = plot_name, project = project,
+                                purpose = purpose, output = 'short')$MacroPlot_GUID
+
+  sampev1 <- sampev[sampev$MacroPlot_GUID %in% macro_guids,]
+  sampev2 <- sampev1[sampev1$year %in% years,]
+
+  #---- Filtering Monitoring Status ----
+  # pulling MonitoringStatus_Name column
+  mon_stat_vals <- sampev2[["MonitoringStatus_Name"]]
+
+  # Update monitoring status for options
+    keep <- rep(FALSE, length(mon_stat_vals))
+
+  ## 'all'
+  if(any(mon_status %in% 'all')){
+    keep <- rep(TRUE, length(mon_stat_vals))
+  } else {
+    ## NGPN_PCM
+    if(any(mon_status %in% 'NGPN_PCM')){
+      keep <- keep | grepl("_PlantCommunity",
+                           mon_stat_vals,
+                           ignore.case = FALSE)
+    }
+    ## FireEffects
+    if(any(mon_status %in% 'FireEffects')){
+      keep <- keep | grepl("(Pre|Burn|Post|Year|Yr|yr)",
+                           mon_stat_vals,
+                           ignore.case = FALSE)
+    }
+    # anything else
+    if(length(mon_status) > 0){
+      keep <- keep | (mon_status %in% mon_stat_vals)
+    }
+  }
 
   # check monitoring status is in the view
-  se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
-  bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|IM_Intensive|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE",
-                                     bad_monstat1)]
+    if(!any(mon_status %in% 'all')){
+      # get values
+      status_check <- sort(unique(mon_stat_vals[keep]))
 
-  if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
-                                   paste0(bad_monstat))}
+      if(length(status_check) == 0){
+        stop(paste0("Specified mon_status not found in data: ",
+                    mon_status))
+      }
+    }
 
-  macro_guids <- getMacroPlot(park = park, plot_name = plot_name, project = project,
-                              purpose = purpose, output = 'short')$MacroPlot_GUID
+  sampev3 <- sampev2[keep,]
 
-  sampev2 <- sampev[sampev$MacroPlot_GUID %in% macro_guids,]
-  sampev3 <- sampev2[sampev2$year %in% years,]
-  sampev4 <- sampev3[sampev3$MonitoringStatus_Base %in% mon_status,]
+  # Should I add other combinations? For eg. If THRO is the only park or AGFO?
+  sampev4 <- if(purpose %in% 'NGPN_PCM' && park %in% 'all'){
+               # filtering with both schedules
+               bind_rows(sampev3 |>
+                           filter(Unit_Name != "THRO") |>
+                           semi_join(panel_sch,
+                                     by = c("MacroPlot_Purpose" = "Panel",
+                                            "year" = "Year")),
+                         sampev3 |>
+                           filter(Unit_Name == "THRO") |>
+                           semi_join(thro_panel_sch,
+                                     by = c("MacroPlot_Purpose" = "Panel",
+                                            "year" = "Year")))
+    } else{sampev3}
 
   # drop MonitoringStatus_Comment, which is how multiple records turn up
   sampev4$ProjectUnit_Name <- project

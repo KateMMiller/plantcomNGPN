@@ -206,7 +206,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
     stop("Data file 'panel_schedule.csv' not found in inst/extdata.")
   }
 
-  panel_sch <- read.csv(panel_filepath)
+  panel_sch <- read_csv(panel_filepath)
 
   # making sure it is up-to-date
   last_year_all <- max(panel_sch$Year, na.rm = TRUE)
@@ -242,7 +242,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   }
 
   # Loading data
-  thro_panel_sch <- read.csv(thro_panel_filepath)
+  thro_panel_sch <- read_csv(thro_panel_filepath)
 
   # making sure it is up-to-date
   thro_last_year <- max(thro_panel_sch$Year, na.rm = TRUE)
@@ -276,6 +276,8 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
 
   sampev$SampleEvent_Date <- format(as.Date(substr(sampev$SampleEvent_Date, 1, 11),
                                             format = "%Y-%m-%d"), "%Y-%m-%d")
+
+  sampev$year <- as.integer(sampev$year)
 
   #---- Getting MacroPlot info ----
   macro_guids <- getMacroPlot(park = park, plot_name = plot_name, project = project,
@@ -327,7 +329,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park", pu
   sampev3 <- sampev2[keep,]
 
   # Should I add other combinations? For eg. If THRO is the only park or AGFO?
-  sampev4 <- if(purpose %in% 'NGPN_PCM' && park %in% 'all'){
+  sampev4 <- if(purpose == 'NGPN_PCM'){
                # filtering with both schedules
                bind_rows(sampev3 |>
                            filter(Unit_Name != "THRO") |>

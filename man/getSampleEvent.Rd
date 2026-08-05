@@ -70,14 +70,14 @@ Other options include c("ABAM Supplemental", "AnnualBrome_Research",
                         "Monitoring", "Pringle Dog Town Herbicide Trial", "Woodland")}
 
 \item{purpose}{Quoted string to return plots with a particular purpose, which typically refers to a characteristic
-of the plot's sample design in NGPN (e.g., Panel1). Note that purpose is not standard across parks. This function
-standardizes some purposes (eg "FX" and "Fire Effects" are both called "FX monitoring"). The following purposes
-that can be specified are below. By default, "NGPN_PCM" plots are selected, which includes all plots with c("_PCM_",
-"_FPCM_", "_LPCM_", and "_RCM_") in their name. If new purposes are added in the future, they will need to be added
-to the bug handling code in the function. Valid inputs:
+of the plot's sample design in NGPN (e.g., Panel1). This function standardizes some purposes (eg "FX" and
+"Fire Effects" are both called "FX monitoring"). The following purposes that can be specified are below. By default,
+"NGPN_PCM" plots are selected, which includes all plots with "_PCM_" in their name and the Panel 1 - 10 associated
+with the SOP for vital signs. If new purposes are added in the future, they will need to be added to the bug
+handling code in the function. Valid inputs:
 \itemize{
 \item{"all":} {All plots in imported FFI database}
-\item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and all of the purposes defined below.}
+\item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with "_PCM_" in their name, and Panel 1 - 10 defined below.}
 \item{"ForestStructure":}{NGPN Forest Structure plot. Found in KNRI and WICA.}
 \item{"IM_Intensive"}{NGPN intensive monitoring plot. Found in AGFO, FOUS, and THRO.}
 \item{"Panel1":} {NGPN PCM Panel 1}
@@ -117,13 +117,15 @@ Other non NPGN_PCM options include:
      "Pre- and Post-treatment of fuels" (JECA),
      "Research" (WICA), "Treatment" (MNRR))}
 
-\item{mon_status}{Quoted string. Allows you to select different MonitoringStatus$MonitoringStatus_Base types. Default is "NGPN_PCM",
-which will pull in sample events coded a NGPN Plant Community Monitoring (see description for NGPN_PCM below).
+\item{mon_status}{Quoted string. Allows you to select different
+MonitoringStatus$MonitoringStatus_Name types. Default is "NGPN_PCM",
+which will pull in sample events coded a NGPN Plant Community Monitoring
+(see description for NGPN_PCM below). Note: ForestStructure and not yet enabled.
 Current valid inputs:
 \itemize{
-\item{"NGPN_PCM":} {Default. Pulls in records with monitoring status base of "PlantCommunity", "FirePlantCommunity", "ForestStructure".
-Note that some base names have _, spaces, or years in them. These are cleaned up in the function until they're fixed in the database.}
-\item{"PlantCommunity":} {PlantCommunity only records}
+\item{"all":} {Pulls all records in FFI database.}
+\item{"NGPN_PCM":} {Default. Pulls in records with monitoring status name of "PlantCommunity".}
+\item{"FireEffects":} {Fire effects monitoring only}
 \item{"FirePlantCommunity":} {FirePlantCommunity only records}
 \item{"ForestStructure":} {ForestStructure only records}
 }

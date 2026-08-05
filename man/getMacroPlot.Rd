@@ -75,7 +75,7 @@ that can be specified are below. By default, "NGPN_PCM" plots are selected, whic
 to the bug handling code in the function. Valid inputs:
 \itemize{
 \item{"all":} {All plots in imported FFI database}
-\item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and all of the purposes defined below.}
+\item{"NGPN_PCM":} {Default. NGPN Plant Community Monitoring Plots with c("_PCM_", "_FPCM_", "_LPCM_", and, "_RCM_") in their name, and Panel 1 - 6 defined below.}
 \item{"ForestStructure":}{NGPN Forest Structure plot. Found in KNRI and WICA.}
 \item{"IM_Intensive"}{NGPN intensive monitoring plot. Found in AGFO, FOUS, and THRO.}
 \item{"Panel1":} {NGPN PCM Panel 1}

@@ -186,20 +186,22 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
                            purpose = purpose, mon_status = mon_status, years = years,
                            complete_events = complete_events)
 
-  # Update monitoring status for all or NGPN_PCM
-  mon_status <- if(any(mon_status %in% 'all')){
-    sort(unique(sampev$MonitoringStatus_Base))
-  } else if(any(mon_status %in% "NGPN_PCM")){
-    c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
-      "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
-  } else {mon_status}
+  # mon_status <- sampev[MonitoringStatus_Name]
 
-  # check monitoring status is in the view
-  se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
-  bad_monstat1 <- setdiff(mon_status, se_monstat)
-  bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
-  if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
-                                   paste0(bad_monstat))}
+  # Update monitoring status for all or NGPN_PCM
+  # mon_status <- if(any(mon_status %in% 'all')){
+  #   sort(unique(sampev$MonitoringStatus_Base))
+  # } else if(any(mon_status %in% "NGPN_PCM")){
+  #   c("PlantCommunity", "FirePlantCommunity", "ForestStructure", "Dual", "Riparian",
+  #     "Panel1", "Panel2", "Panel3", "Panel4", "Panel5", "PanelE")
+  # } else {mon_status}
+  #
+  # # check monitoring status is in the view
+  # se_monstat <- sort(unique(sampev$MonitoringStatus_Base))
+  # bad_monstat1 <- setdiff(mon_status, se_monstat)
+  # bad_monstat <- bad_monstat1[!grepl("PlantCommunity|FirePlantCommunity|ForestStructure|Dual|Riparian|Panel1|Panel2|Panel3|Panel4|Panel5|PanelE", bad_monstat1)]
+  # if(length(bad_monstat) > 0){stop("Specified mon_status not found in data: ",
+  #                                  paste0(bad_monstat))}
 
   covpts <- tryCatch(get("Cover_Points_metric", envir = env),
                      error = function(e){stop(paste0(
@@ -208,11 +210,11 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park", pu
   covpts$ProjectUnit_Name <- project
 
   # Filter by monitoring status, which should drop duplicates
-  covpts1 <- covpts[covpts$MonitoringStatus_Base %in% mon_status,]
+  # covpts1 <- covpts[covpts$MonitoringStatus_Base %in% mon_status,]
 
   # Filter on sample events
   sampev_guids <- unique(sampev$SampleEvent_GUID)
-  covpts_samp <- covpts1[covpts1$SampleEvent_GUID %in% sampev_guids,]
+  covpts_samp <- covpts[covpts$SampleEvent_GUID %in% sampev_guids,]
   # Drop records where Index is blank b/c causes issues in the join
   covpts_samp2 <- covpts_samp[!is.na(covpts_samp$Index),]
 

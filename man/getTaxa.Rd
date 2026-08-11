@@ -7,17 +7,20 @@
 getTaxa(output = "short")
 }
 \arguments{
-\item{output}{Quoted string. Options are "short" (default), which only returns most important columns;
-"verbose" returns all columns in the SampleEvent-related tables.}
+\item{output}{Quoted string. Options are "short" (default), which only
+returns most important columns; "verbose" returns all columns in the
+SampleEvent-related tables.}
 }
 \value{
 Returns a data frame of plant species data
 }
 \description{
-Combines the local species and master species plant lists for easier joins with other tables.
-Note that scientific names are combined from the MasterSpecies and AuxSpecies tables such that, if a
-scientific name is missing from the MasterSpecies table, the the scientific name from the AuxSpecies table is used.
-The same goes for ITIS_TSN, family, genus, and symbol columns.
+Combines the local species and master species plant lists for
+easier joins with other tables. Note that scientific names are combined from
+the MasterSpecies and AuxSpecies tables such that, if a scientific name is
+missing from the MasterSpecies table, the the scientific name from the
+AuxSpecies table is used. The same goes for ITIS_TSN, family, genus, and
+symbol columns.
 }
 \examples{
 \dontrun{

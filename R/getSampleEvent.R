@@ -14,6 +14,7 @@
 #' sample event.
 #'
 #' @importFrom dplyr distinct
+#' @importFrom readr read_csv
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one.
 #' Valid inputs:

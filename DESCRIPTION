@@ -15,7 +15,8 @@ LazyData: true
 Imports: 
     dplyr,
     purrr,
-    tidyr
+    tidyr,
+    readr
 Suggests: 
     DBI,
     dbplyr,

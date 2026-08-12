@@ -14,7 +14,6 @@
 #' sample event.
 #'
 #' @importFrom dplyr distinct
-#' @importFrom readr read_csv
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one.
 #' Valid inputs:
@@ -240,7 +239,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
     stop("Data file 'panel_schedule.csv' not found in inst/extdata.")
   }
 
-  panel_sch <- readr::read_csv(panel_filepath)
+  panel_sch <- read.csv(panel_filepath)
 
   # making sure it is up-to-date
   last_year_all <- max(panel_sch$Year, na.rm = TRUE)
@@ -276,7 +275,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
   }
 
   # Loading data
-  thro_panel_sch <- readr::read_csv(thro_panel_filepath)
+  thro_panel_sch <- read.csv(thro_panel_filepath)
 
   # making sure it is up-to-date
   thro_last_year <- max(thro_panel_sch$Year, na.rm = TRUE)

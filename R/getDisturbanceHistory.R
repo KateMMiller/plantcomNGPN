@@ -243,7 +243,8 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all",
                  "ProjectUnit_Name", "UTM_X", "UTM_Y", "UTMzone", "Elevation",
                  "Aspect", "Azimuth", "SlopeHill", "SlopeTransect",
                  "SampleEvent_Date", "year", "month", "doy",
-                 "DefaultMonitoringStatus", "MonitoringStatus_Base", "Visited",
+                 "DefaultMonitoringStatus", #"MonitoringStatus_Base",
+                 "Visited",
                  "Index", "ChAgent", "ChgDesc", "Comment", "UV1", "UV2", "UV3",
                  #"SevCode", "StartYr", "StartMo", "StartDy", "EndYr", "EndDy", "DatePrec",
                  "UV1Desc", "UV2Desc", "SaComment","MacroPlot_GUID",
@@ -253,10 +254,13 @@ getDisturbanceHistory <- function(park = 'all', plot_name = "all",
     keep_cols
   } else {c(keep_cols, sort(setdiff(names(dist_samp2), keep_cols)))}
 
-  dist_final <- dist_samp2[order(dist_samp2$MacroPlot_Name,
+  dist_final1 <- dist_samp2[order(dist_samp2$MacroPlot_Name,
                                  dist_samp2$SampleEvent_Date,
                                  dist_samp2$ChAgent),
                           final_names]
+
+  dist_final <- dist_final1 |>
+    distinct()
 
   if(nrow(dist_final) == 0){
     stop("Specified arguments returned an empty dataframe.")

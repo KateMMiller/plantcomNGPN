@@ -250,7 +250,8 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park",
                  "ProjectUnit_Name", "UTM_X", "UTM_Y", "UTMzone", "Elevation",
                  "Aspect", "Azimuth", "SlopeHill", "SlopeTransect",
                  "SampleEvent_Date", "year", "month", "doy",
-                 "DefaultMonitoringStatus", "MonitoringStatus_Base", "Visited",
+                 "DefaultMonitoringStatus",# "MonitoringStatus_Base", pulling Pre values
+                 "Visited",
                  "NumTran", "TranLen", "NumPtsTran", "Offset", "UV1Desc",
                  "SaComment", "Index", "Transect", "Point", "Tape", "Order",
                  "Height", #"CanopyLayer", # Blank in NGPN data

@@ -338,30 +338,23 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
 
   ## Update monitoring status for options
   sampev3 <-
-  if(any(mon_status %in% 'all')){sampev2
+    # all
+  if(any(mon_status %in% 'all')){
+    sampev2
+    # NGPN_PCM
   } else if(any(mon_status %in% 'NGPN_PCM')){
     sampev2 |> filter(grepl("_PlantCommunity", MonitoringStatus_Name))
+    # FireEffects
   } else if(any(mon_status %in% 'FireEffects')){
     sampev2 |> filter(grepl("Pre|Burn|Post|Year|Yr|yr", MonitoringStatus_Name))
+    # Anything else
   } else {sampev2 |> filter(grepl(mon_status, MonitoringStatus_Name))}
 
-    # anything else
-  #   if(length(mon_status) > 0){
-  #     keep <- #keep |
-  #       mon_status %in% mon_stat_vals
-  #   }
-  # }
-
   # check monitoring status is in the view
-    if(!any(mon_status %in% 'all')){
-      # get values
-      # status_check <- sort(unique(mon_stat_vals[keep]))
-
-      if(nrow(sampev3) == 0){
-        stop(paste0("Specified mon_status not found in data: ",
-                    mon_status))
-      }
-    }
+  if(nrow(sampev3) == 0){
+    stop(paste0("Specified mon_status not found in data: ",
+                mon_status))
+  }
 
   ## monitoring statuses to keep
   #sampev3 <- sampev2[keep,]
@@ -383,16 +376,6 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
 
   # drop MonitoringStatus_Comment, which is how multiple records turn up
   sampev4$ProjectUnit_Name <- project
-
-  # keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose",
-  #                "MacroPlot_Type", "ProjectUnit_Name", "SampleEvent_Date",
-  #                "year", "month", "doy", "UTM_X", "UTM_Y", "UTMzone",
-  #                "Elevation", "Azimuth", "Aspect", "SlopeHill", "SlopeTransect",
-  #                "SampleEvent_UV1", "DefaultMonitoringStatus", "TreatmentUnit",
-  #                "MonitoringStatus_Prefix", "MonitoringStatus_Base",
-  #                "MonitoringStatus_Suffix", "MonitoringStatus_Name",
-  #                "SampleEvent_Comment", "SampleEvent_GUID",
-  #                "RegistrationUnit_GUID", "MacroPlot_GUID")
 
   keep_cols <- names(sampev4[!grepl("MonitoringStatus_Comment|MM_MonitoringStatus_GUID",
                                     names(sampev4))])

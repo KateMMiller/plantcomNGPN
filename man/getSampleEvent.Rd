@@ -148,7 +148,6 @@ Current valid inputs:
 \item{"all":} {Pulls all records in FFI database.}
 \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status name of "PlantCommunity".}
 \item{"FireEffects":} {Fire effects monitoring only}
-\item{"FirePlantCommunity":} {FirePlantCommunity only records}
 \item{"ForestStructure":} {ForestStructure only records}
 }
 
@@ -188,7 +187,7 @@ sample event.
 \dontrun{
 
 library(plantcomNGPN)
-importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
+importData(import_path = "./data/NGPN_FFI_table_export_20260616.zip")
 
 # Default return all samples of NGPN Plant Community Monitoring plots (ie vital signs plots),
 # for the Park stratum and all purposes used by NGPN from 2011 and later
@@ -198,8 +197,8 @@ samp_vs <- getSampleEvent()
 samp_AS <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM")
 table(samp_AS$Unit_Name)
 
-# query all NGPN_PCM sites JECA PlantCommunity only
-samp_jeca <- getSampleEvent(park = "JECA", mon_status = "PlantCommunity")
+# query all NGPN_PCM sites JECA NGPN PCM_ only
+samp_jeca <- getSampleEvent(park = "JECA", mon_status = "NGPN_PCM")
 table(samp_jeca$Unit_Name, samp_jeca$MonitoringStatus_Base)
 
 # query NGPN only plots from North Dakota from 2020:2024
@@ -218,7 +217,7 @@ table(thro_up$ProjectUnit, thro_up$year)
 
 # return results for three plots in KNRI for PlantCommunity monitoring status only
 KNRI_123 <- getSampleEvent(plot_name = c("KNRI_PCM_001", "KNRI_PCM_002", "KNRI_PCM_003"),
- mon_stat = "PlantCommunity")
+ mon_stat = "NGPN_PCM")
 table(KNRI_123$MacroPlot_Name, KNRI_123$MonitoringStatus_Base)
 
 }

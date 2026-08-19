@@ -157,7 +157,7 @@ efficiently filter on records.
 \dontrun{
 
 library(plantcomNGPN)
-importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
+importViews(import_path = "NGPN_FFI_views_20250708.zip")
 
 # return all NGPN Plant Community Monitoring plots (ie vital signs plots),
 # for the Park stratum and all purposes used by NGPN
@@ -174,11 +174,11 @@ table(macro_nd$Unit_Name, macro_nd$MacroPlot_Purpose)
 
 # query and combine North and South Upland for THRO
 thro_upn <- getMacroPlot(park = "THRO", project = "North Upland") |>
-select(-ProjectUnit_North_Upland)
+dplyr::select(-ProjectUnit_North_Upland)
 thro_upn$ProjectUnit <- "North_Upland"
 
 thro_ups <- getMacroPlot(park = "THRO", project = "South Upland") |>
-select(-ProjectUnit_South_Upland)
+dplyr::select(-ProjectUnit_South_Upland)
 thro_ups$ProjectUnit <- "South_Upland"
 
 thro_up <- rbind(thro_upn, thro_ups)

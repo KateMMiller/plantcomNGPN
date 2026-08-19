@@ -13,7 +13,8 @@
 #' returns, where one row is blank and another includes a comment for the sample
 #' sample event.
 #'
-#' @importFrom dplyr distinct
+#' @importFrom dplyr distinct filter select semi_join
+#' @importFrom tidyr pivot_longer
 #'
 #' @param park Filter on park code (aka Unit_Name). Can select more than one.
 #' Valid inputs:
@@ -148,7 +149,6 @@
 #' \item{"all":} {Pulls all records in FFI database.}
 #' \item{"NGPN_PCM":} {Default. Pulls in records with monitoring status name of "PlantCommunity".}
 #' \item{"FireEffects":} {Fire effects monitoring only}
-#' \item{"FirePlantCommunity":} {FirePlantCommunity only records}
 #' \item{"ForestStructure":} {ForestStructure only records}
 #' }
 #'
@@ -173,7 +173,7 @@
 #' \dontrun{
 #'
 #' library(plantcomNGPN)
-#' importViews(import_path = "C:/temp/NGPN_FFI_views_20250708.zip")
+#' importData(import_path = "./data/NGPN_FFI_table_export_20260616.zip")
 #'
 #' # Default return all samples of NGPN Plant Community Monitoring plots (ie vital signs plots),
 #' # for the Park stratum and all purposes used by NGPN from 2011 and later
@@ -183,8 +183,8 @@
 #' samp_AS <- getSampleEvent(park = c("AGFO", "SCBL"), purpose = "NGPN_PCM")
 #' table(samp_AS$Unit_Name)
 #'
-#' # query all NGPN_PCM sites JECA PlantCommunity only
-#' samp_jeca <- getSampleEvent(park = "JECA", mon_status = "PlantCommunity")
+#' # query all NGPN_PCM sites JECA NGPN PCM_ only
+#' samp_jeca <- getSampleEvent(park = "JECA", mon_status = "NGPN_PCM")
 #' table(samp_jeca$Unit_Name, samp_jeca$MonitoringStatus_Base)
 #'
 #' # query NGPN only plots from North Dakota from 2020:2024
@@ -203,7 +203,7 @@
 #'
 #' # return results for three plots in KNRI for PlantCommunity monitoring status only
 #' KNRI_123 <- getSampleEvent(plot_name = c("KNRI_PCM_001", "KNRI_PCM_002", "KNRI_PCM_003"),
-#'  mon_stat = "PlantCommunity")
+#'  mon_stat = "NGPN_PCM")
 #' table(KNRI_123$MacroPlot_Name, KNRI_123$MonitoringStatus_Base)
 #'
 #' }
@@ -235,7 +235,7 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
   current_year <- as.integer(format(Sys.Date(), "%Y"))
 
   ## Panel schedule not found
-  if(panel_filepath == ""){
+  if(!exists("panel_filepath")){
     stop("Data file 'panel_schedule.csv' not found in inst/extdata.")
   }
 
@@ -258,7 +258,8 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
   panel_sch <- panel_sch |>
     pivot_longer(!Year,
                  names_to = "Panel") |>
-    drop_na() |>
+    filter(!is.na(value)) |>
+    #drop_na() |>
     # filtering to current date
     filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
     select(Year,
@@ -294,7 +295,8 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
   thro_panel_sch <- thro_panel_sch |>
     pivot_longer(!Year,
                  names_to = "Panel") |>
-    drop_na() |>
+    filter(!is.na(value)) |>
+    # drop_na() |>
     # filtering to current date (will update every year)
     filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
     select(Year,
@@ -335,50 +337,39 @@ getSampleEvent <- function(park = 'all', plot_name = "all", project = "Park",
   mon_stat_vals <- sampev2[["MonitoringStatus_Name"]]
 
   ## Update monitoring status for options
-    keep <- rep(FALSE, length(mon_stat_vals))
+  sampev3 <-
+  if(any(mon_status %in% 'all')){sampev2
+  } else if(any(mon_status %in% 'NGPN_PCM')){
+    sampev2 |> filter(grepl("_PlantCommunity", MonitoringStatus_Name))
+  } else if(any(mon_status %in% 'FireEffects')){
+    sampev2 |> filter(grepl("Pre|Burn|Post|Year|Yr|yr", MonitoringStatus_Name))
+  } else {sampev2 |> filter(grepl(mon_status, MonitoringStatus_Name))}
 
-  ## 'all'
-  if(any(mon_status %in% 'all')){
-    keep <- rep(TRUE, length(mon_stat_vals))
-  } else {
-
-    ## NGPN_PCM
-    if(any(mon_status %in% 'NGPN_PCM')){
-      keep <- keep | grepl("_PlantCommunity",
-                           mon_stat_vals,
-                           ignore.case = FALSE)
-    }
-
-    ## FireEffects
-    if(any(mon_status %in% 'FireEffects')){
-      keep <- keep | grepl("(Pre|Burn|Post|Year|Yr|yr)",
-                           mon_stat_vals,
-                           ignore.case = FALSE)
-    }
     # anything else
-    if(length(mon_status) > 0){
-      keep <- keep | (mon_status %in% mon_stat_vals)
-    }
-  }
+  #   if(length(mon_status) > 0){
+  #     keep <- #keep |
+  #       mon_status %in% mon_stat_vals
+  #   }
+  # }
 
   # check monitoring status is in the view
     if(!any(mon_status %in% 'all')){
       # get values
-      status_check <- sort(unique(mon_stat_vals[keep]))
+      # status_check <- sort(unique(mon_stat_vals[keep]))
 
-      if(length(status_check) == 0){
+      if(nrow(sampev3) == 0){
         stop(paste0("Specified mon_status not found in data: ",
                     mon_status))
       }
     }
 
   ## monitoring statuses to keep
-  sampev3 <- sampev2[keep,]
+  #sampev3 <- sampev2[keep,]
 
   ## filtering by schedule
   sampev4 <- if(purpose == 'NGPN_PCM'){
                # filtering with both schedules
-               bind_rows(sampev3 |>
+               rbind(sampev3 |>
                            filter(Unit_Name != "THRO") |>
                            semi_join(panel_sch,
                                      by = c("MacroPlot_Purpose" = "Panel",

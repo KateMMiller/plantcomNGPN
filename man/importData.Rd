@@ -34,25 +34,33 @@ tables being row binded must be identical for this to work, and there aren't
 thorough checks built in the function to ensure that's true (i.e.,
 it's likely to fail, but the error message may be weird).}
 
-\item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
-environment.}
+\item{new_env}{Logical. If TRUE (default), will import tables to VIEWS_NGPN
+environment. If FALSE, will import tables to global environment.}
 
-\item{export_views}{Logical. If TRUE, will export a zip file of csvs to specified export_path for the flattened views of the data.
-Views are the analysis-ready files that have all associated MacroPlot, Sample Event, and sample data for a given FFI protocol (e.g. Point Intercept).}
+\item{export_views}{Logical. If TRUE, will export a zip file of csvs to
+specified export_path for the flattened views of the data. Views are the
+analysis-ready files that have all associated MacroPlot, Sample Event, and
+sample data for a given FFI protocol (e.g. Point Intercept).}
 
-\item{export_tables}{Logical. If TRUE, will export a zip file of csvs to specified export_path for the raw data tables from the FFI database.
-The raw tables are what can be imported the same as importing from a local instance of the FFI database.}
+\item{export_tables}{Logical. If TRUE, will export a zip file of csvs to
+specified export_path for the raw data tables from the FFI database. The raw
+tables are what can be imported the same as importing from a local instance
+of the FFI database.}
 
-\item{export_path}{Quoted string to export zipped csvs to if export = TRUE. If not specified, will export to the working directory.}
+\item{export_path}{Quoted string to export zipped csvs to if export = TRUE.
+If not specified, will export to the working directory.}
 
-\item{import_path}{Quoted string to import a zipped file of csvs if type = 'csv'. The name of the zipped file should be included
-in the path. Can specify multiple paths to import multiple parks/projects.}
+\item{import_path}{Quoted string to import a zipped file of csvs if type =
+'csv'. The name of the zipped file should be included in the path. Can
+specify multiple paths to import multiple parks/projects.}
 
-\item{keep_tables}{Logical. If TRUE, will return the raw FFI database tables in a NGPN_tables environment. If FALSE (default),
-only returns the flattened views. This feature is primarily for internal use to QC the original data.}
+\item{keep_tables}{Logical. If TRUE, will return the raw FFI database tables
+in a NGPN_tables environment. If FALSE (default), only returns the flattened
+views. This feature is primarily for internal use to QC the original data.}
 }
 \value{
-Either an environment of NGPN_PCM views as data frames and possibly an environment of the original FFI database tables.
+Either an environment of NGPN_PCM views as data frames and possibly
+an environment of the original FFI database tables.
 }
 \description{
 Imports data from FFI SQL Server database or csvs of FFI
@@ -97,11 +105,14 @@ table(NGPN_tables$MacroPlot$datasource)
 importData(type = 'csv', import_path = "C:/temp/FFI_RA_THRO.zip")
 
 # Import zipped files of NGPN parks and export as 1 zip file with all parks included
-zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zip", "NGPN_FFI_tables_DETO_20250508.zip",
-          "NGPN_FFI_tables_FOLA_20250508.zip", "NGPN_FFI_tables_FOUS_20250508.zip", "NGPN_FFI_tables_JECA_20250508.zip",
-          "NGPN_FFI_tables_KNRI_20250508.zip", "NGPN_FFI_tables_MORU_20250508.zip", "NGPN_FFI_tables_SCBL_20250508.zip",
-          "NGPN_FFI_tables_THRO_20250508.zip", "NGPN_FFI_tables_WICA_20250508.zip")
-filepath = "C:/Users/KMMiller/OneDrive - DOI/MWR/NGPN_veg/FFI_zips/"
+zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zip",
+          "NGPN_FFI_tables_DETO_20250508.zip", "NGPN_FFI_tables_FOLA_20250508.zip",
+          "NGPN_FFI_tables_FOUS_20250508.zip", "NGPN_FFI_tables_JECA_20250508.zip",
+          "NGPN_FFI_tables_KNRI_20250508.zip", "NGPN_FFI_tables_MORU_20250508.zip",
+          "NGPN_FFI_tables_SCBL_20250508.zip", "NGPN_FFI_tables_THRO_20250508.zip",
+          "NGPN_FFI_tables_WICA_20250508.zip")
+
+filepath = "C:PATH/TO/ZIP/FFI_zips/"
 zips_full <- paste0(filepath, zips)
 importData(type = 'csv', import_path = zips_full, export_tables = T)
 

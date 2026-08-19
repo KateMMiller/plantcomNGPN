@@ -126,48 +126,7 @@ check_null_print <- function(table, tab_level = 4, tab_title){
 try(tab4_spp <- read.csv("./data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = TRUE)
 try(tab4_spp <- read.csv("../data/NGPN_PCM_Table_4_Tree_shrub_species_list.csv"), silent = TRUE)
 
-# PCM Panel sampling schedule
-# Path will need to be updated
-try(panel_sch_wide <- read.csv("./data/panel_schedule.csv", na.strings = ""), silent = TRUE)
-try(panel_sch_wide <- read.csv("../data/panel_schedule.csv", na.strings = ""), silent = TRUE)
-
-# pivot to longer
-panel_sch <- panel_sch_wide |>
-  pivot_longer(!Year,
-               names_to = "Panel") |>
-  drop_na() |>
-  # filtering to current date (will update every year)
-  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
-  select(Year,
-         Panel)
-
-#THRO Panel sch
-try(panel_sch_wide_thro <- read.csv("./data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
-try(panel_sch_wide_thro <- read.csv("../data/THRO_panel_schedule.csv", na.strings = ""), silent = T)
-
-# pivot to longer
-panel_sch_thro <- panel_sch_wide_thro |>
-  pivot_longer(!Year,
-               names_to = "Panel") |>
-  drop_na() |>
-  # filtering to current date (will update every year)
-  filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
-  select(Year,
-         Panel)
-
-# Forest panel sampling schedule
-# forest_sch_wide <- read.csv("C:/Users/kbailey/Documents/Development/plantcomNGPN/data/forest_panel_schedule.csv",
-#                            na.strings = "")
-#
-# # pivot to linger
-# forest_sch <- forest_sch_wide |>
-#   pivot_longer(!Year,
-#                names_to = "Panel") |>
-#   drop_na()|>
-#   # filtering to current date (will update every year)
-#   filter(Year <= as.integer(format(Sys.Date(), "%Y"))) |>
-#   select(Year,
-#          Panel)
+#### START OF REPORTING TABLES ####
 
 ## Taxa ----
 # Does not remove "only active" plots
@@ -306,22 +265,11 @@ taxa_check <- QC_table |>
 taxa_include <- tab_include(taxa_check)
 
 ## Cover Point Data ----
-point_int1 <- getCoverPoints(years = year_range,
-                             purpose = "NGPN_PCM") |>
+point_int1 <- getCoverPoints() |>
   mutate(park = substr(MacroPlot_Name, 1, 4),
          year = as.numeric(year))
 
-# filtering plots on panel sched
-point_int <- bind_rows(point_int1 |>
-                        filter(!park == "THRO") |>
-                        semi_join(panel_sch,
-                                  by = c("MacroPlot_Purpose" = "Panel",
-                                         "year" = "Year")),
-                      point_int1 |>
-                        filter(park == "THRO") |>
-                        semi_join(panel_sch_thro,
-                                  by = c("MacroPlot_Purpose" = "Panel",
-                                         "year" = "Year"))) |>
+point_int <- point_int1 |>
   select(MacroPlot_Name,
          Unit_Name,
          SampleEvent_Date,
@@ -496,7 +444,7 @@ pint_include <- tab_include(pint_check)
 
 
 ## Quadrats ----
-densb1 <- getDensityBelts(years = year_range, purpose = "NGPN_PCM") |>
+densb <- getDensityBelts(years = year_range, purpose = "NGPN_PCM") |>
   mutate(year = as.numeric(year)) |>
   select(MacroPlot_Name,
          Unit_Name,
@@ -519,19 +467,6 @@ densb1 <- getDensityBelts(years = year_range, purpose = "NGPN_PCM") |>
          UV1,
          UV2,
          UV3)
-
-# filtering plots on sched
-densb <- bind_rows(densb1 |>
-                     filter(!Unit_Name == "THRO") |>
-                     semi_join(panel_sch,
-                               by = c("MacroPlot_Purpose" = "Panel",
-                                      "year" = "Year")),
-                   densb1 |>
-                     filter(Unit_Name == "THRO") |>
-                     semi_join(panel_sch_thro,
-                               by = c("MacroPlot_Purpose" = "Panel",
-                                      "year" = "Year")))
-
 
 ### Transect numbers that aren't 1 or 2 ----
 dtrans12 <- densb |>

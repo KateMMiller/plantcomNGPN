@@ -39,22 +39,29 @@
 #' thorough checks built in the function to ensure that's true (i.e.,
 #' it's likely to fail, but the error message may be weird).
 #'
-#' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN environment. If FALSE, will import tables to global
-#' environment.
+#' @param new_env Logical. If TRUE (default), will import tables to VIEWS_NGPN
+#' environment. If FALSE, will import tables to global environment.
 #'
-#' @param keep_tables Logical. If TRUE, will return the raw FFI database tables in a NGPN_tables environment. If FALSE (default),
-#' only returns the flattened views. This feature is primarily for internal use to QC the original data.
+#' @param keep_tables Logical. If TRUE, will return the raw FFI database tables
+#' in a NGPN_tables environment. If FALSE (default), only returns the flattened
+#' views. This feature is primarily for internal use to QC the original data.
 #'
-#' @param export_views Logical. If TRUE, will export a zip file of csvs to specified export_path for the flattened views of the data.
-#' Views are the analysis-ready files that have all associated MacroPlot, Sample Event, and sample data for a given FFI protocol (e.g. Point Intercept).
+#' @param export_views Logical. If TRUE, will export a zip file of csvs to
+#' specified export_path for the flattened views of the data. Views are the
+#' analysis-ready files that have all associated MacroPlot, Sample Event, and
+#' sample data for a given FFI protocol (e.g. Point Intercept).
 #'
-#' @param export_tables Logical. If TRUE, will export a zip file of csvs to specified export_path for the raw data tables from the FFI database.
-#' The raw tables are what can be imported the same as importing from a local instance of the FFI database.
+#' @param export_tables Logical. If TRUE, will export a zip file of csvs to
+#' specified export_path for the raw data tables from the FFI database. The raw
+#' tables are what can be imported the same as importing from a local instance
+#' of the FFI database.
 #'
-#' @param export_path Quoted string to export zipped csvs to if export = TRUE. If not specified, will export to the working directory.
+#' @param export_path Quoted string to export zipped csvs to if export = TRUE.
+#' If not specified, will export to the working directory.
 #'
-#' @param import_path Quoted string to import a zipped file of csvs if type = 'csv'. The name of the zipped file should be included
-#' in the path. Can specify multiple paths to import multiple parks/projects.
+#' @param import_path Quoted string to import a zipped file of csvs if type =
+#' 'csv'. The name of the zipped file should be included in the path. Can
+#' specify multiple paths to import multiple parks/projects.
 #'
 #' @examples
 #' \dontrun{
@@ -80,77 +87,147 @@
 #' importData(type = 'csv', import_path = "C:/temp/FFI_RA_THRO.zip")
 #'
 #' # Import zipped files of NGPN parks and export as 1 zip file with all parks included
-#' zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zip", "NGPN_FFI_tables_DETO_20250508.zip",
-#'           "NGPN_FFI_tables_FOLA_20250508.zip", "NGPN_FFI_tables_FOUS_20250508.zip", "NGPN_FFI_tables_JECA_20250508.zip",
-#'           "NGPN_FFI_tables_KNRI_20250508.zip", "NGPN_FFI_tables_MORU_20250508.zip", "NGPN_FFI_tables_SCBL_20250508.zip",
-#'           "NGPN_FFI_tables_THRO_20250508.zip", "NGPN_FFI_tables_WICA_20250508.zip")
-#' filepath = "C:/Users/KMMiller/OneDrive - DOI/MWR/NGPN_veg/FFI_zips/"
+#' zips <- c("NGPN_FFI_tables_AGFO_20250508.zip", "NGPN_FFI_tables_BADL_20250508.zip",
+#'           "NGPN_FFI_tables_DETO_20250508.zip", "NGPN_FFI_tables_FOLA_20250508.zip",
+#'           "NGPN_FFI_tables_FOUS_20250508.zip", "NGPN_FFI_tables_JECA_20250508.zip",
+#'           "NGPN_FFI_tables_KNRI_20250508.zip", "NGPN_FFI_tables_MORU_20250508.zip",
+#'           "NGPN_FFI_tables_SCBL_20250508.zip", "NGPN_FFI_tables_THRO_20250508.zip",
+#'           "NGPN_FFI_tables_WICA_20250508.zip")
+#'
+#' filepath = "C:PATH/TO/ZIP/FFI_zips/"
 #' zips_full <- paste0(filepath, zips)
 #' importData(type = 'csv', import_path = zips_full, export_tables = T)
 #'
 #' }
 #'
-#' @returns Either an environment of NGPN_PCM views as data frames and possibly an environment of the original FFI database tables.
+#' @returns Either an environment of NGPN_PCM views as data frames and possibly
+#' an environment of the original FFI database tables.
 #'
 #' @export
 #'
 
-importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_env = T, export_views = F,
-                       export_tables = F, export_path = NA, import_path = NA, keep_tables = F){
+importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO",
+                       new_env = T, export_views = F, export_tables = F,
+                       export_path = NA, import_path = NA, keep_tables = F){
+
   #---- Bug Handling ----
   # Check that suggested package required for this function are installed
   # Need to make this conditional on type.
   if(type %in% c("local", "server") & !requireNamespace("odbc", quietly = TRUE)){
-    stop("Package 'odbc' needed for this function to work. Please install it.", call. = FALSE)}
+    stop("Package 'odbc' needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
   if(type %in% c("local", "server") & !requireNamespace("DBI", quietly = TRUE)){
-    stop("Package 'DBI' needed for this function to work. Please install it.", call. = FALSE)}
+    stop("Package 'DBI' needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
   if(type %in% c("local", "server") & !requireNamespace("dbplyr", quietly = TRUE)){
-    stop("Package 'dbplyr' needed for this function to work. Please install it.", call. = FALSE)}
+    stop("Package 'dbplyr' needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+
   if(!requireNamespace("zip", quietly = TRUE) & (export_tables == T | export_views == TRUE)){
-    stop("Package 'zip' needed when export_views = TRUE or export_tables = TRUE. Please install it.", call. = FALSE)}
+    stop("Package 'zip' needed when export_views = TRUE or export_tables = TRUE. Please install it.",
+         call. = FALSE)
+  }
+
+  ## type
   type <- match.arg(type, c("local", "server", 'csv'))
+
+  ## environment
   stopifnot(is.logical(new_env))
+
+  ## export views
   stopifnot(is.logical(export_views))
+
+  ## export tables
   stopifnot(is.logical(export_tables))
-  if(any(type %in% c("local", "server")) & any(is.na(dbname))){stop("Must specify a dbname if type is 'local' or 'server'")}
-  if(type == "server" & is.na(server)){stop("Must specify a server address if type = 'server'")}
+
+  ## type error
+  if(any(type %in% c("local", "server")) & any(is.na(dbname))){
+    stop("Must specify a dbname if type is 'local' or 'server'")
+  }
+
+  if(type == "server" & is.na(server)){
+    stop("Must specify a server address if type = 'server'")
+  }
+
+  ## keep tables
   stopifnot(is.logical(keep_tables))
 
   #++++++ Update as more features are added ++++++
-  if(type %in% c("server")){stop(paste0("Sorry, type = ", type, " is not yet enabled."))}
+  if(type %in% c("server")){
+    stop(paste0("Sorry, type = ",  type, " is not yet enabled."))
+  }
 
   # Error handling for paths
+
+  ## export path
   if(export_views == TRUE | export_tables == TRUE){
     if(is.na(export_path)){
       export_path <- getwd()
-      print(paste0("No export_path specified. Output saved to working directory: ", getwd()), quote = FALSE)}
-    if(!grepl("/$", export_path)){export_path <- paste0(export_path, "/")} # add / to end of path if doesn't exist
-    if(!dir.exists(export_path)){stop("Specified export_path directory does not exist.")}
-    # Normalize filepath for zip
-    export_pathn <- normalizePath(export_path)
+      print(paste0("No export_path specified. Output saved to working directory: ",
+                   getwd()), quote = FALSE)
     }
 
+    ## correct path
+    if(!grepl("/$", export_path)){
+      export_path <- paste0(export_path, "/")
+    } # add / to end of path if doesn't exist
+
+    ## path doesn't exist
+    if(!dir.exists(export_path)){
+      stop("Specified export_path directory does not exist.")
+    }
+
+    # Normalize filepath for zip
+    export_pathn <- normalizePath(export_path)
+  }
+
+  ## CSV path
   if(type == 'csv'){
     if(!any(file.exists(import_path))){
       stop(paste0("Specified import_path does not exist. ",
-                  ifelse(any(grepl("sharepoint", import_path)), " Note that file paths from Sharepoint or Teams are not accessible.",
-                         "")))}
+                  ifelse(any(grepl("sharepoint", import_path)),
+                         " Note that file paths from Sharepoint or Teams are not accessible.",
+                         "")))
+    }
 
-    if(all(is.na(import_path))){stop("Must specify an import_path for type = 'csv'.")}
-    if(any(!grepl(".zip$", import_path))){stop("Must include the name of the zip file in import_path.")} # add / to end of path if doesn't exist
-    if(any(!file.exists(import_path))){stop("Specified import_path directory does not exist.")}
+    ## specify import path
+    if(all(is.na(import_path))){
+      stop("Must specify an import_path for type = 'csv'.")
+    }
+
+    ## name of file
+    if(any(!grepl(".zip$", import_path))){
+      stop("Must include the name of the zip file in import_path.")
+    } # add / to end of path if doesn't exist
+
+    ## direcotyr doesn't exist
+    if(any(!file.exists(import_path))){
+      stop("Specified import_path directory does not exist.")
+    }
+
     # Normalize filepath for zip
     import_pathn <- normalizePath(import_path)
   }
 
+  #---- Data Import ----
   cat(noquote("Importing data tables."), "\n\n")
 
+  # check environment
   env <- if(keep_tables == TRUE){
     NGPN_tables <<- new.env()
-  } else {environment()}
+  } else {
+    environment()
+    }
 
+  # local env
   if(type == "local"){
-  error_mess <- paste0("Unable to connect to specified SQL database. Make sure you have a local installation of the database in SSMS, ",
+  error_mess <- paste0("Unable to connect to specified SQL database. ",
+                       "Make sure you have a local installation of the database in SSMS, ",
                        "and check that the database name is correct.")
 
   if(length(dbname) == 1){
@@ -160,9 +237,14 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                              Server = "localhost\\SQLEXPRESS",
                              Database = dbname,
                              Trusted_Connection = "Yes"),
-     error = function(e){stop(error_mess)},
-     warning = function(w){stop(error_mess)})
+     error = function(e){
+       stop(error_mess)
+       },
+     warning = function(w){
+       stop(error_mess)
+       })
 
+  # list data tables
   tbls <- DBI::dbListTables(con, schema = "dbo")
 
   # Setup progress bar
@@ -170,25 +252,44 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   # Import views using their names and show progress bar
   tbl_import <- lapply(seq_along(tbls), function(x){
-    setTxtProgressBar(pb, x)
-    tbl <- tbls[x]
-    tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-      as.data.frame() |> dplyr::mutate(datasource = dbname)
-    return(tab)})
 
+    # progress bar
+    setTxtProgressBar(pb, x)
+
+    # tables
+    tbl <- tbls[x]
+
+    tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |>
+      # put data into tibble
+      dplyr::collect() |>
+      # make data frame
+      as.data.frame() |>
+      # add dbname
+      dplyr::mutate(datasource = dbname)
+
+    return(tab)
+    })
+
+  # naming tables
   tbl_import <- setNames(tbl_import, tbls)
+
   tbl_import2 <- tbl_import[sort(names(tbl_import))]
+
   # remove empty tables
   tbl_import3 <- tbl_import2[sapply(tbl_import2, nrow) > 0]
 
   list2env(tbl_import3, envir = env)
+
+  # disconnect from dbase
   DBI::dbDisconnect(con)
 
+  # Keeping tables
   if(keep_tables == TRUE){
     NGPN_tables <<- new.env()
     list2env(tbl_import2[sapply(tbl_import2, nrow) > 0], envir = NGPN_tables)
   }
 
+  # exporting tables
   if(export_tables == TRUE){
     dir.create(tmp <- tempfile())
     dbtbls <- names(tbl_import3)
@@ -201,9 +302,15 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     }))
 
     file_list <- list.files(tmp)
-    park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
-    zip_name = paste0("NGPN_FFI_table_export_", park, "_", format(Sys.Date(), "%Y%m%d"), ".zip")
 
+    # park list
+    park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
+
+    # naming with park
+    zip_name = paste0("NGPN_FFI_table_export_", park, "_",
+                      format(Sys.Date(), "%Y%m%d"), ".zip")
+
+    # saving .zip files
     zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
               root = tmp,
               files = file_list)
@@ -214,8 +321,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     } else if(length(dbname) > 1){
     dbimport <-
       purrr::map(seq_along(dbname), function(db){
-        error_mess = paste0("Unable to connect to specified SQL database named ", dbname[db],
-                            ". Make sure you have a local installation of the database in SSMS, ",
+        error_mess = paste0("Unable to connect to specified SQL database named ",
+                            dbname[db], ". Make sure you have a local ",
+                            "installation of the database in SSMS, ",
                             "and check that the database name is correct.")
 
         tryCatch(
@@ -224,8 +332,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                                  Server = "localhost\\SQLEXPRESS",
                                  Database = dbname[db],
                                  Trusted_Connection = "Yes"),
-          error = function(e){stop(error_mess)},
-          warning = function(w){stop(error_mess)})
+          error = function(e){
+            stop(error_mess)
+            },
+          warning = function(w){
+            stop(error_mess)
+            })
 
         tbls <- DBI::dbListTables(con, schema = "dbo")
 
@@ -233,19 +345,31 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       tbl_import <- lapply(seq_along(tbls), function(x){
        # setTxtProgressBar(pb, x)
         tbl <- tbls[x]
-        tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |> dplyr::collect() |>
-          as.data.frame() |> dplyr::mutate(datasource = dbname[db])
-        return(tab)})
+
+        tab <- dplyr::tbl(con, dbplyr::in_schema("dbo", tbl)) |>
+          dplyr::collect() |>
+          as.data.frame() |>
+          dplyr::mutate(datasource = dbname[db])
+        return(tab)
+        })
+
       DBI::dbDisconnect(con)
+
       tbl_import <- setNames(tbl_import, tbls)
+
       #list2env(tbl_import)
-      }, .progress = T) |> purrr::set_names(dbname)
+
+      }, .progress = T) |>
+      purrr::set_names(dbname)
 
     # flatten list to bind like tables together
     dbflat1 <- purrr::flatten(dbimport)
+
     dbflat2 <- tapply(dbflat1, names(dbflat1), dplyr::bind_rows)
+
     # remove empty tables
     dbflat3 <- dbflat2[sapply(dbflat2, nrow) > 0]
+
     # sort tables alphabetically
     dbflat4 <- dbflat3[sort(names(dbflat3))]
 
@@ -269,7 +393,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
       file_list <- list.files(tmp)
 
-      zip_name = paste0("NGPN_FFI_table_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
+      zip_name = paste0("NGPN_FFI_table_export_",
+                        format(Sys.Date(), "%Y%m%d"), ".zip")
 
       zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                 root = tmp,
@@ -319,7 +444,9 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       # Check if can read files within the zip file
       tryCatch(
         {zfiles = utils::unzip(import_path, list = T)$Name},
-         error = function(e){stop(paste0("Unable to import specified zip file."))})
+         error = function(e){
+           stop(paste0("Unable to import specified zip file."))
+           })
 
       z_list = sort(zfiles[grepl(paste0(csv_list1, collapse = "|"), zfiles)])
 
@@ -333,16 +460,18 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       # I'll update csv_list1 above and use the same tables for each park.
 
       # Check for missing views
-      if(length(miss_tbls) > 0){warning("The following tables are not included in specified database: ",
-                                     paste0(miss_tbls, collapse = ", "))}
+      if(length(miss_tbls) > 0){
+        warning("The following tables are not included in specified database: ",
+                paste0(miss_tbls, collapse = ", "))}
 
-      # Since the missing test passed, clean up files so only includes names in view_list, but
-      # maintain order in files
+      # Since the missing test passed, clean up files so only includes names in
+      # view_list, but maintain order in files
 
       # Import views now that all tests passed
       pb <- txtProgressBar(min = 0, max = length(z_list), style = 3)
 
       tbls1 <- unzip(import_path, junkpaths = TRUE, exdir = tempdir())
+
       tbls2 <- sort(tbls1[grepl(".csv", tbls1)])
 
       tbls <- sort(tbls2[grepl(paste0(csv_list, collapse = "|"), tbls2)])
@@ -351,7 +480,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
         lapply(seq_along(tbls), function(x){
           setTxtProgressBar(pb,x)
           tbl <- tbls[x]
-          tab <- read.csv(tbls[x], na.string = c("NA", "NULL"), check.names = FALSE) |>
+          tab <- read.csv(tbls[x], na.string = c("NA", "NULL"),
+                          check.names = FALSE) |>
             dplyr::mutate(datasource = file_name)
           return(tab)})
 
@@ -380,7 +510,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         file_list <- list.files(tmp)
         park <- substr(dbname, nchar(dbname)-3, nchar(dbname))
-        zip_name = paste0(file_name, "_table_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
+        zip_name = paste0(file_name, "_table_export_",
+                          format(Sys.Date(), "%Y%m%d"), ".zip")
 
         zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                   root = tmp,
@@ -400,9 +531,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         tryCatch(
           {zfiles = utils::unzip(import_path[ip], list = T)$Name},
-           error = function(e){stop(paste0("Unable to import specified zip file: ", ip))})
+           error = function(e){
+             stop(paste0("Unable to import specified zip file: ", ip))
+             })
 
-        z_list = sort(zfiles[grepl(paste0(csv_list1, ".csv", collapse = "|"), zfiles)])
+        z_list = sort(zfiles[grepl(paste0(csv_list1, ".csv", collapse = "|"),
+                                   zfiles)])
 
         # Drop date stamp (if it exists) from file name if exists in 2 steps
         # Drop csv from file names
@@ -415,9 +549,12 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
         # I'll update csv_list1 above and use the same tables for each park.
 
         # Check for missing views
-        if(length(miss_tbls) > 0){warning("Missing the following tables from the specified import_path: ",
-                                       import_path[ip], "\n",
-                                       paste0(miss_tbls, collapse = ", "))}
+        if(length(miss_tbls) > 0){
+          warning("Missing the following tables from ",
+                  "the specified import_path: ",
+                  import_path[ip], "\n",
+                  paste0(miss_tbls, collapse = ", "))
+          }
 
         # Since the missing test passed, clean up files so only includes names in view_list, but
         # maintain order in files
@@ -427,7 +564,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         tbl_import <-
           lapply(seq_along(tbls), function(x){
-          tbl_temp <- read.csv(tbls[x], na.strings = c("NA", "NULL", ""), check.names = FALSE, as.is = T) |>
+          tbl_temp <- read.csv(tbls[x], na.strings = c("NA", "NULL", ""),
+                               check.names = FALSE, as.is = T) |>
             dplyr::mutate(datasource = file_name)
 
           # When fields from one park are all NAs vs other parks have data, read.csv doesn't always assign
@@ -435,20 +573,27 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
           # error that Can't Combine two columns, it needs to be added here. I couldn't figure out how
           # to generalize this better, given that parks have different tables.
           cols_to_char <-
-              c("UV1", "UV2", "UV3", "AttributeData_DataRow_GUID", "AttributeData_SampleRow_GUID",
-               "Spp_GUID", "Status", "AgeCl", "Comment", "AttributeData_Original_GUID",
-               "AttributeData_CreatedBy", "AttributeData_CreatedDate", "AttributeData_ModifiedBy",
-               "AttributeData_ModifiedDate", "SampleData_SampleRow_GUID", "SampleData_SampleEvent_GUID",
-               "FieldTeam", "EntryTeam", "SaComment", "SampleData_Original_GUID",
-               "SampleData_CreatedBy", "SampleData_CreatedDate", "SampleData_ModifiedBy",
-               "SampleData_ModifiedDate", "MethodAtt_Value_Default", "ProtocolVersion_GUID",
-               "ProtocolVersion_Family_GUID", "ProtocolVersion_Protocol_GUID", "ProtocolVersion_TimeStamp",
-               "UV1Desc", "UV2Desc", "UV3Desc", "TypeCov", "NFRatio", "NFNum", "SizeCl",
-               "MacroPlot_UV5", "MacroPlot_UV7", "MM_SpeciesPickList_GUID", "MM_LocalSpecies_GUID",
-               "MonitoringStatus_Suffix", "SampleAttributeCode_GUID", "SampleAttributeCode_SampleAttribute_GUID",
-               "SampleAttributeCode_Code", "SampleAttributeCode_Text", "SampleAttributeCode_Description",
-               "SampleEvent_GUID", "val1", "key1", "SpeciesPickList_GUID", "SpeciesPickList_RegistrationUnitGUID",
-               "SpeciesPickList_Name", "SpeciesPickList_Describe", "DamCd3", "DamCd4", "DamCd5")
+              c("UV1", "UV2", "UV3", "AttributeData_DataRow_GUID",
+                "AttributeData_SampleRow_GUID", "Spp_GUID", "Status",
+                "AgeCl", "Comment", "AttributeData_Original_GUID",
+                "AttributeData_CreatedBy", "AttributeData_CreatedDate",
+                "AttributeData_ModifiedBy", "AttributeData_ModifiedDate",
+                "SampleData_SampleRow_GUID", "SampleData_SampleEvent_GUID",
+                "FieldTeam", "EntryTeam", "SaComment", "SampleData_Original_GUID",
+                "SampleData_CreatedBy", "SampleData_CreatedDate",
+                "SampleData_ModifiedBy", "SampleData_ModifiedDate",
+                "MethodAtt_Value_Default", "ProtocolVersion_GUID",
+                "ProtocolVersion_Family_GUID", "ProtocolVersion_Protocol_GUID",
+                "ProtocolVersion_TimeStamp", "UV1Desc", "UV2Desc", "UV3Desc",
+                "TypeCov", "NFRatio", "NFNum", "SizeCl", "MacroPlot_UV5",
+                "MacroPlot_UV7", "MM_SpeciesPickList_GUID", "MM_LocalSpecies_GUID",
+                "MonitoringStatus_Suffix", "SampleAttributeCode_GUID",
+                "SampleAttributeCode_SampleAttribute_GUID",
+                "SampleAttributeCode_Code", "SampleAttributeCode_Text",
+                "SampleAttributeCode_Description", "SampleEvent_GUID", "val1",
+                "key1", "SpeciesPickList_GUID",
+                "SpeciesPickList_RegistrationUnitGUID", "SpeciesPickList_Name",
+                "SpeciesPickList_Describe", "DamCd3", "DamCd4", "DamCd5")
 
           if(any(cols_to_char %in% names(tbl_temp))){
             cols_to_char2 <- cols_to_char[cols_to_char %in% names(tbl_temp)]
@@ -490,7 +635,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
         file_list <- list.files(tmp)
 
-        zip_name = paste0("NGPN_FFI_table_export_", format(Sys.Date(), "%Y%m%d"), ".zip")
+        zip_name = paste0("NGPN_FFI_table_export_",
+                          format(Sys.Date(), "%Y%m%d"), ".zip")
 
         zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
                   root = tmp,
@@ -498,8 +644,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
       } # end of fp 2
       } # type = csv
 
-  if(export_tables == TRUE){cat(noquote(paste0('Export of raw data tables complete and saved to: ', export_pathn, "\\", zip_name)),
-                                "\n\n")}
+  if(export_tables == TRUE){
+    cat(noquote(paste0('Export of raw data tables complete and saved to: ',
+                       export_pathn, "\\", zip_name)),
+        "\n\n")
+    }
 
   #---- Make Views ----
   cat(noquote("Joining tables into views."), "\n\n")
@@ -507,54 +656,94 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   pb <- txtProgressBar(min = 0, max = 11, style = 3)
 
   setTxtProgressBar(pb,1)
+
   #---- MacroPlot View -----
   #### Compile MacroPlot data ####
   #env <- if(exists("NGPN_tables")){NGPN_tables} else {.GlobalEnv}
   tryCatch(
     macro_orig <- get("MacroPlot", envir = env),
-    error = function(e){stop("MacroPlot table not found. Please import NGPN FFI data.")})
+    error = function(e){
+      stop("MacroPlot table not found. Please import NGPN FFI data.")
+      })
   tryCatch(
     mm_projunit <- get("MM_ProjectUnit_MacroPlot", envir = env),
-    error = function(e){stop("MM_ProjectUnit_MacroPlot table not found. Please import NGPN FFI data tables.")})
+    error = function(e){
+      stop("MM_ProjectUnit_MacroPlot table not found. Please import NGPN FFI data tables.")
+      })
   tryCatch(
     projunit <- get("ProjectUnit", envir = env),
-    error = function(e){stop("ProjectUnit table not found. Please import NGPN FFI data tables.")})
+    error = function(e){
+      stop("ProjectUnit table not found. Please import NGPN FFI data tables.")
+      })
   tryCatch(
     regunit <- get("RegistrationUnit", envir = env),
-    error = function(e){stop("RegistrationUnit table not found. Please import NGPN FFI data tables.")})
+    error = function(e){
+      stop("RegistrationUnit table not found. Please import NGPN FFI data tables.")
+      })
 
   # Clean up purpose
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose == "Panel 9"] <- "Panel9"
+
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in%
-                                 c("FX", "Fx", "FX Monitoring", "FX monitoring", "Fire Effects Monitoring")] <- "FX Monitoring"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FX Dual", "FX_Dual")] <- "FX Dual"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Research", "research")] <- "Research"
+                                 c("FX", "Fx", "FX Monitoring", "FX monitoring",
+                                   "Fire Effects Monitoring")] <- "FX Monitoring"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FX Dual",
+                                                                   "FX_Dual")] <- "FX Dual"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Research",
+                                                                   "research")] <- "Research"
+
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Determine Strategies for efficient early detection",
                                                                    "Determine strategies for efficient early detection",
                                                                    "Early Invasives Detection")] <- "Early Detection"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FMH Grass Plot", "FMH Grass Plot ")] <- "FMH Grass Plot"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Intensive", "FIRE_intensive", "FX_Intensive",
-                                                                   "FX_ Intensive", "FIRE_intesive")] <- "FX Intensive"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FMH Grass Plot",
+                                                                   "FMH Grass Plot ")] <- "FMH Grass Plot"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Intensive",
+                                                                   "FIRE_intensive",
+                                                                   "FX_Intensive",
+                                                                   "FX_ Intensive",
+                                                                   "FIRE_intesive")] <- "FX Intensive"
+
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FIRE_Extensive")] <- "FX Extensive"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Lafferty Plot", "Lafferty Plot ")] <- "Lafferty Plot"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("invasive research", "Invasives Research",
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Lafferty Plot",
+                                                                   "Lafferty Plot ")] <- "Lafferty Plot"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("invasive research",
+                                                                   "Invasives Research",
                                                                    "Invasvies Research")] <- "Invasives Research"
-  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Modified Shrub Plot", "Modified Shrub Plot ")] <- "Modified Shrub Plot"
+
+  macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Modified Shrub Plot",
+                                                                   "Modified Shrub Plot ")] <- "Modified Shrub Plot"
+
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("Pre- and Post- treatment of fuels",
                                                                    "pre- and post-treatment forest and fuels")] <- "Pre and post fuels treatment"
+
   macro_orig$MacroPlot_Purpose[macro_orig$MacroPlot_Purpose %in% c("FS")] <- "ForestStructure" # KNRI_PCM_038
 
-  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE", "In-Active", "Inactive")] <- "INACTIVE"
+  projunit$ProjectUnit_Name[projunit$ProjectUnit_Name %in% c("IN-ACTIVE",
+                                                             "In-Active",
+                                                             "Inactive")] <- "INACTIVE"
 
   # cleanup project and projectunit data
   projunit$ProjectUnit_Agency <- "NPS"
-  NGPN_plots <- macro_orig$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_", macro_orig$MacroPlot_Name)]
+  NGPN_plots <- macro_orig$MacroPlot_Name[grepl("_PCM_|_LPCM_|_FPCM_|_RCM_",
+                                                macro_orig$MacroPlot_Name)]
+
   macro <- macro_orig[macro_orig$MacroPlot_Name %in% NGPN_plots,]
 
   # Joining macroplot-relevant tables
   macro1 <- left_join(macro, mm_projunit,
-                      by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID", "datasource"))
-  macro2 <- left_join(macro1, regunit, by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID", "datasource"))
+                      by = c("MacroPlot_GUID" = "MM_MacroPlot_GUID",
+                             "datasource"))
+
+  macro2 <- left_join(macro1, regunit,
+                      by = c("MacroPlot_RegistrationUnit_GUID" = "RegistrationUnit_GUID",
+                             "datasource"))
+
   macro3 <- left_join(macro2, projunit,
                       by = c("MacroPlot_RegistrationUnit_GUID" = "ProjectUnit_RegistrationUnitGUID",
                              "MM_ProjectUnit_GUID" = "ProjectUnit_GUID",
@@ -592,9 +781,10 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
       "ProjectUnit_Name", "Agency", "UTM_X", "UTM_Y", "UTMzone", "Datum",
       "DD_Lat", "DD_Long", "Elevation", "ElevationUnits", "Azimuth", "Aspect",
-      "SlopeHill", "SlopeTransect", "MacroPlot_UV1", "MacroPlot_UV2", "MacroPlot_UV3",
-      "MacroPlot_UV4", "MacroPlot_UV5", "MacroPlot_UV6", "MacroPlot_UV7", "MacroPlot_UV8",
-      "Metadata", "StartPoint", "Directions", "MacroPlot_Comment","Unit_Comment", #"Description",
+      "SlopeHill", "SlopeTransect", "MacroPlot_UV1", "MacroPlot_UV2",
+      "MacroPlot_UV3", "MacroPlot_UV4", "MacroPlot_UV5", "MacroPlot_UV6",
+      "MacroPlot_UV7", "MacroPlot_UV8", "Metadata", "StartPoint", "Directions",
+      "MacroPlot_Comment","Unit_Comment", #"Description",
       "MacroPlot_GUID", "RegistrationUnit_GUID", #"MM_ProjectUnit_GUID",
       "datasource")
 
@@ -606,10 +796,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   macro4$ProjectUnit_Name <- gsub(" ", "_", macro4$ProjectUnit_Name)
 
   # make project column wide, so more efficient shape
-  macro5 <- macro4 |> pivot_wider(names_from = "ProjectUnit_Name",
-                                      values_from = "sampled",
-                                      values_fill = 0,
-                                      names_prefix = "ProjectUnit_") |>
+  macro5 <- macro4 |>
+    pivot_wider(names_from = "ProjectUnit_Name",
+                values_from = "sampled",
+                values_fill = 0,
+                names_prefix = "ProjectUnit_") |>
     data.frame()
 
   colnames(macro5) <- gsub(" ", "_", colnames(macro5))
@@ -619,8 +810,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   proj_names1 <- names(macro5[grepl("ProjectUnit_", names(macro5))])
   proj_names <-
     if(any(names(macro5) %in% "ProjectUnit_Park")){
-    c("ProjectUnit_Park", sort(proj_names1[!proj_names1 %in% "ProjectUnit_Park"]))
-      } else {sort(proj_names1)}
+    c("ProjectUnit_Park",
+      sort(proj_names1[!proj_names1 %in% "ProjectUnit_Park"]))
+    } else {
+        sort(proj_names1)
+      }
 
   MacroPlots <- data.frame(macro5[order(macro5$MacroPlot_Name),
                            c(macro_names, proj_names)])
@@ -628,36 +822,56 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   #---- SampleEvents View ----
   #### Compile Sample Event Data ####
   tryCatch(
-    monstat <- get("MonitoringStatus", envir = env) |> select(-datasource),
-    error = function(e){stop("MonitoringStatus table not found. Please import NGPN FFI data tables.")})
+    monstat <- get("MonitoringStatus", envir = env) |>
+      select(-datasource),
+    error = function(e){
+      stop("MonitoringStatus table not found. Please import NGPN FFI data tables.")
+      })
   tryCatch(
-    mm_monstat_se <- get("MM_MonitoringStatus_SampleEvent", envir = env) |> select(-datasource),
-    error = function(e){stop("MM_MonitoringStatus_SampleEvent table not found. Please import NGPN FFI data tables.")})
+    mm_monstat_se <- get("MM_MonitoringStatus_SampleEvent", envir = env) |>
+      select(-datasource),
+    error = function(e){
+      stop("MM_MonitoringStatus_SampleEvent table not found. Please import NGPN FFI data tables.")
+      })
   tryCatch(
-    sampev <- get("SampleEvent", envir = env) |> select(-datasource),
-    error = function(e){stop("SampleEvent table not found. Please import NGPN FFI data tables.")})
+    sampev <- get("SampleEvent", envir = env) |>
+      select(-datasource),
+    error = function(e){
+      stop("SampleEvent table not found. Please import NGPN FFI data tables.")
+      })
 
   # Use to make some tables smaller before join
   macro_guids <- unique(MacroPlots$MacroPlot_GUID)
 
   # Fix typos in MonitoringStatus_Name and MonitoringStatus_Base
   monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2009_Plant Community"] <- "2009_PlantCommunity"
+
   monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2018_Plant Community"] <- "2018_PlantCommunity"
+
   monstat$MonitoringStatus_Name[monstat$MonitoringStatus_Name == "2024_Plant Community"] <- "2024_PlantCommunity"
 
   monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base == "2016_"] <- "PlantCommunity"
-  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("Plant Community", "_PlantCommunity")] <- "PlantCommunity"
-  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("2018_PlantCommunity", "2019_PlantCommunity")] <- "PlantCommunity"
+
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("Plant Community",
+                                                                     "_PlantCommunity")] <- "PlantCommunity"
+
+  monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("2018_PlantCommunity",
+                                                                     "2019_PlantCommunity")] <- "PlantCommunity"
+
   monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_Riparian")] <- "Riparian"
+
   monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_ForestStructure")] <- "ForestStructure"
+
   monstat$MonitoringStatus_Base[monstat$MonitoringStatus_Base %in% c("_FirePlantCommunity")] <- "FirePlantCommunity"
 
   sampev2 <- left_join(MacroPlots, sampev, by = c("MacroPlot_GUID" = "SampleEvent_Plot_GUID"),
                        relationship = 'many-to-many') #MM b/c plots are used for multiple projects
 
-  monstat_join <- inner_join(mm_monstat_se, monstat, by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID"))
+  monstat_join <- inner_join(mm_monstat_se, monstat,
+                             by = c("MM_MonitoringStatus_GUID" = "MonitoringStatus_GUID"))
 
-  sampev3 <- left_join(sampev2, monstat_join, by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"),
+  sampev3 <- left_join(sampev2, monstat_join,
+                       by = c("SampleEvent_GUID" = "MM_SampleEvent_GUID"),
                        relationship = 'many-to-many')
 
   sampev3$SampleEvent_Date <-
@@ -689,22 +903,31 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   keep_cols_samp <-
     c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose", "MacroPlot_Type",
-      "SampleEvent_Date", "year", "month", "doy",
-      "UTM_X", "UTM_Y", "UTMzone", "Elevation", "Azimuth", "Aspect",
-      "SlopeHill", "SlopeTransect", "SampleEvent_UV1", "DefaultMonitoringStatus",
-      "TreatmentUnit", "MonitoringStatus_Prefix", "MonitoringStatus_Base",
+      "SampleEvent_Date", "year", "month", "doy", "UTM_X", "UTM_Y", "UTMzone",
+      "Elevation", "Azimuth", "Aspect", "SlopeHill", "SlopeTransect",
+      "SampleEvent_UV1", "DefaultMonitoringStatus", "TreatmentUnit",
+      "MonitoringStatus_Prefix", "MonitoringStatus_Base",
       "MonitoringStatus_Suffix", "MonitoringStatus_Name",
-      "MonitoringStatus_Comment", "SampleEvent_Comment",
-      "SampleEvent_GUID", "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID", "MacroPlot_GUID")
+      "MonitoringStatus_Comment", "SampleEvent_Comment", "SampleEvent_GUID",
+      "MM_MonitoringStatus_GUID", "RegistrationUnit_GUID", "MacroPlot_GUID")
 
-  SampleEvents <- data.frame(sampev5[order(sampev5$MacroPlot_Name, sampev5$SampleEvent_Date),
+  SampleEvents <- data.frame(sampev5[order(sampev5$MacroPlot_Name,
+                                           sampev5$SampleEvent_Date),
                              keep_cols_samp])
 
-  sampev_unique1 <- SampleEvents |> select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |> distinct()
+  sampev_unique1 <- SampleEvents |>
+    select(-MonitoringStatus_Comment, -MM_MonitoringStatus_GUID) |>
+    distinct()
+
   # Convert "" to NA so unique actually works
-  mon_cols <- c("DefaultMonitoringStatus", "MonitoringStatus_Prefix", "MonitoringStatus_Base",
-                "MonitoringStatus_Suffix", "MonitoringStatus_Name")
+  mon_cols <- c("DefaultMonitoringStatus",
+                "MonitoringStatus_Prefix",
+                "MonitoringStatus_Base",
+                "MonitoringStatus_Suffix",
+                "MonitoringStatus_Name")
+
   sampev_unique1[,mon_cols][sampev_unique1[,mon_cols] == ""] <- NA_character_
+
   sampev_unique <- distinct(sampev_unique1)
 
   # Prevents some duplication of data until monitoring status is fixed in database.
@@ -713,19 +936,30 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   #---- Taxa_Table View----
   setTxtProgressBar(pb,2)
   tryCatch(localspp <- get("LocalSpecies", envir = env),
-           error = function(e){stop("LocalSpecies table not found. Please import NGPN FFI data tables.")})
-  tryCatch(mastspp <- get("MasterSpecies", envir = env) |> distinct(),
-           error = function(e){stop("MasterSpecies table not found. Please import NGPN FFI data tables.")})
+           error = function(e){
+             stop("LocalSpecies table not found. Please import NGPN FFI data tables.")
+             })
+  tryCatch(mastspp <- get("MasterSpecies", envir = env) |>
+             distinct(),
+           error = function(e){
+             stop("MasterSpecies table not found. Please import NGPN FFI data tables.")
+             })
   tryCatch(auxspp <- get("AuxSpecies", envir = env),
-           error = function(e){stop("AuxSpecies table not found. Please import NGPN FFI data tables.")})
-  tryCatch(lifeform <- get("LU_LifeForm", envir = env) |> distinct(),
-           error = function(e){stop("LU_LifeForm table not found. Please import NGPN FFI data tables.")})
+           error = function(e){
+             stop("AuxSpecies table not found. Please import NGPN FFI data tables.")
+             })
+  tryCatch(lifeform <- get("LU_LifeForm", envir = env) |>
+             distinct(),
+           error = function(e){
+             stop("LU_LifeForm table not found. Please import NGPN FFI data tables.")
+             })
   # NGPN does not appear to use the SpeciesPickList, so not including here.
   # lifecycle doesn't appear to be used much by NGPN, so not including it here.
 
   # Table joins
   locspp_reg <- left_join(localspp, regunit,
-                          by = c("LocalSpecies_RegistrationUnitGUID" = "RegistrationUnit_GUID", "datasource"))
+                          by = c("LocalSpecies_RegistrationUnitGUID" = "RegistrationUnit_GUID",
+                                 "datasource"))
 
   spp1 <- left_join(locspp_reg, auxspp,
                     by = c("LocalSpecies_AuxSpeciesGUID" = "AuxSpecies_GUID",
@@ -733,43 +967,63 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                            "datasource"))
 
   spp2 <- left_join(spp1, mastspp,
-                    by = c("LocalSpecies_MasterSpeciesGUID" = "MasterSpecies_GUID", 'datasource'))
+                    by = c("LocalSpecies_MasterSpeciesGUID" = "MasterSpecies_GUID",
+                           'datasource'))
 
   spp3 <- left_join(spp2, lifeform,
-                    by = c("LocalSpecies_PreferedLifeForm_GUID" = "LU_LifeForm_GUID", "datasource"))
+                    by = c("LocalSpecies_PreferedLifeForm_GUID" = "LU_LifeForm_GUID",
+                           "datasource"))
 
   # Merge Master and Aux species list to return complete species list.
-  spp3$ScientificName <- ifelse(is.na(spp3$MasterSpecies_ScientificName), spp3$AuxSpecies_ScientificName,
+  spp3$ScientificName <- ifelse(is.na(spp3$MasterSpecies_ScientificName),
+                                spp3$AuxSpecies_ScientificName,
                                 spp3$MasterSpecies_ScientificName)
-  spp3$ITIS_TSN <- ifelse(is.na(spp3$MasterSpecies_ITIS_TSN), spp3$AuxSpecies_ITIS_TSN,
+
+  spp3$ITIS_TSN <- ifelse(is.na(spp3$MasterSpecies_ITIS_TSN),
+                          spp3$AuxSpecies_ITIS_TSN,
                           spp3$MasterSpecies_ITIS_TSN)
 
-  spp3$Family <- ifelse(is.na(spp3$MasterSpecies_Family), spp3$AuxSpecies_Family,
+  spp3$Family <- ifelse(is.na(spp3$MasterSpecies_Family),
+                        spp3$AuxSpecies_Family,
                         spp3$MasterSpecies_Family)
 
-  spp3$Genus <- ifelse(is.na(spp3$MasterSpecies_Genus), spp3$AuxSpecies_Genus,
+  spp3$Genus <- ifelse(is.na(spp3$MasterSpecies_Genus),
+                       spp3$AuxSpecies_Genus,
                        spp3$MasterSpecies_Genus)
 
-  spp3$Symbol <- ifelse(is.na(spp3$MasterSpecies_Symbol), spp3$AuxSpecies_Symbol,
+  spp3$Symbol <- ifelse(is.na(spp3$MasterSpecies_Symbol),
+                        spp3$AuxSpecies_Symbol,
                         spp3$MasterSpecies_Symbol)
 
-  spp3$NotBiological <- ifelse(is.na(spp3$MasterSpecies_NotBiological), spp3$AuxSpecies_NotBiological,
+  spp3$NotBiological <- ifelse(is.na(spp3$MasterSpecies_NotBiological),
+                               spp3$AuxSpecies_NotBiological,
                                spp3$MasterSpecies_NotBiological)
 
-  spp3$Nativity <- ifelse(is.na(spp3$LocalSpecies_Nativity), spp3$MasterSpecies_Nativity,
+  spp3$Nativity <- ifelse(is.na(spp3$LocalSpecies_Nativity),
+                          spp3$MasterSpecies_Nativity,
                           spp3$LocalSpecies_Nativity)
 
-  spp3$CommonName <- ifelse(is.na(spp3$LocalSpecies_CommonName), spp3$MasterSpecies_CommonName,
+  spp3$CommonName <- ifelse(is.na(spp3$LocalSpecies_CommonName),
+                            spp3$MasterSpecies_CommonName,
                             spp3$LocalSpecies_CommonName)
 
-  spp4 <- spp3 |> select(-MasterSpecies_ScientificName, -AuxSpecies_ScientificName,
-                         -MasterSpecies_ITIS_TSN, -AuxSpecies_ITIS_TSN,
-                         -MasterSpecies_Family, -AuxSpecies_Family,
-                         -MasterSpecies_Genus, -AuxSpecies_Genus,
-                         -MasterSpecies_Symbol, -LocalSpecies_Symbol, -AuxSpecies_Symbol,
-                         -MasterSpecies_NotBiological, -AuxSpecies_NotBiological,
-                         -LocalSpecies_Nativity, -MasterSpecies_Nativity,
-                         -LocalSpecies_CommonName, -MasterSpecies_CommonName)
+  spp4 <- spp3 |> select(-MasterSpecies_ScientificName,
+                         -AuxSpecies_ScientificName,
+                         -MasterSpecies_ITIS_TSN,
+                         -AuxSpecies_ITIS_TSN,
+                         -MasterSpecies_Family,
+                         -AuxSpecies_Family,
+                         -MasterSpecies_Genus,
+                         -AuxSpecies_Genus,
+                         -MasterSpecies_Symbol,
+                         -LocalSpecies_Symbol,
+                         -AuxSpecies_Symbol,
+                         -MasterSpecies_NotBiological,
+                         -AuxSpecies_NotBiological,
+                         -LocalSpecies_Nativity,
+                         -MasterSpecies_Nativity,
+                         -LocalSpecies_CommonName,
+                         -MasterSpecies_CommonName)
 
   # hacky way to keep LocalSpecies_UV1 as is
   names(spp4)[names(spp4) == "LocalSpecies_GUID"] <- "Spp_GUID"
@@ -779,21 +1033,26 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
 
   # Drop table names from column names for easier coding
   names(spp4) <-
-    gsub("^MacroPlot_|^LocalSpecies_|^MasterSpecies_|^LU_|^AuxSpecies_|^Registration", "", names(spp4))
+    gsub("^MacroPlot_|^LocalSpecies_|^MasterSpecies_|^LU_|^AuxSpecies_|^Registration",
+         "", names(spp4))
 
   names(spp4)[names(spp4) == "UnitGUID"] <- "RegistrationUnitGUID"
 
-  keep_cols_taxa <- c("Symbol", "ITIS_TSN", "ScientificName", "CommonName", "Family", "Genus",
-                      "Nativity", "Invasive", "Cultural", "Concern", "LifeCycle",
-                      "LifeForm_Name", "NotBiological", "UserAdded", "Species_UV1",
-                      "IsUnknown", "IsUnlisted", "Species_Description", "Species_Comment", "Unit_Name",
-                      "SymbolKey", "Synonym_SymbolKey", "Spp_GUID", "RegistrationUnitGUID",
-                      "MasterSpeciesGUID", "AuxSpeciesGUID", "PLANTS_GUID")
+  keep_cols_taxa <- c("Symbol", "ITIS_TSN", "ScientificName", "CommonName",
+                      "Family", "Genus", "Nativity", "Invasive", "Cultural",
+                      "Concern", "LifeCycle", "LifeForm_Name", "NotBiological",
+                      "UserAdded", "Species_UV1", "IsUnknown", "IsUnlisted",
+                      "Species_Description", "Species_Comment", "Unit_Name",
+                      "SymbolKey", "Synonym_SymbolKey", "Spp_GUID",
+                      "RegistrationUnitGUID", "MasterSpeciesGUID",
+                      "AuxSpeciesGUID", "PLANTS_GUID")
 
-  Taxa_Table <- data.frame(spp4[order(spp4$Symbol, spp4$Unit_Name), keep_cols_taxa])
+  Taxa_Table <- data.frame(spp4[order(spp4$Symbol, spp4$Unit_Name),
+                                keep_cols_taxa])
 
   #---- Cover_Points_Metric View ----
   setTxtProgressBar(pb,3)
+
   covpts_samp1 <-   tryCatch(get("Cover_Points_metric_Sample", envir = env),
                              error = function(e){NULL})
 
@@ -821,36 +1080,46 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                          relationship = 'many-to-many') # b/c multiple projects/macroplot
 
   samp_cov_spp <- left_join(samp_cova, Taxa_Table,
-                            by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+                            by = c("Spp_GUID", "Unit_Name",
+                                   "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
   cols_view_start <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose",
-                       "UTM_X", "UTM_Y", "UTMzone", "Elevation",
-                       "Azimuth", "Aspect", "SlopeHill", "SlopeTransect", "SampleEvent_Date",
+                       "UTM_X", "UTM_Y", "UTMzone", "Elevation", "Azimuth",
+                       "Aspect", "SlopeHill", "SlopeTransect", "SampleEvent_Date",
                        "year", "month", "doy")
+
   cols_view_end <- c("UV1Desc", "UV2Desc", "UV3Desc", "SaComment",
                      "DefaultMonitoringStatus", "MonitoringStatus_Base",
                      "MacroPlot_GUID", "SampleEvent_GUID", #"MM_MonitoringStatus_GUID",
-                     "RegistrationUnit_GUID",
-                     "Spp_GUID")
+                     "RegistrationUnit_GUID", "Spp_GUID")
+
   cols_taxa_start <- c("Symbol", "ITIS_TSN", "ScientificName", "CommonName")
-  cols_taxa_end <- c("Nativity", "Invasive", "Cultural", "Concern", "LifeCycle", "LifeForm_Name",
-                     "NotBiological", "Species_Comment")
+
+  cols_taxa_end <- c("Nativity", "Invasive", "Cultural", "Concern", "LifeCycle",
+                     "LifeForm_Name", "NotBiological", "Species_Comment")
+
   cols_covpt <- c("Visited", "NumTran", "TranLen", 'NumPtsTran', "Offset",
                   "Index", "Transect", "Point", "Tape", "Order", "Height",
                   "CanopyLayer", "Status", "Comment")
 
   Cover_Points_metric <- distinct(data.frame(
-    samp_cov_spp[order(samp_cov_spp$MacroPlot_Name, samp_cov_spp$year,
-                       samp_cov_spp$Index, samp_cov_spp$ScientificName),
-                 c(cols_view_start, cols_taxa_start,
+    samp_cov_spp[order(samp_cov_spp$MacroPlot_Name,
+                       samp_cov_spp$year,
+                       samp_cov_spp$Index,
+                       samp_cov_spp$ScientificName),
+                 c(cols_view_start,
+                   cols_taxa_start,
                    cols_covpt,
-                   cols_taxa_end, cols_view_end)]))
+                   cols_taxa_end,
+                   cols_view_end)]))
   }
   #---- Cover_Species_Composition View ----
   setTxtProgressBar(pb,4)
-  covcomp_samp1 <-   tryCatch(get("Cover_SpeciesComposition_metric_Sample", envir = env),
+  covcomp_samp1 <-   tryCatch(get("Cover_SpeciesComposition_metric_Sample",
+                                  envir = env),
                               error = function(e){NULL})
-  covcomp_attr1 <- tryCatch(get("Cover_SpeciesComposition_metric_Attribute", envir = env),
+  covcomp_attr1 <- tryCatch(get("Cover_SpeciesComposition_metric_Attribute",
+                                envir = env),
                             error = function(e){NULL})
 
   if(class(covcomp_samp1) == "data.frame"){
@@ -871,18 +1140,23 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                           relationship = 'many-to-many') # b/c multiple projects/macroplot
 
   samp_comp_spp <- left_join(samp_compa, Taxa_Table,
-                             by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+                             by = c("Spp_GUID", "Unit_Name",
+                                    "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover", "Height",
-                    "Comment", "UV1", "UV2", "UV3")
+  cols_covcomp <- c("Visited", "Index", "Status", "SizeCl", "AgeCl", "Cover",
+                    "Height", "Comment", "UV1", "UV2", "UV3")
 
   Cover_Species_Composition <- distinct(
     data.frame(
-    samp_comp_spp[order(samp_comp_spp$MacroPlot_Name, samp_comp_spp$year,
-                        samp_comp_spp$Index, samp_comp_spp$ScientificName),
-                  c(cols_view_start, cols_taxa_start,
+    samp_comp_spp[order(samp_comp_spp$MacroPlot_Name,
+                        samp_comp_spp$year,
+                        samp_comp_spp$Index,
+                        samp_comp_spp$ScientificName),
+                  c(cols_view_start,
+                    cols_taxa_start,
                     cols_covcomp,
-                    cols_taxa_end, cols_view_end)]))
+                    cols_taxa_end,
+                    cols_view_end)]))
   }
   #---- Density_Belts_Metric View ----
   setTxtProgressBar(pb,5)
@@ -912,16 +1186,21 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                               by = c("Spp_GUID", "Unit_Name",
                                      "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_densbelt <- c("Visited", "NumTran", "NumSubbelt", "TranLen", "TranWid", "Area",
-                     "Index", "Transect", "Subbelt", "Status", "SizeCl", "AgeCl",
-                     "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
+  cols_densbelt <- c("Visited", "NumTran", "NumSubbelt", "TranLen", "TranWid",
+                     "Area", "Index", "Transect", "Subbelt", "Status", "SizeCl",
+                     "AgeCl", "Count", "Height", "SubFrac", "Comment", "UV1",
+                     "UV2", "UV3")
 
   Density_Belts_metric <- distinct(data.frame(
-    samp_densb_spp[order(samp_densb_spp$MacroPlot_Name, samp_densb_spp$year,
-                         samp_densb_spp$Index, samp_densb_spp$ScientificName),
-                   c(cols_view_start, cols_taxa_start,
+    samp_densb_spp[order(samp_densb_spp$MacroPlot_Name,
+                         samp_densb_spp$year,
+                         samp_densb_spp$Index,
+                         samp_densb_spp$ScientificName),
+                   c(cols_view_start,
+                     cols_taxa_start,
                      cols_densbelt,
-                     cols_taxa_end, cols_view_end)]))
+                     cols_taxa_end,
+                     cols_view_end)]))
   }
   #---- Density_Quadrats_Metric View ----
   setTxtProgressBar(pb,6)
@@ -952,16 +1231,21 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                               by = c("Spp_GUID", "Unit_Name",
                                      "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_densquad <- c("Visited", "NumTran", "NumQuadTran", "QuadLen", "QuadWid", "Area",
-                     "Index", "Transect", "Quadrat", "Status", "SizeCl", "AgeCl",
-                     "Count", "Height", "SubFrac", "Comment", "UV1", "UV2", "UV3")
+  cols_densquad <- c("Visited", "NumTran", "NumQuadTran", "QuadLen", "QuadWid",
+                     "Area", "Index", "Transect", "Quadrat", "Status", "SizeCl",
+                     "AgeCl", "Count", "Height", "SubFrac", "Comment", "UV1",
+                     "UV2", "UV3")
 
   Density_Quadrats_metric <- distinct(data.frame(
-    samp_densq_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
-                         samp_densq_spp$Index, samp_densq_spp$ScientificName),
-                   c(cols_view_start, cols_taxa_start,
+    samp_densq_spp[order(samp_densq_spp$MacroPlot_Name,
+                         samp_densq_spp$year,
+                         samp_densq_spp$Index,
+                         samp_densq_spp$ScientificName),
+                   c(cols_view_start,
+                     cols_taxa_start,
                      cols_densquad,
-                     cols_taxa_end, cols_view_end)]))
+                     cols_taxa_end,
+                     cols_view_end)]))
   }
   #---- Disturbance_History View ----
   setTxtProgressBar(pb,7)
@@ -987,17 +1271,19 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                                  "datasource"),
                           relationship = 'many-to-many') # b/c multiple projects/macroplot
 
-  cols_dist <- c("Visited",
-                 "Index", "ChAgent", "SevCode", "StartYr", "StartMo", "StartDy",
-                 "EndYr", "EndMo", "EndDy", "DatePrec", "ChgDesc", "Comment",
-                 "UV1", "UV2", "UV3")
+  cols_dist <- c("Visited", "Index", "ChAgent", "SevCode", "StartYr", "StartMo",
+                 "StartDy", "EndYr", "EndMo", "EndDy", "DatePrec", "ChgDesc",
+                 "Comment", "UV1", "UV2", "UV3")
 
   cols_view_end_nospp <- cols_view_end[!cols_view_end %in% "Spp_GUID"]
 
   Disturbance_History <- distinct(data.frame(
-    samp_dista[order(samp_dista$MacroPlot_Name, samp_dista$year,
+    samp_dista[order(samp_dista$MacroPlot_Name,
+                     samp_dista$year,
                      samp_dista$Index),
-               c(cols_view_start, cols_dist, cols_view_end_nospp)]
+               c(cols_view_start,
+                 cols_dist,
+                 cols_view_end_nospp)]
   ))
   }
   #---- Surface_Fuels_1000Hr View ----
@@ -1023,13 +1309,17 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                                      "datasource"),
                               relationship = 'many-to-many') # b/c multiple projects/macroplot
 
-  cols_surf1000 <- c("Visited", "NumTran", "TranLen", "Index", "Transect", "Slope", "LogNum", "Dia",
-                     "DecayCl", "CWDFuConSt", "Comment", "UV1", "UV2", "UV3")
+  cols_surf1000 <- c("Visited", "NumTran", "TranLen", "Index", "Transect",
+                     "Slope", "LogNum", "Dia", "DecayCl", "CWDFuConSt",
+                     "Comment", "UV1", "UV2", "UV3")
 
   Surface_Fuels_1000Hr <- distinct(data.frame(
-    samp_surf1000a[order(samp_surf1000a$MacroPlot_Name, samp_surf1000a$year,
+    samp_surf1000a[order(samp_surf1000a$MacroPlot_Name,
+                         samp_surf1000a$year,
                          samp_surf1000a$Index),
-                   c(cols_view_start, cols_surf1000, cols_view_end_nospp)]))
+                   c(cols_view_start,
+                     cols_surf1000,
+                     cols_view_end_nospp)]))
   }
   #---- Surface_Fuels_Fine View ----
   setTxtProgressBar(pb,9)
@@ -1054,17 +1344,22 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                               by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
                                      "datasource"),
                               relationship = 'many-to-many') # b/c multiple projects/macroplot
+
   names(samp_surffinea)[names(samp_surffinea) == "Azimuth.x"] <- "Azimuth"
   names(samp_surffinea)[names(samp_surffinea) == "Azimuth.y"] <- "Azimuth_Fuels"
 
-  cols_surffine <- c("Visited", "NumTran", "OneHrTranLen", "TenHrTranLen", "HunHrTranLen",
-                     "Index", "Transect", "Azimuth_Fuels", "Slope", "OneHr", "TenHr", "HunHr", "FWDFuConSt",
+  cols_surffine <- c("Visited", "NumTran", "OneHrTranLen", "TenHrTranLen",
+                     "HunHrTranLen", "Index", "Transect", "Azimuth_Fuels",
+                     "Slope", "OneHr", "TenHr", "HunHr", "FWDFuConSt",
                      "Comment", "UV1", "UV2", "UV3")
 
   Surface_Fuels_Fine <- distinct(data.frame(
-    samp_surffinea[order(samp_surffinea$MacroPlot_Name, samp_surffinea$year,
+    samp_surffinea[order(samp_surffinea$MacroPlot_Name,
+                         samp_surffinea$year,
                          samp_surffinea$Index),
-                   c(cols_view_start, cols_surffine, cols_view_end_nospp)]))
+                   c(cols_view_start,
+                     cols_surffine,
+                     cols_view_end_nospp)]))
 
   }
 
@@ -1092,13 +1387,17 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                                      "datasource"),
                               relationship = 'many-to-many') # b/c multiple projects/macroplot
 
-  cols_surfduff <- c("Visited", "NumTran", "Index", "Transect", "SampLoc", "OffSet", "LittDep",
-                     "DuffDep", "FuelbedDep", "DLFuConSt", "Comment", "UV1", "UV2", "UV3")
+  cols_surfduff <- c("Visited", "NumTran", "Index", "Transect", "SampLoc",
+                     "OffSet", "LittDep", "DuffDep", "FuelbedDep", "DLFuConSt",
+                     "Comment", "UV1", "UV2", "UV3")
 
   Surface_Fuels_Duff <- distinct(data.frame(
-    samp_surfduffa[order(samp_surfduffa$MacroPlot_Name, samp_surfduffa$year,
+    samp_surfduffa[order(samp_surfduffa$MacroPlot_Name,
+                         samp_surfduffa$year,
                          samp_surfduffa$Index),
-                   c(cols_view_start, cols_surfduff, cols_view_end_nospp)]))
+                   c(cols_view_start,
+                     cols_surfduff,
+                     cols_view_end_nospp)]))
   }
   #---- Trees_Metric ----
   setTxtProgressBar(pb,11)
@@ -1121,6 +1420,7 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                              by = c("SampleData_SampleRow_GUID" = "AttributeData_SampleRow_GUID",
                                     "datasource"),
                              relationship = 'many-to-many') # b/c multiple projects/macroplot
+
   tree_samp_plots <- sort(unique(samp_treearj$MacroPlot_Name))
 
   samp_trees1 <- left_join(sampev_unique, tree_samp,
@@ -1135,10 +1435,11 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
                           relationship = 'many-to-many') # b/c multiple projects/macroplot
 
   samp_tree_spp <- left_join(samp_treea, Taxa_Table,
-                             by = c("Spp_GUID", "Unit_Name", "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
+                             by = c("Spp_GUID", "Unit_Name",
+                                    "RegistrationUnit_GUID" = "RegistrationUnitGUID"))
 
-  cols_tree <- c("Visited", "MacroPlotSize", "SnagPlotSize", "BrkPntDia",
-                 "QTR", "SubFrac", "TagNo", "Status", "DBH", "CrwnCl", "LiCrBHt",
+  cols_tree <- c("Visited", "MacroPlotSize", "SnagPlotSize", "BrkPntDia", "QTR",
+                 "SubFrac", "TagNo", "Status", "DBH", "CrwnCl", "LiCrBHt",
                  "CrwnRad", "DRC", "Comment", "UV1", "UV2", "UV3")
 
   # tree columns not used by NGPN
@@ -1148,49 +1449,65 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
   # "DamSev3", "DamCd4", "DamSev4", "DamCd5", "DamSev5")
 
   Trees_metric <- distinct(data.frame(
-    samp_tree_spp[order(samp_densq_spp$MacroPlot_Name, samp_densq_spp$year,
-                        samp_densq_spp$Index, samp_densq_spp$ScientificName),
-                  c(cols_view_start, cols_taxa_start,
+    samp_tree_spp[order(samp_densq_spp$MacroPlot_Name,
+                        samp_densq_spp$year,
+                        samp_densq_spp$Index,
+                        samp_densq_spp$ScientificName),
+                  c(cols_view_start,
+                    cols_taxa_start,
                     cols_tree,
-                    cols_taxa_end, cols_view_end)]))
+                    cols_taxa_end,
+                    cols_view_end)]))
 
   }
 
   #---- Add views to VIEWS_NGPN ----
-  view_names <- c("Cover_Points_metric", "Cover_Species_Composition", "Density_Belts_metric",
-                  "Density_Quadrats_metric", "Disturbance_History", "MacroPlots", "SampleEvents",
-                  "Surface_Fuels_1000Hr", "Surface_Fuels_Fine", "Surface_Fuels_Duff", "Taxa_Table",
-                  "Trees_metric")
+  view_names <- c("Cover_Points_metric", "Cover_Species_Composition",
+                  "Density_Belts_metric", "Density_Quadrats_metric",
+                  "Disturbance_History", "MacroPlots", "SampleEvents",
+                  "Surface_Fuels_1000Hr", "Surface_Fuels_Fine",
+                  "Surface_Fuels_Duff", "Taxa_Table", "Trees_metric")
 
   if(new_env == TRUE){VIEWS_NGPN <<- new.env()}
   env_views <- if(new_env == TRUE){VIEWS_NGPN} else {.GlobalEnv}
   if(exists("Cover_Points_metric")){
-     assign("Cover_Points_metric", Cover_Points_metric, envir = env_views)}
+     assign("Cover_Points_metric", Cover_Points_metric, envir = env_views)
+    }
   if(exists("Cover_Species_Composition")){
-     assign("Cover_Species_Composition", Cover_Species_Composition, envir = env_views)}
+     assign("Cover_Species_Composition", Cover_Species_Composition, envir = env_views)
+    }
   if(exists("Density_Belts_metric")){
-     assign("Density_Belts_metric", Density_Belts_metric, envir = env_views)}
+     assign("Density_Belts_metric", Density_Belts_metric, envir = env_views)
+    }
   if(exists("Density_Quadrats_metric")){
-     assign("Density_Quadrats_metric", Density_Quadrats_metric, envir = env_views)}
+     assign("Density_Quadrats_metric", Density_Quadrats_metric, envir = env_views)
+    }
   if(exists("Disturbance_History")){
-     assign("Disturbance_History", Disturbance_History, envir = env_views)}
+     assign("Disturbance_History", Disturbance_History, envir = env_views)
+    }
   assign("MacroPlots", MacroPlots, envir = env_views)
   assign("SampleEvents", SampleEvents, envir = env_views)
   if(exists("Surface_Fuels_1000Hr")){
-    assign("Surface_Fuels_1000Hr", Surface_Fuels_1000Hr, envir = env_views)}
+    assign("Surface_Fuels_1000Hr", Surface_Fuels_1000Hr, envir = env_views)
+    }
   if(exists("Surface_Fuels_Fine")){
-    assign("Surface_Fuels_Fine", Surface_Fuels_Fine, envir = env_views)}
+    assign("Surface_Fuels_Fine", Surface_Fuels_Fine, envir = env_views)
+    }
   if(exists("Surface_Fuels_Duff")){
-    assign("Surface_Fuels_Duff", Surface_Fuels_Duff, envir = env_views)}
+    assign("Surface_Fuels_Duff", Surface_Fuels_Duff, envir = env_views)
+    }
   assign("Taxa_Table", Taxa_Table, envir = env_views)
   if(exists("Trees_metric")){
-    assign("Trees_metric", Trees_metric, envir = env_views)}
+    assign("Trees_metric", Trees_metric, envir = env_views)
+    }
 
   views_final <- view_names[view_names %in% names(env_views)]
 
   if(length(views_final) != length(view_names)){
-    warning(paste0("The following views were not created because specified database did not include relevant tables: ",
-                   paste0(view_names[!view_names %in% names(env_views)], collapse = ", ")))
+    warning(paste0("The following views were not created because specified ",
+                   "database did not include relevant tables: ",
+                   paste0(view_names[!view_names %in% names(env_views)],
+                          collapse = ", ")))
   }
 
   close(pb)
@@ -1211,7 +1528,8 @@ importData <- function(type = "local", server = NA, dbname = "FFI_RA_AGFO", new_
     zip::zipr(zipfile = paste0(export_pathn, "\\", zip_name),
               root = tmp,
               files = view_list)
-    noquote(paste0("Export of views complete and saved to ", export_pathn, "\\", zip_name))
+    noquote(paste0("Export of views complete and saved to ", export_pathn, "\\",
+                   zip_name))
   }
 
   } # end of function

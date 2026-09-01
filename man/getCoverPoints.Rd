@@ -197,7 +197,7 @@ table(covpts_pr$Unit_Name, covpts_pr$ProjectUnit_Name, useNA = 'always')
 
 # get cover point data for ForestStructure monitoring status
 covpts_for <- getCoverPoints(mon_status = "ForestStructure")
-table(covpts_for$Unit_Name, covpts_for$MonitoringStatus_Base, useNA = 'always')
+table(covpts_for$Unit_Name, covpts_for$DefaultMonitoringStatus, useNA = 'always')
 
 # get invasive graminoid cover point data for BADL in 2024
 badl_inv_gram <- getCoverPoints(park = "BADL", years = 2024) |>

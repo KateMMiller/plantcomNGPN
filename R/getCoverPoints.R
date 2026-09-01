@@ -181,7 +181,7 @@
 #'
 #' # get cover point data for ForestStructure monitoring status
 #' covpts_for <- getCoverPoints(mon_status = "ForestStructure")
-#' table(covpts_for$Unit_Name, covpts_for$MonitoringStatus_Base, useNA = 'always')
+#' table(covpts_for$Unit_Name, covpts_for$DefaultMonitoringStatus, useNA = 'always')
 #'
 #' # get invasive graminoid cover point data for BADL in 2024
 #' badl_inv_gram <- getCoverPoints(park = "BADL", years = 2024) |>
@@ -243,7 +243,7 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park",
   covpts_samp <- covpts[covpts$SampleEvent_GUID %in% sampev_guids,]
 
   # Drop records where Index is blank b/c causes issues in the join
-  covpts_samp2 <- covpts_samp[!is.na(covpts_samp$Index),]
+  # covpts_samp2 <- covpts_samp[!is.na(covpts_samp$Index),]
 
   # column ouptut
   keep_cols <- c("MacroPlot_Name", "Unit_Name", "MacroPlot_Purpose",
@@ -253,7 +253,8 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park",
                  "DefaultMonitoringStatus",# "MonitoringStatus_Base", pulling Pre values
                  "Visited",
                  "NumTran", "TranLen", "NumPtsTran", "Offset", "UV1Desc",
-                 "SaComment", "Index", "Transect", "Point", "Tape", "Order",
+                 "SaComment",# "Index",
+                 "Transect", "Point", "Tape", "Order",
                  "Height", #"CanopyLayer", # Blank in NGPN data
                  "Status", "Comment", "Symbol", "ITIS_TSN", "ScientificName",
                  "CommonName", "Nativity", "Invasive", "Cultural", "Concern",
@@ -267,11 +268,18 @@ getCoverPoints <- function(park = 'all', plot_name = "all", project = "Park",
     c(keep_cols, sort(setdiff(names(covpts_samp2), keep_cols)))
     }
 
-  sampcov2 <- covpts_samp2[order(covpts_samp2$MacroPlot_Name,
-                                 covpts_samp2$SampleEvent_Date,
-                                 covpts_samp2$Transect,
-                                 covpts_samp2$Point,
-                                 covpts_samp2$Order),
+  # sampcov2 <- covpts_samp2[order(covpts_samp2$MacroPlot_Name,
+  #                                covpts_samp2$SampleEvent_Date,
+  #                                covpts_samp2$Transect,
+  #                                covpts_samp2$Point,
+  #                                covpts_samp2$Order),
+  #                          final_names]
+
+  sampcov2 <- covpts_samp[order(covpts_samp$MacroPlot_Name,
+                                 covpts_samp$SampleEvent_Date,
+                                 covpts_samp$Transect,
+                                 covpts_samp$Point,
+                                 covpts_samp$Order),
                            final_names]
 
   sampcov_final <- distinct(sampcov2)
